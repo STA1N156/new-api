@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { Gauge, HeartPulse, Timer } from 'lucide-react'
+import { Gauge, HeartPulse } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -25,7 +25,6 @@ import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import {
-  formatLatency,
   formatThroughput,
   formatUptimePct,
   getSuccessRateDotClass,
@@ -114,13 +113,6 @@ export function PerformanceHealthPanel() {
             tone='success'
           />
           <MetricCell
-            icon={Timer}
-            label={t('Average latency')}
-            value={formatLatency(summary.avgLatencyMs)}
-            loading={loading}
-            tone='warning'
-          />
-          <MetricCell
             icon={Gauge}
             label={t('Throughput')}
             value={formatThroughput(summary.avgTps)}
@@ -131,7 +123,7 @@ export function PerformanceHealthPanel() {
 
         {loading ? (
           <div className='space-y-1'>
-            {['success', 'latency', 'throughput'].map((key) => (
+            {['success', 'throughput'].map((key) => (
               <Skeleton key={key} className='h-5 w-full rounded' />
             ))}
           </div>

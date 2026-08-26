@@ -38,12 +38,6 @@ function formatCompactNumber(value: number): string {
   return value > 1 ? String(Math.round(value)) : value.toFixed(1)
 }
 
-function formatCompactLatency(ms: number): string {
-  if (!Number.isFinite(ms) || ms <= 0) return '—'
-  if (ms >= 1_000) return `${formatCompactNumber(ms / 1_000)}s`
-  return `${formatCompactNumber(ms)}ms`
-}
-
 function formatCompactThroughput(tps: number): string {
   if (!Number.isFinite(tps) || tps <= 0) return '—'
   if (tps >= 1_000) return `${formatCompactNumber(tps / 1_000)}Kt`
@@ -59,7 +53,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
     return null
   }
 
-  const { avg_latency_ms, avg_tps, success_rate } = props.perf
+  const { avg_tps, success_rate } = props.perf
 
   const recentRates =
     props.perf.recent_success_rates?.filter((rate) => Number.isFinite(rate)) ??
@@ -74,18 +68,10 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
   return (
     <div
       className={cn(
-        'hidden w-[132px] grid-cols-[38px_48px_30px] gap-x-2 text-right tabular-nums min-[460px]:grid',
+        'hidden w-[82px] grid-cols-[48px_30px] gap-x-2 text-right tabular-nums min-[460px]:grid',
         props.className
       )}
     >
-      <div title={t('Average latency')} className='min-w-0'>
-        <div className='text-muted-foreground/55 text-[10px] leading-4'>
-          {t('Latency short')}
-        </div>
-        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
-          {formatCompactLatency(avg_latency_ms)}
-        </div>
-      </div>
       <div title={t('Throughput')} className='min-w-0'>
         <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
           {t('Throughput short')}

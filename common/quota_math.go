@@ -8,12 +8,12 @@ import (
 )
 
 // Quota conversions are centralized here so every billing path shares one
-// saturation + logging policy. Quota columns (user/token/log) are 32-bit
-// integers in the database, so an oversized product must clamp to the int32
-// range instead of wrapping around and turning a charge into a credit.
+// saturation + logging policy. Quota columns (user/token/log) are BIGINT in
+// the database, so quota arithmetic must use the signed 64-bit range. Using
+// an int32 ceiling here would reject valid migrated balances during checkout.
 const (
-	MaxQuota = math.MaxInt32
-	MinQuota = math.MinInt32
+	MaxQuota = math.MaxInt64
+	MinQuota = math.MinInt64
 )
 
 // QuotaClampKind identifies why a quota conversion had to be saturated.

@@ -172,8 +172,8 @@ it('shows each cycle as an accessible percentage meter without raw quota amounts
   expect(screen.getByText('Waiting for reset')).toHaveClass('text-rose-600/90')
   expect(screen.getAllByText('Next reset')).toHaveLength(2)
   for (const label of screen.getAllByText('Next reset')) {
-    expect(label.parentElement).toHaveClass('text-xs')
-    expect(label.parentElement?.querySelector('svg')).toHaveClass('size-3.5')
+    expect(label.parentElement).toHaveClass('text-[10px]')
+    expect(label.parentElement?.querySelector('svg')).toHaveClass('size-3')
   }
   expect(container).not.toHaveTextContent('🍪')
   expect(container).not.toHaveTextContent('120/300')

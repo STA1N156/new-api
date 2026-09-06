@@ -199,8 +199,8 @@ export function SubscriptionQuotaUsage(props: Props) {
             )}
             <div className='text-muted-foreground flex min-h-4 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] leading-relaxed'>
               {reset ? (
-                <span className='flex flex-wrap items-center gap-x-1.5 text-xs'>
-                  <Clock3 aria-hidden='true' className='size-3.5 shrink-0' />
+                <span className='flex flex-wrap items-center gap-x-1.5 text-[10px]'>
+                  <Clock3 aria-hidden='true' className='size-3 shrink-0' />
                   <span>{t('Next reset')}</span>
                   <ResetCountdown resetTime={cycle.reset} />
                 </span>

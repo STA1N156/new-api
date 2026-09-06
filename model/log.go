@@ -279,6 +279,14 @@ func RecordTopupLog(userId int, content string, callerIp string, paymentMethod s
 	}
 }
 
+func requestLogIP(c *gin.Context, userId int) string {
+	settings, err := GetUserSetting(userId, false)
+	if err != nil || !settings.RecordIpLog {
+		return ""
+	}
+	return c.ClientIP()
+}
+
 func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string, tokenName string, content string, tokenId int, useTimeSeconds int,
 	isStream bool, group string, other map[string]interface{}) {
 	logger.LogInfo(c, fmt.Sprintf("record error log: userId=%d, channelId=%d, modelName=%s, tokenName=%s, content=%s", userId, channelId, modelName, tokenName, common.LocalLogPreview(content)))
@@ -302,7 +310,7 @@ func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string,
 		UseTime:           useTimeSeconds,
 		IsStream:          isStream,
 		Group:             group,
-		Ip:                c.ClientIP(),
+		Ip:                requestLogIP(c, userId),
 		RequestId:         requestId,
 		UpstreamRequestId: upstreamRequestId,
 		Other:             otherStr,
@@ -354,7 +362,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 		UseTime:           params.UseTimeSeconds,
 		IsStream:          params.IsStream,
 		Group:             params.Group,
-		Ip:                c.ClientIP(),
+		Ip:                requestLogIP(c, userId),
 		RequestId:         requestId,
 		UpstreamRequestId: upstreamRequestId,
 		Other:             otherStr,

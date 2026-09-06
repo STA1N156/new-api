@@ -11,16 +11,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRequestLogsAlwaysRecordIP(t *testing.T) {
-	for _, setting := range []string{"", `{"record_ip_log":false}`, "invalid settings"} {
-		t.Run(setting, func(t *testing.T) {
+func TestRequestLogsRespectIPSetting(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		setting string
+		wantIP  string
+	}{
+		{"default disabled", "", ""},
+		{"explicitly disabled", `{"record_ip_log":false}`, ""},
+		{"invalid settings", "invalid settings", ""},
+		{"explicitly enabled", `{"record_ip_log":true}`, "198.51.100.42"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
 			setupUserUpdateTestState(t)
 			oldConsume, oldExport := common.LogConsumeEnabled, common.DataExportEnabled
 			common.LogConsumeEnabled, common.DataExportEnabled = true, false
 			t.Cleanup(func() {
 				common.LogConsumeEnabled, common.DataExportEnabled = oldConsume, oldExport
 			})
-			user := User{Username: "ip-log-user", Setting: setting}
+			user := User{Username: "ip-log-user", Setting: tc.setting}
 			require.NoError(t, DB.Create(&user).Error)
 			c, _ := gin.CreateTestContext(httptest.NewRecorder())
 			c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
@@ -36,7 +45,7 @@ func TestRequestLogsAlwaysRecordIP(t *testing.T) {
 			assert.Equal(t, LogTypeConsume, logs[0].Type)
 			assert.Equal(t, LogTypeError, logs[1].Type)
 			for _, log := range logs {
-				assert.Equal(t, "198.51.100.42", log.Ip)
+				assert.Equal(t, tc.wantIP, log.Ip)
 			}
 		})
 	}

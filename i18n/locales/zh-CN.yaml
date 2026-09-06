@@ -114,8 +114,6 @@ user.quota_change_zero: "额度变更量不能为0"
 quota.negative: "额度不能为负数！"
 quota.exceed_max: "额度值超出有效范围"
 quota.insufficient: "额度不足"
-quota.warning_invalid: "无效的预警类型"
-quota.threshold_gt_zero: "预警阈值必须大于0"
 
 # Subscription messages
 subscription.not_enabled: "套餐未启用"
@@ -284,3 +282,6 @@ custom_oauth.name_empty: "提供商名称不能为空"
 custom_oauth.has_bindings: "无法删除已有用户绑定的提供商"
 custom_oauth.binding_not_found: "OAuth 绑定不存在"
 custom_oauth.provider_id_field_invalid: "无法从提供商响应中提取用户 ID"
+
+user.qq_email_numeric_required: "已开启邮箱别名限制，QQ 邮箱仅支持纯数字账号，例如 12345678@qq.com。"
+user.email_alias_restricted: "已开启邮箱别名限制，邮箱账号中不能包含 + 或 .。"

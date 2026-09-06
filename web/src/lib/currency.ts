@@ -635,3 +635,19 @@ export function formatLocalCurrencyAmount(
 
   return formatCurrencyValue(amount, merged, meta)
 }
+
+/** Format the CNY cost of USD credits using the configured recharge price. */
+export function formatRechargePrice(
+  amountUSD: number | null | undefined,
+  priceRate: number,
+  options?: CurrencyFormatOptions
+): string {
+  if (amountUSD == null || Number.isNaN(amountUSD)) return '-'
+
+  return formatCurrencyValue(amountUSD * priceRate, mergeOptions(options), {
+    kind: 'currency',
+    symbol: '¥',
+    currencyCode: 'CNY',
+    exchangeRate: 1,
+  })
+}

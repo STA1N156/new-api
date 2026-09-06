@@ -227,7 +227,9 @@ export function BasicAuthSection({ defaultValues }: BasicAuthSectionProps) {
                 <SettingsSwitchContent>
                   <FormLabel>{t('Email Alias Restriction')}</FormLabel>
                   <FormDescription>
-                    {t('Block email aliases (e.g., user+alias@domain.com)')}
+                    {t(
+                      'Block email aliases; QQ email addresses must use digits only before @qq.com.'
+                    )}
                   </FormDescription>
                 </SettingsSwitchContent>
                 <FormControl>

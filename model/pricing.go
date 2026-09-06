@@ -16,6 +16,7 @@ import (
 )
 
 type Pricing struct {
+	ModelDiscount          *float64                `json:"model_discount,omitempty"`
 	ModelName              string                  `json:"model_name"`
 	Description            string                  `json:"description,omitempty"`
 	Icon                   string                  `json:"icon,omitempty"`
@@ -404,6 +405,11 @@ func updatePricing() {
 			if expr, ok := billing_setting.GetBillingExpr(model); ok && strings.TrimSpace(expr) != "" {
 				pricing.BillingMode = billingMode
 				pricing.BillingExpr = expr
+			}
+		}
+		if pricing.QuotaType == 0 && pricing.BillingMode == "" {
+			if discount, ok := ratio_setting.GetModelDiscount(model); ok {
+				pricing.ModelDiscount = &discount
 			}
 		}
 		pricingMap = append(pricingMap, pricing)

@@ -71,3 +71,8 @@ Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
   configurable: true,
   value: () => undefined,
 })
+
+Object.defineProperty(HTMLElement.prototype, 'getAnimations', {
+  configurable: true,
+  value: () => [],
+})

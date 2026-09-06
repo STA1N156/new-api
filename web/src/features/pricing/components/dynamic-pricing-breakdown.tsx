@@ -48,6 +48,7 @@ import {
 
 type DynamicPricingBreakdownProps = {
   billingExpr: string | null | undefined
+  rechargePriceRate?: number
   /**
    * Label of the tier that fired for the current request. When provided,
    * the corresponding row is highlighted and tagged as "Matched". Used by
@@ -169,6 +170,7 @@ function nextOccurrenceKey(
 
 export function DynamicPricingBreakdown({
   billingExpr,
+  rechargePriceRate,
   matchedTierLabel,
   requestRules,
   hideCacheColumns = false,
@@ -179,6 +181,9 @@ export function DynamicPricingBreakdown({
   const currency = useSystemConfigStore((s) => s.config.currency)
 
   const { symbol, rate } = useMemo(() => {
+    if (rechargePriceRate !== undefined) {
+      return { symbol: '¥', rate: rechargePriceRate }
+    }
     if (currency.quotaDisplayType === 'CNY') {
       return { symbol: '¥', rate: currency.usdExchangeRate || 7 }
     }
@@ -189,7 +194,7 @@ export function DynamicPricingBreakdown({
       }
     }
     return { symbol: '$', rate: 1 }
-  }, [currency])
+  }, [currency, rechargePriceRate])
 
   const { tiers, ruleGroups } = useMemo(() => {
     const split = splitBillingExprAndRequestRules(expr)

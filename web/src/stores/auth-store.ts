@@ -41,6 +41,10 @@ export interface AuthUser {
   aff_count?: number
   aff_quota?: number
   aff_history_quota?: number
+  aff_topup_quota?: number
+  aff_inviter_reward?: number
+  aff_invitee_reward?: number
+  aff_topup_reward_percent?: number
   inviter_id?: number
   github_id?: string
   discord_id?: string

@@ -1715,9 +1715,6 @@
                   "notify_type": {
                     "type": "string"
                   },
-                  "quota_warning_threshold": {
-                    "type": "number"
-                  },
                   "webhook_url": {
                     "type": "string"
                   },

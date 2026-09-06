@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 
 import { useStatus } from '@/hooks/use-status'
 import { getNotice } from '@/lib/api'
@@ -80,9 +80,10 @@ export function useNotifications() {
   })
 
   // Fetch Announcements from status
-  const { status, loading: statusLoading } = useStatus()
+  const { status, loading: statusLoading } = useStatus({
+    refetchInterval: 60_000,
+  })
   const announcementsEnabled = status?.announcements_enabled ?? false
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const announcements: Record<string, unknown>[] = announcementsEnabled
     ? ((status?.announcements || []) as Record<string, unknown>[]).slice(0, 20)
     : []
@@ -92,7 +93,9 @@ export function useNotifications() {
     lastReadNotice,
     markNoticeRead,
     markAnnouncementsRead,
-    isAnnouncementRead,
+    readAnnouncementKeys,
+    viewedBannerAnnouncementKeys,
+    markAnnouncementBannerViewed,
   } = useNotificationStore()
 
   // Extract notice content
@@ -100,31 +103,19 @@ export function useNotifications() {
     ? (noticeResponse.data || '').trim()
     : ''
 
-  // Calculate unread counts
-  const unreadCounts = useMemo(() => {
-    const noticeUnread =
-      noticeContent && noticeContent !== lastReadNotice ? 1 : 0
-
-    const announcementsUnread = announcements.filter(
-      (item: Record<string, unknown>) => {
-        const key = getAnnouncementKey(item)
-        return !isAnnouncementRead(key)
-      }
-    ).length
-
-    return {
-      notice: noticeUnread,
-      announcements: announcementsUnread,
-      total: noticeUnread + announcementsUnread,
-    }
-  }, [noticeContent, lastReadNotice, announcements, isAnnouncementRead])
+  const announcementKeys = announcements.map(getAnnouncementKey)
+  const unreadNoticeCount =
+    noticeContent && noticeContent !== lastReadNotice ? 1 : 0
+  const unreadAnnouncementsCount = announcementKeys.filter(
+    (key) => !readAnnouncementKeys.includes(key)
+  ).length
+  const pendingAnnouncementCount = announcementKeys.filter(
+    (key) => !viewedBannerAnnouncementKeys.includes(key)
+  ).length
 
   const markAnnouncementsAsRead = () => {
     if (announcements.length > 0) {
-      const allKeys = announcements.map((item: Record<string, unknown>) =>
-        getAnnouncementKey(item)
-      )
-      markAnnouncementsRead(allKeys)
+      markAnnouncementsRead(announcementKeys)
     }
   }
 
@@ -169,9 +160,10 @@ export function useNotifications() {
     loading: noticeLoading || statusLoading,
 
     // Unread counts
-    unreadCount: unreadCounts.total,
-    unreadNoticeCount: unreadCounts.notice,
-    unreadAnnouncementsCount: unreadCounts.announcements,
+    unreadCount: unreadNoticeCount + unreadAnnouncementsCount,
+    unreadNoticeCount,
+    unreadAnnouncementsCount,
+    pendingAnnouncementCount,
 
     // Popover state
     popoverOpen,
@@ -181,6 +173,10 @@ export function useNotifications() {
 
     // Actions
     openPopover: handleOpenPopover,
+    viewAnnouncementBanner: () => {
+      handleOpenPopover('announcements')
+      markAnnouncementBannerViewed(announcementKeys)
+    },
     closePopover: () => setPopoverOpen(false),
     refetchNotice,
   }

@@ -229,6 +229,9 @@ func Register(c *gin.Context) {
 		return
 	}
 	if common.EmailVerificationEnabled {
+		if !allowEmailAlias(c, user.Email) {
+			return
+		}
 		if user.Email == "" || user.VerificationCode == "" {
 			common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
 			return
@@ -507,34 +510,43 @@ func GetSelf(c *gin.Context) {
 // administrator-only remarks.
 func buildSelfUserData(user *model.User) map[string]interface{} {
 	userSetting := user.GetSetting()
+	inviteCount, err := model.CountInvitedUsers(user.Id)
+	if err != nil {
+		common.SysError("failed to count invited users: " + err.Error())
+		inviteCount = int64(user.AffCount)
+	}
 	permissions := calculateUserPermissions(user.Role)
 	permissions["admin_permissions"] = authz.Capabilities(user.Id, user.Role)
 	return map[string]interface{}{
-		"id":                user.Id,
-		"username":          user.Username,
-		"display_name":      user.DisplayName,
-		"role":              user.Role,
-		"status":            user.Status,
-		"email":             user.Email,
-		"github_id":         user.GitHubId,
-		"discord_id":        user.DiscordId,
-		"oidc_id":           user.OidcId,
-		"wechat_id":         user.WeChatId,
-		"telegram_id":       user.TelegramId,
-		"group":             user.Group,
-		"quota":             user.Quota,
-		"used_quota":        user.UsedQuota,
-		"request_count":     user.RequestCount,
-		"aff_code":          user.AffCode,
-		"aff_count":         user.AffCount,
-		"aff_quota":         user.AffQuota,
-		"aff_history_quota": user.AffHistoryQuota,
-		"inviter_id":        user.InviterId,
-		"linux_do_id":       user.LinuxDOId,
-		"setting":           user.Setting,
-		"stripe_customer":   user.StripeCustomer,
-		"sidebar_modules":   userSetting.SidebarModules, // 正确提取sidebar_modules字段
-		"permissions":       permissions,
+		"id":                       user.Id,
+		"username":                 user.Username,
+		"display_name":             user.DisplayName,
+		"role":                     user.Role,
+		"status":                   user.Status,
+		"email":                    user.Email,
+		"github_id":                user.GitHubId,
+		"discord_id":               user.DiscordId,
+		"oidc_id":                  user.OidcId,
+		"wechat_id":                user.WeChatId,
+		"telegram_id":              user.TelegramId,
+		"group":                    user.Group,
+		"quota":                    user.Quota,
+		"used_quota":               user.UsedQuota,
+		"request_count":            user.RequestCount,
+		"aff_code":                 user.AffCode,
+		"aff_count":                inviteCount,
+		"aff_quota":                user.AffQuota,
+		"aff_history_quota":        user.AffHistoryQuota,
+		"aff_topup_quota":          user.AffTopUpQuota,
+		"aff_inviter_reward":       common.QuotaForInviter,
+		"aff_invitee_reward":       common.QuotaForInvitee,
+		"aff_topup_reward_percent": model.InviteTopUpRewardPercent,
+		"inviter_id":               user.InviterId,
+		"linux_do_id":              user.LinuxDOId,
+		"setting":                  user.Setting,
+		"stripe_customer":          user.StripeCustomer,
+		"sidebar_modules":          userSetting.SidebarModules, // 正确提取sidebar_modules字段
+		"permissions":              permissions,
 	}
 }
 
@@ -1275,6 +1287,9 @@ func EmailBind(c *gin.Context) {
 	}
 	email := req.Email
 	email = model.NormalizeEmail(email)
+	if !allowEmailAlias(c, email) {
+		return
+	}
 	code := req.Code
 	if !common.VerifyCodeWithKey(email, code, common.EmailVerificationPurpose) {
 		common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
@@ -1386,18 +1401,16 @@ func TopUp(c *gin.Context) {
 }
 
 type UpdateUserSettingRequest struct {
-	QuotaWarningType                 string  `json:"notify_type"`
-	QuotaWarningThreshold            float64 `json:"quota_warning_threshold"`
-	WebhookUrl                       string  `json:"webhook_url,omitempty"`
-	WebhookSecret                    string  `json:"webhook_secret,omitempty"`
-	NotificationEmail                string  `json:"notification_email,omitempty"`
-	BarkUrl                          string  `json:"bark_url,omitempty"`
-	GotifyUrl                        string  `json:"gotify_url,omitempty"`
-	GotifyToken                      string  `json:"gotify_token,omitempty"`
-	GotifyPriority                   int     `json:"gotify_priority,omitempty"`
-	UpstreamModelUpdateNotifyEnabled *bool   `json:"upstream_model_update_notify_enabled,omitempty"`
-	AcceptUnsetModelRatioModel       bool    `json:"accept_unset_model_ratio_model"`
-	RecordIpLog                      bool    `json:"record_ip_log"`
+	NotifyType                       string `json:"notify_type"`
+	WebhookUrl                       string `json:"webhook_url,omitempty"`
+	WebhookSecret                    string `json:"webhook_secret,omitempty"`
+	NotificationEmail                string `json:"notification_email,omitempty"`
+	BarkUrl                          string `json:"bark_url,omitempty"`
+	GotifyUrl                        string `json:"gotify_url,omitempty"`
+	GotifyToken                      string `json:"gotify_token,omitempty"`
+	GotifyPriority                   int    `json:"gotify_priority,omitempty"`
+	UpstreamModelUpdateNotifyEnabled *bool  `json:"upstream_model_update_notify_enabled,omitempty"`
+	AcceptUnsetModelRatioModel       bool   `json:"accept_unset_model_ratio_model"`
 }
 
 func UpdateUserSetting(c *gin.Context) {
@@ -1407,20 +1420,14 @@ func UpdateUserSetting(c *gin.Context) {
 		return
 	}
 
-	// 验证预警类型
-	if req.QuotaWarningType != dto.NotifyTypeEmail && req.QuotaWarningType != dto.NotifyTypeWebhook && req.QuotaWarningType != dto.NotifyTypeBark && req.QuotaWarningType != dto.NotifyTypeGotify {
+	// 验证通知类型
+	if req.NotifyType != dto.NotifyTypeEmail && req.NotifyType != dto.NotifyTypeWebhook && req.NotifyType != dto.NotifyTypeBark && req.NotifyType != dto.NotifyTypeGotify {
 		common.ApiErrorI18n(c, i18n.MsgSettingInvalidType)
 		return
 	}
 
-	// 验证预警阈值
-	if req.QuotaWarningThreshold <= 0 {
-		common.ApiErrorI18n(c, i18n.MsgQuotaThresholdGtZero)
-		return
-	}
-
 	// 如果是webhook类型,验证webhook地址
-	if req.QuotaWarningType == dto.NotifyTypeWebhook {
+	if req.NotifyType == dto.NotifyTypeWebhook {
 		if req.WebhookUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingWebhookEmpty)
 			return
@@ -1433,7 +1440,7 @@ func UpdateUserSetting(c *gin.Context) {
 	}
 
 	// 如果是邮件类型，验证邮箱地址
-	if req.QuotaWarningType == dto.NotifyTypeEmail && req.NotificationEmail != "" {
+	if req.NotifyType == dto.NotifyTypeEmail && req.NotificationEmail != "" {
 		// 验证邮箱格式
 		if !strings.Contains(req.NotificationEmail, "@") {
 			common.ApiErrorI18n(c, i18n.MsgSettingEmailInvalid)
@@ -1442,7 +1449,7 @@ func UpdateUserSetting(c *gin.Context) {
 	}
 
 	// 如果是Bark类型，验证Bark URL
-	if req.QuotaWarningType == dto.NotifyTypeBark {
+	if req.NotifyType == dto.NotifyTypeBark {
 		if req.BarkUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingBarkUrlEmpty)
 			return
@@ -1460,7 +1467,7 @@ func UpdateUserSetting(c *gin.Context) {
 	}
 
 	// 如果是Gotify类型，验证Gotify URL和Token
-	if req.QuotaWarningType == dto.NotifyTypeGotify {
+	if req.NotifyType == dto.NotifyTypeGotify {
 		if req.GotifyUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingGotifyUrlEmpty)
 			return
@@ -1495,15 +1502,13 @@ func UpdateUserSetting(c *gin.Context) {
 
 	// 构建设置
 	settings := dto.UserSetting{
-		NotifyType:                       req.QuotaWarningType,
-		QuotaWarningThreshold:            req.QuotaWarningThreshold,
+		NotifyType:                       req.NotifyType,
 		UpstreamModelUpdateNotifyEnabled: upstreamModelUpdateNotifyEnabled,
 		AcceptUnsetRatioModel:            req.AcceptUnsetModelRatioModel,
-		RecordIpLog:                      req.RecordIpLog,
 	}
 
 	// 如果是webhook类型,添加webhook相关设置
-	if req.QuotaWarningType == dto.NotifyTypeWebhook {
+	if req.NotifyType == dto.NotifyTypeWebhook {
 		settings.WebhookUrl = req.WebhookUrl
 		if req.WebhookSecret != "" {
 			settings.WebhookSecret = req.WebhookSecret
@@ -1511,17 +1516,17 @@ func UpdateUserSetting(c *gin.Context) {
 	}
 
 	// 如果提供了通知邮箱，添加到设置中
-	if req.QuotaWarningType == dto.NotifyTypeEmail && req.NotificationEmail != "" {
+	if req.NotifyType == dto.NotifyTypeEmail && req.NotificationEmail != "" {
 		settings.NotificationEmail = req.NotificationEmail
 	}
 
 	// 如果是Bark类型，添加Bark URL到设置中
-	if req.QuotaWarningType == dto.NotifyTypeBark {
+	if req.NotifyType == dto.NotifyTypeBark {
 		settings.BarkUrl = req.BarkUrl
 	}
 
 	// 如果是Gotify类型，添加Gotify配置到设置中
-	if req.QuotaWarningType == dto.NotifyTypeGotify {
+	if req.NotifyType == dto.NotifyTypeGotify {
 		settings.GotifyUrl = req.GotifyUrl
 		settings.GotifyToken = req.GotifyToken
 		// Gotify优先级范围0-10，超出范围则使用默认值5

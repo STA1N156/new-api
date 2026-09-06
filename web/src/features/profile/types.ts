@@ -83,40 +83,8 @@ export interface UserProfile {
   linux_do_id?: string
 }
 
-/**
- * Notification type
- */
-export type NotifyType = 'email' | 'webhook' | 'bark' | 'gotify'
-
-/**
- * Parsed user settings
- */
+/** Parsed settings used by the profile page. */
 export interface UserSettings {
-  /** Notification type */
-  notify_type?: NotifyType
-  /** Quota warning threshold */
-  quota_warning_threshold?: number
-  /** Webhook URL */
-  webhook_url?: string
-  /** Webhook secret */
-  webhook_secret?: string
-  /** Notification email */
-  notification_email?: string
-  /** Bark URL */
-  bark_url?: string
-  /** Gotify server URL */
-  gotify_url?: string
-  /** Gotify application token */
-  gotify_token?: string
-  /** Gotify message priority (0-10) */
-  gotify_priority?: number
-  /** Accept unset model ratio model */
-  accept_unset_model_ratio_model?: boolean
-  /** Record IP log */
-  record_ip_log?: boolean
-  /** Receive upstream model update notifications (admin only) */
-  upstream_model_update_notify_enabled?: boolean
-  /** Preferred interface/API response language */
   language?: string
 }
 
@@ -127,24 +95,6 @@ export interface UpdateUserRequest {
   display_name?: string
   password?: string
   original_password?: string
-}
-
-/**
- * User settings update request
- */
-export interface UpdateUserSettingsRequest {
-  notify_type?: string
-  quota_warning_threshold?: number
-  webhook_url?: string
-  webhook_secret?: string
-  notification_email?: string
-  bark_url?: string
-  gotify_url?: string
-  gotify_token?: string
-  gotify_priority?: number
-  accept_unset_model_ratio_model?: boolean
-  record_ip_log?: boolean
-  upstream_model_update_notify_enabled?: boolean
 }
 
 /**

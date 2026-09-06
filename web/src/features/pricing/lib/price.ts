@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { formatCurrencyFromUSD } from '@/lib/currency'
+import { formatCurrencyFromUSD, formatRechargePrice } from '@/lib/currency'
 
 import { QUOTA_TYPE_VALUES, TOKEN_UNIT_DIVISORS } from '../constants'
 import type { PricingModel, TokenUnit, PriceType } from '../types'
@@ -103,42 +103,6 @@ function hasRatio(value: number | null | undefined): boolean {
 }
 
 /**
- * Apply recharge rate to price
- *
- * priceRate represents how much users need to recharge (in the display currency)
- * to get 1 USD credit. usdExchangeRate is the real exchange rate.
- *
- * The returned value will be formatted by formatCurrencyFromUSD, which will
- * multiply by the display currency's exchange rate.
- *
- * Examples:
- *
- * 1. Display currency = USD:
- *    - Model: 1 USD
- *    - priceRate = 0.5 (recharge $0.5 to get $1 credit)
- *    - usdExchangeRate = 1
- *    - Return: 1 × 0.5 / 1 = 0.5
- *    - formatCurrencyFromUSD(0.5) → $0.5 ✓
- *
- * 2. Display currency = CNY:
- *    - Model: 1 USD
- *    - priceRate = 4 (recharge ¥4 to get $1 credit)
- *    - usdExchangeRate = 7 (real rate: 1 USD = ¥7)
- *    - Return: 1 × 4 / 7 = 0.571
- *    - formatCurrencyFromUSD(0.571) → 0.571 × 7 = ¥4 ✓
- *    - Normal price: ¥7, Recharge price: ¥4 (cheaper!)
- */
-function applyRechargeRate(
-  price: number,
-  showWithRecharge: boolean,
-  priceRate: number,
-  usdExchangeRate: number
-): number {
-  if (!showWithRecharge) return price
-  return (price * priceRate) / usdExchangeRate
-}
-
-/**
  * Format token-based price for display
  */
 export function formatPrice(
@@ -147,7 +111,6 @@ export function formatPrice(
   tokenUnit: TokenUnit,
   showWithRecharge = false,
   priceRate = 1,
-  usdExchangeRate = 1,
   selectedGroup?: string
 ): string {
   if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) {
@@ -156,20 +119,17 @@ export function formatPrice(
 
   const displayGroupRatio = getDisplayGroupRatio(model, selectedGroup)
 
-  let priceInUSD = calculateTokenPrice(model, type, displayGroupRatio)
-  priceInUSD = applyRechargeRate(
-    priceInUSD,
-    showWithRecharge,
-    priceRate,
-    usdExchangeRate
-  )
+  const priceInUSD = calculateTokenPrice(model, type, displayGroupRatio)
 
   const price = priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
-  return formatCurrencyFromUSD(price, {
+  const options = {
     digitsLarge: 4,
     digitsSmall: 6,
     abbreviate: false,
-  })
+  }
+  return showWithRecharge
+    ? formatRechargePrice(price, priceRate, options)
+    : formatCurrencyFromUSD(price, options)
 }
 
 /**
@@ -182,7 +142,6 @@ export function formatGroupPrice(
   tokenUnit: TokenUnit,
   showWithRecharge = false,
   priceRate = 1,
-  usdExchangeRate = 1,
   groupRatio: Record<string, number>
 ): string {
   if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) {
@@ -190,21 +149,17 @@ export function formatGroupPrice(
   }
 
   const ratio = getConfiguredGroupRatio(groupRatio, group)
-  let priceInUSD = calculateTokenPrice(model, type, ratio)
-
-  priceInUSD = applyRechargeRate(
-    priceInUSD,
-    showWithRecharge,
-    priceRate,
-    usdExchangeRate
-  )
+  const priceInUSD = calculateTokenPrice(model, type, ratio)
 
   const price = priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
-  return formatCurrencyFromUSD(price, {
+  const options = {
     digitsLarge: 4,
     digitsSmall: 6,
     abbreviate: false,
-  })
+  }
+  return showWithRecharge
+    ? formatRechargePrice(price, priceRate, options)
+    : formatCurrencyFromUSD(price, options)
 }
 
 /**
@@ -215,7 +170,6 @@ export function formatFixedPrice(
   group: string,
   showWithRecharge = false,
   priceRate = 1,
-  usdExchangeRate = 1,
   groupRatio: Record<string, number>
 ): string {
   if (model.quota_type !== QUOTA_TYPE_VALUES.REQUEST) {
@@ -223,20 +177,16 @@ export function formatFixedPrice(
   }
 
   const ratio = getConfiguredGroupRatio(groupRatio, group)
-  let priceInUSD = (model.model_price || 0) * ratio
+  const priceInUSD = (model.model_price || 0) * ratio
 
-  priceInUSD = applyRechargeRate(
-    priceInUSD,
-    showWithRecharge,
-    priceRate,
-    usdExchangeRate
-  )
-
-  return formatCurrencyFromUSD(priceInUSD, {
+  const options = {
     digitsLarge: 4,
     digitsSmall: 4,
     abbreviate: false,
-  })
+  }
+  return showWithRecharge
+    ? formatRechargePrice(priceInUSD, priceRate, options)
+    : formatCurrencyFromUSD(priceInUSD, options)
 }
 
 /**
@@ -246,7 +196,6 @@ export function formatRequestPrice(
   model: PricingModel,
   showWithRecharge = false,
   priceRate = 1,
-  usdExchangeRate = 1,
   selectedGroup?: string
 ): string {
   if (model.quota_type !== QUOTA_TYPE_VALUES.REQUEST) {
@@ -255,18 +204,14 @@ export function formatRequestPrice(
 
   const displayGroupRatio = getDisplayGroupRatio(model, selectedGroup)
 
-  let priceInUSD = (model.model_price || 0) * displayGroupRatio
+  const priceInUSD = (model.model_price || 0) * displayGroupRatio
 
-  priceInUSD = applyRechargeRate(
-    priceInUSD,
-    showWithRecharge,
-    priceRate,
-    usdExchangeRate
-  )
-
-  return formatCurrencyFromUSD(priceInUSD, {
+  const options = {
     digitsLarge: 4,
     digitsSmall: 4,
     abbreviate: false,
-  })
+  }
+  return showWithRecharge
+    ? formatRechargePrice(priceInUSD, priceRate, options)
+    : formatCurrencyFromUSD(priceInUSD, options)
 }

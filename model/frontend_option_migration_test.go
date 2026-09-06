@@ -167,14 +167,17 @@ func TestMigrateRetiredFrontendOptionsKeepsEmptyAuthoritativeTargets(t *testing.
 	}
 }
 
-func TestRetiredThemeOptionIsPersistedButNotPublished(t *testing.T) {
+func TestRetiredOptionsArePersistedButNotPublished(t *testing.T) {
 	db := useFrontendOptionMigrationDB(t)
 	previousMap := common.OptionMap
 	t.Cleanup(func() { common.OptionMap = previousMap })
 	common.OptionMap = map[string]string{}
 
-	require.NoError(t, UpdateOption(retiredThemeOptionKey, "default"))
-	assert.Equal(t, "default", requireOptionValue(t, db, retiredThemeOptionKey))
-	_, published := common.OptionMap[retiredThemeOptionKey]
-	assert.False(t, published)
+	for key, value := range map[string]string{retiredThemeOptionKey: "default", "QuotaRemindThreshold": "1000"} {
+		common.OptionMap[key] = value
+		require.NoError(t, UpdateOption(key, value))
+		assert.Equal(t, value, requireOptionValue(t, db, key))
+		_, published := common.OptionMap[key]
+		assert.False(t, published)
+	}
 }

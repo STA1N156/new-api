@@ -18,6 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { z } from 'zod'
 
+const quotaLimitSchema = z.object({
+  period_seconds: z.number(),
+  amount_total: z.number(),
+  amount_used: z.number().optional(),
+  last_reset_time: z.number().optional(),
+})
+
 // ============================================================================
 // Subscription Plan Schema & Types
 // ============================================================================
@@ -33,6 +40,7 @@ export const subscriptionPlanSchema = z.object({
   custom_seconds: z.number().optional(),
   quota_reset_period: z.enum(['never', 'daily', 'weekly', 'monthly', 'custom']),
   quota_reset_custom_seconds: z.number().optional(),
+  quota_limits: z.array(quotaLimitSchema).nullable().optional(),
   enabled: z.boolean(),
   sort_order: z.number(),
   allow_balance_pay: z.boolean().optional().default(true),
@@ -67,6 +75,8 @@ export const userSubscriptionSchema = z.object({
   amount_total: z.number(),
   amount_used: z.number(),
   next_reset_time: z.number().optional(),
+  quota_limits: z.array(quotaLimitSchema).nullable().optional(),
+  next_quota_reset_time: z.number().optional(),
 })
 
 export type UserSubscription = z.infer<typeof userSubscriptionSchema>

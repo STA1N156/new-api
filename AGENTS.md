@@ -127,6 +127,17 @@ Do NOT directly import or call `encoding/json` in business code. `json.RawMessag
 - Avoid hand-written assertion helpers unless they encode a reusable project-specific invariant.
 - When cleaning tests, preserve meaningful regression coverage. If a deleted test covered a real contract indirectly, replace it with a smaller test that asserts that contract directly.
 
+### Subscription quota cycles
+
+- Additional quota cycles are snapshotted on purchase/binding; see `docs/subscription-quota-cycles.md` for configuration and reset semantics.
+- Keep the main quota, additional windows, and subscription expiry independent. Reserve against every limit under the subscription row lock, and record actual settlement usage even when an in-flight request exceeded its estimate.
+- Refunds and settlement must use the original charge time so they cannot alter a newer reset window.
+
+### Invitation rewards
+
+- Wallet top-ups and redemption codes award 8% of credited quota to the direct inviter. Gateway subscription purchases also award 8% of the saved payment amount converted using USDExchangeRate; balance purchases and admin bindings do not. Keep settlement and the source reward snapshot in the same transaction. See `docs/invitation-rewards.md`.
+- Keep signup income, top-up income, lifetime income, and available rewards distinct. Reward transfers must not generate further commission or overwrite lifetime totals.
+
 ### Frontend Rules
 
 - Use `bun` as the preferred package manager and script runner for the frontend (`web/`):
@@ -137,6 +148,7 @@ Do NOT directly import or call `encoding/json` in business code. `json.RawMessag
 - Frontend UI text must support i18n with `i18next`/`react-i18next`. Use flat JSON locale files in `web/src/i18n/locales/{lang}.json`, with English source strings as keys.
 - In React components, use `useTranslation()` and call `t('English key')` for user-facing text.
 - Follow `web/AGENTS.md` for detailed frontend conventions, including TypeScript, component structure, styling, accessibility, testing, and build checks.
+- Timeline announcement banners keep a separate persisted acknowledgement: only their View action dismisses them and opens the timeline. Bell read status is independent; keep banner space accounted for in fixed header/sidebar layouts.
 
 ### Project Governance
 

@@ -24,7 +24,6 @@ import type {
   ApiResponse,
   UserProfile,
   UpdateUserRequest,
-  UpdateUserSettingsRequest,
   DeleteAccountRequest,
   CheckinStatusResponse,
   CheckinResponse,
@@ -51,16 +50,6 @@ export async function updateUserProfile(
   const res = await api.put('/api/user/self', data, {
     acceptAuthRotation: Boolean(data.password),
   })
-  return res.data
-}
-
-/**
- * Update user settings
- */
-export async function updateUserSettings(
-  data: UpdateUserSettingsRequest
-): Promise<ApiResponse> {
-  const res = await api.put('/api/user/setting', data)
   return res.data
 }
 

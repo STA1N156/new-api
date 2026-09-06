@@ -98,8 +98,9 @@ type User struct {
 	Group            string                     `json:"group" gorm:"type:varchar(64);default:'default'"`
 	AffCode          string                     `json:"aff_code" gorm:"type:varchar(32);column:aff_code;uniqueIndex"`
 	AffCount         int                        `json:"aff_count" gorm:"type:int;default:0;column:aff_count"`
-	AffQuota         int                        `json:"aff_quota" gorm:"type:int;default:0;column:aff_quota"`           // 邀请剩余额度
-	AffHistoryQuota  int                        `json:"aff_history_quota" gorm:"type:int;default:0;column:aff_history"` // 邀请历史额度
+	AffQuota         int64                      `json:"aff_quota" gorm:"type:bigint;default:0;column:aff_quota"`             // 邀请剩余额度
+	AffHistoryQuota  int64                      `json:"aff_history_quota" gorm:"type:bigint;default:0;column:aff_history"`   // 邀请历史额度
+	AffTopUpQuota    int64                      `json:"aff_topup_quota" gorm:"type:bigint;default:0;column:aff_topup_quota"` // 充值分成累计额度
 	InviterId        int                        `json:"inviter_id" gorm:"type:int;column:inviter_id;index"`
 	DeletedAt        gorm.DeletedAt             `gorm:"index"`
 	LinuxDOId        string                     `json:"linux_do_id" gorm:"column:linux_do_id;index"`
@@ -564,12 +565,19 @@ func (user *User) TransferAffQuotaToQuota(quota int) error {
 	}
 
 	// 再次检查用户的AffQuota是否足够
-	if user.AffQuota < quota {
+	if user.AffQuota < int64(quota) {
 		return errors.New("邀请额度不足！")
+	}
+	maxCurrent, err := topUpQuotaMaxCurrent(quota)
+	if err != nil {
+		return err
+	}
+	if user.Quota > maxCurrent {
+		return ErrTopUpQuotaLimitExceeded
 	}
 
 	// 更新用户额度
-	user.AffQuota -= quota
+	user.AffQuota -= int64(quota)
 	user.Quota += quota
 
 	// 保存用户状态
@@ -578,7 +586,11 @@ func (user *User) TransferAffQuotaToQuota(quota int) error {
 	}
 
 	// 提交事务
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+	syncCreditUserQuotaCache(user.Id, quota, "invitation transfer")
+	return nil
 }
 
 func (user *User) prepareForInsert(tx *gorm.DB) error {
@@ -800,6 +812,7 @@ func (user *User) UpdateWithTx(tx *gorm.DB, updatePassword bool) error {
 		"aff_count",
 		"aff_quota",
 		"aff_history",
+		"aff_topup_quota",
 		"auth_version",
 	).Updates(newUser).Error; err != nil {
 		return err

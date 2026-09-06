@@ -55,7 +55,6 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
-import { formatQuota } from '@/lib/format'
 
 import {
   getAdminPlans,
@@ -65,8 +64,9 @@ import {
   deleteUserSubscription,
   resetUserSubscriptionsByPlan,
 } from '../../api'
-import { formatTimestamp } from '../../lib'
+import { formatTimestamp, formatSubscriptionPrice } from '../../lib'
 import type { PlanRecord, UserSubscriptionRecord } from '../../types'
+import { SubscriptionQuotaUsage } from '../subscription-quota-usage'
 
 interface Props {
   open: boolean
@@ -251,8 +251,8 @@ export function UserSubscriptionsDialog(props: Props) {
                   value: String(p.plan.id),
                   label: (
                     <>
-                      {p.plan.title}($
-                      {Number(p.plan.price_amount || 0).toFixed(2)})
+                      {p.plan.title} (
+                      {formatSubscriptionPrice(p.plan.price_amount)})
                     </>
                   ),
                 }))}
@@ -266,8 +266,8 @@ export function UserSubscriptionsDialog(props: Props) {
                   <SelectGroup>
                     {plans.map((p) => (
                       <SelectItem key={p.plan.id} value={String(p.plan.id)}>
-                        {p.plan.title} ($
-                        {Number(p.plan.price_amount || 0).toFixed(2)})
+                        {p.plan.title} (
+                        {formatSubscriptionPrice(p.plan.price_amount)})
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -340,15 +340,23 @@ export function UserSubscriptionsDialog(props: Props) {
                 },
                 {
                   id: 'quota',
-                  header: t('Total Quota'),
-                  cell: (record) => {
-                    const sub = record.subscription
-                    const total = Number(sub.amount_total || 0)
-                    const used = Number(sub.amount_used || 0)
-                    return total > 0
-                      ? `${formatQuota(used)}/${formatQuota(total)}`
-                      : t('Unlimited')
-                  },
+                  header: t('Quota usage'),
+                  cell: (record) => (
+                    <div className='min-w-[220px]'>
+                      <SubscriptionQuotaUsage
+                        subscription={record.subscription}
+                        plan={
+                          plans.find(
+                            (p) => p.plan.id === record.subscription.plan_id
+                          )?.plan
+                        }
+                        active={
+                          record.subscription.status === 'active' &&
+                          record.subscription.end_time > Date.now() / 1000
+                        }
+                      />
+                    </div>
+                  ),
                 },
                 {
                   id: 'actions',

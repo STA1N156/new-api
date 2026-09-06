@@ -26,6 +26,13 @@ export const createModelPricingSchema = (t: (key: string) => string) =>
   z.object({
     name: z.string().min(1, t('Model name is required')),
     price: z.string().optional(),
+    discount: z
+      .string()
+      .optional()
+      .refine(
+        (value) => !value || (Number(value) > 0 && Number(value) <= 10),
+        t('Enter a discount greater than 0 and no more than 10')
+      ),
     ratio: z.string().optional(),
     cacheRatio: z.string().optional(),
     createCacheRatio: z.string().optional(),
@@ -52,6 +59,7 @@ export type LaneKey =
 export type ModelRatioData = {
   name: string
   price?: string
+  discount?: string
   ratio?: string
   cacheRatio?: string
   createCacheRatio?: string

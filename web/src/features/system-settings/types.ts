@@ -207,6 +207,7 @@ export type ModelSettings = {
   'grok.violation_deduction_enabled': boolean
   'grok.violation_deduction_amount': number
   ModelPrice: string
+  ModelDiscount: string
   ModelRatio: string
   CacheRatio: string
   CreateCacheRatio: string
@@ -266,6 +267,7 @@ export type BillingSettings = {
   DisplayInCurrencyEnabled: boolean
   DisplayTokenStatEnabled: boolean
   ModelPrice: string
+  ModelDiscount: string
   ModelRatio: string
   CacheRatio: string
   CreateCacheRatio: string
@@ -340,7 +342,6 @@ export type OperationsSettings = {
   DefaultCollapseSidebar: boolean
   DemoSiteEnabled: boolean
   SelfUseModeEnabled: boolean
-  QuotaRemindThreshold: string
   SMTPServer: string
   SMTPPort: string
   SMTPAccount: string

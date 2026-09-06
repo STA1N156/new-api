@@ -39,6 +39,8 @@ export type PricingModel = {
   quota_type: number
   model_ratio: number
   completion_ratio: number
+  /** Display-only discount on a 0–10 scale; does not change billing. */
+  model_discount?: number
   model_price?: number
   cache_ratio?: number | null
   create_cache_ratio?: number | null

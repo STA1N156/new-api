@@ -163,6 +163,7 @@ export const ModelPricingEditorPanel = forwardRef<
     defaultValues: {
       name: '',
       price: '',
+      discount: '',
       ratio: '',
       cacheRatio: '',
       createCacheRatio: '',
@@ -180,6 +181,7 @@ export const ModelPricingEditorPanel = forwardRef<
       form.reset({
         name: editData.name,
         price: editData.price || '',
+        discount: editData.discount || '',
         ratio: editData.ratio || '',
         cacheRatio: editData.cacheRatio || '',
         createCacheRatio: editData.createCacheRatio || '',
@@ -188,19 +190,17 @@ export const ModelPricingEditorPanel = forwardRef<
         audioRatio: editData.audioRatio || '',
         audioCompletionRatio: editData.audioCompletionRatio || '',
       })
-      setPricingMode(
-        editData.billingMode === 'tiered_expr'
-          ? 'tiered_expr'
-          : editData.price
-            ? 'per-request'
-            : 'per-token'
-      )
+      let mode: PricingMode = 'per-token'
+      if (editData.billingMode === 'tiered_expr') mode = 'tiered_expr'
+      else if (editData.price) mode = 'per-request'
+      setPricingMode(mode)
       setBillingExpr(editData.billingExpr || '')
       setRequestRuleExpr(editData.requestRuleExpr || '')
     } else {
       form.reset({
         name: '',
         price: '',
+        discount: '',
         ratio: '',
         cacheRatio: '',
         createCacheRatio: '',
@@ -335,6 +335,7 @@ export const ModelPricingEditorPanel = forwardRef<
   const handleModeChange = (value: string) => {
     const nextMode = value as PricingMode
     setPricingMode(nextMode)
+    if (nextMode !== 'per-token') setFormValue('discount', '')
     if (nextMode === 'tiered_expr' && !billingExpr) {
       setBillingExpr('tier("base", p * 0 + c * 0)')
     }
@@ -444,6 +445,7 @@ export const ModelPricingEditorPanel = forwardRef<
         name: values.name.trim(),
         billingMode: pricingMode,
         price: values.price || '',
+        discount: pricingMode === 'per-token' ? values.discount || '' : '',
         ratio: values.ratio || '',
         cacheRatio: values.cacheRatio || '',
         createCacheRatio: values.createCacheRatio || '',
@@ -558,6 +560,30 @@ export const ModelPricingEditorPanel = forwardRef<
 
                   <TabsContent value='per-token' className='pt-0'>
                     <FieldGroup className='gap-5'>
+                      <FormField
+                        control={form.control}
+                        name='discount'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {t('Display discount (out of 10)')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                inputMode='decimal'
+                                placeholder='5.5'
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'Display only; does not change billing. Leave blank to hide.'
+                              )}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <Field>
                         <FieldLabel>{t('Input price')}</FieldLabel>
                         <PriceInput

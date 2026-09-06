@@ -22,6 +22,58 @@ import dayjs from '@/lib/dayjs'
 
 import type { SubscriptionPlan } from '../types'
 
+export function formatSubscriptionPrice(amount: number): string {
+  return `¥${Number(amount || 0).toFixed(2)}`
+}
+
+export function formatQuotaPeriodLabel(seconds: number, t: TFunction): string {
+  if (seconds % 86400 === 0) {
+    return t('Quota per {{count}} days', { count: seconds / 86400 })
+  }
+  if (seconds % 3600 === 0) {
+    return t('Quota per {{count}} hours', { count: seconds / 3600 })
+  }
+  if (seconds % 60 === 0) {
+    return t('Quota per {{count}} minutes', { count: seconds / 60 })
+  }
+  return t('Quota per {{count}} seconds', { count: seconds })
+}
+
+export function getPlanQuotaRows(
+  plan: Partial<SubscriptionPlan>,
+  t: TFunction
+): { key: string; label: string; amount: number; periodSeconds: number }[] {
+  let label = t('Total Quota')
+  let periodSeconds = Infinity
+  switch (plan.quota_reset_period) {
+    case 'daily':
+      label = t('Daily Quota')
+      periodSeconds = 86400
+      break
+    case 'weekly':
+      label = t('Weekly Quota')
+      periodSeconds = 7 * 86400
+      break
+    case 'monthly':
+      label = t('Monthly Quota')
+      periodSeconds = 30 * 86400
+      break
+    case 'custom':
+      label = formatQuotaPeriodLabel(plan.quota_reset_custom_seconds || 0, t)
+      periodSeconds = plan.quota_reset_custom_seconds || Infinity
+      break
+  }
+  return [
+    { key: 'primary', label, amount: plan.total_amount || 0, periodSeconds },
+    ...(plan.quota_limits || []).map((limit) => ({
+      key: String(limit.period_seconds),
+      label: formatQuotaPeriodLabel(limit.period_seconds, t),
+      amount: limit.amount_total,
+      periodSeconds: limit.period_seconds,
+    })),
+  ].sort((a, b) => a.periodSeconds - b.periodSeconds)
+}
+
 export function formatDuration(
   plan: Partial<SubscriptionPlan>,
   t: TFunction

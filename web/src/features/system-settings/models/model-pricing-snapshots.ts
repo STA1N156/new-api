@@ -23,6 +23,7 @@ import { formatPricingNumber } from './pricing-format'
 
 export type ModelPricingSnapshotInput = {
   modelPrice: string
+  modelDiscount: string
   modelRatio: string
   cacheRatio: string
   createCacheRatio: string
@@ -37,6 +38,7 @@ export type ModelPricingSnapshotInput = {
 export type ModelPricingSnapshot = {
   name: string
   price?: string
+  discount?: string
   ratio?: string
   cacheRatio?: string
   createCacheRatio?: string
@@ -165,6 +167,7 @@ export const getPriceDetail = (
 
 export const buildModelSnapshots = ({
   modelPrice,
+  modelDiscount,
   modelRatio,
   cacheRatio,
   createCacheRatio,
@@ -178,6 +181,10 @@ export const buildModelSnapshots = ({
   const priceMap = safeJsonParse<Record<string, number>>(modelPrice, {
     fallback: {},
     context: 'model prices',
+  })
+  const discountMap = safeJsonParse<Record<string, number>>(modelDiscount, {
+    fallback: {},
+    context: 'model discounts',
   })
   const ratioMap = safeJsonParse<Record<string, number>>(modelRatio, {
     fallback: {},
@@ -218,6 +225,7 @@ export const buildModelSnapshots = ({
 
   const modelNames = new Set([
     ...Object.keys(priceMap),
+    ...Object.keys(discountMap),
     ...Object.keys(ratioMap),
     ...Object.keys(cacheMap),
     ...Object.keys(createCacheMap),
@@ -229,7 +237,7 @@ export const buildModelSnapshots = ({
     ...Object.keys(billingExprMap),
   ])
 
-  return Array.from(modelNames).map((name) => {
+  return [...modelNames].map((name) => {
     const price = priceMap[name]?.toString() || ''
     const ratio = ratioMap[name]?.toString() || ''
     const cache = cacheMap[name]?.toString() || ''
@@ -250,6 +258,7 @@ export const buildModelSnapshots = ({
         billingExpr: pureExpr,
         requestRuleExpr,
         price,
+        discount: discountMap[name]?.toString() || '',
         ratio,
         cacheRatio: cache,
         createCacheRatio: createCache,
@@ -264,6 +273,7 @@ export const buildModelSnapshots = ({
     return {
       name,
       price,
+      discount: discountMap[name]?.toString() || '',
       ratio,
       cacheRatio: cache,
       createCacheRatio: createCache,
@@ -289,6 +299,7 @@ export const getSnapshotSignature = (snapshot?: ModelPricingSnapshot) => {
   if (!snapshot) return ''
   return JSON.stringify({
     price: snapshot.price || '',
+    discount: snapshot.discount || '',
     ratio: snapshot.ratio || '',
     cacheRatio: snapshot.cacheRatio || '',
     createCacheRatio: snapshot.createCacheRatio || '',

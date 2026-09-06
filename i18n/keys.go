@@ -90,6 +90,8 @@ const (
 	MsgUserEmailVerificationRequired = "user.email_verification_required"
 	MsgUserVerificationCodeError     = "user.verification_code_error"
 	MsgUserEmailAlreadyTaken         = "user.email_already_taken"
+	MsgQQEmailNumericRequired        = "user.qq_email_numeric_required"
+	MsgEmailAliasRestricted          = "user.email_alias_restricted"
 	MsgUserPasswordUnset             = "user.password_unset"
 	MsgUserPasswordResetLinkInvalid  = "user.password_reset_link_invalid"
 	MsgUserInputInvalid              = "user.input_invalid"
@@ -124,11 +126,9 @@ const (
 
 // Quota related messages
 const (
-	MsgQuotaNegative        = "quota.negative"
-	MsgQuotaExceedMax       = "quota.exceed_max"
-	MsgQuotaInsufficient    = "quota.insufficient"
-	MsgQuotaWarningInvalid  = "quota.warning_invalid"
-	MsgQuotaThresholdGtZero = "quota.threshold_gt_zero"
+	MsgQuotaNegative     = "quota.negative"
+	MsgQuotaExceedMax    = "quota.exceed_max"
+	MsgQuotaInsufficient = "quota.insufficient"
 )
 
 // Subscription related messages

@@ -25,11 +25,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   resolve: {
+    mainFields: ['module', 'main'],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
   test: {
+    server: {
+      deps: {
+        inline: [
+          '@lobehub/icons',
+          '@lobehub/ui',
+          '@emoji-mart/data',
+          /@visactor\//,
+        ],
+      },
+    },
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     clearMocks: true,

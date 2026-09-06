@@ -238,6 +238,10 @@ export interface UserWalletData {
   aff_quota: number
   /** Total affiliate quota earned (historical) */
   aff_history_quota: number
+  aff_topup_quota?: number
+  aff_inviter_reward?: number
+  aff_invitee_reward?: number
+  aff_topup_reward_percent?: number
   /** Number of successful affiliate invites */
   aff_count: number
   /** User group */

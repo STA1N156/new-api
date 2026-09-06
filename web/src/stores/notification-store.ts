@@ -24,14 +24,15 @@ interface NotificationState {
   lastReadNotice: string
   // Array of read announcement keys (id or content hash)
   readAnnouncementKeys: string[]
+  viewedBannerAnnouncementKeys: string[]
   // Timestamp of last "Close Today" action
   closedUntilDate: string | null
 
   // Actions
   markNoticeRead: (noticeContent: string) => void
   markAnnouncementsRead: (keys: string[]) => void
+  markAnnouncementBannerViewed: (keys: string[]) => void
   setClosedUntilDate: (date: string | null) => void
-  isAnnouncementRead: (key: string) => boolean
   isNoticeClosed: () => boolean
 }
 
@@ -44,6 +45,7 @@ export const useNotificationStore = create<NotificationState>()(
     (set, get) => ({
       lastReadNotice: '',
       readAnnouncementKeys: [],
+      viewedBannerAnnouncementKeys: [],
       closedUntilDate: null,
 
       markNoticeRead: (noticeContent: string) => {
@@ -64,8 +66,12 @@ export const useNotificationStore = create<NotificationState>()(
         set({ closedUntilDate: date })
       },
 
-      isAnnouncementRead: (key: string) => {
-        return get().readAnnouncementKeys.includes(key)
+      markAnnouncementBannerViewed: (keys: string[]) => {
+        set((state) => ({
+          viewedBannerAnnouncementKeys: [
+            ...new Set([...state.viewedBannerAnnouncementKeys, ...keys]),
+          ],
+        }))
       },
 
       isNoticeClosed: () => {
@@ -78,9 +84,20 @@ export const useNotificationStore = create<NotificationState>()(
     }),
     {
       name: 'notification-storage',
+      version: 1,
+      migrate: (persisted) => {
+        const state = persisted as Partial<NotificationState>
+        return {
+          lastReadNotice: state.lastReadNotice ?? '',
+          readAnnouncementKeys: state.readAnnouncementKeys ?? [],
+          closedUntilDate: state.closedUntilDate ?? null,
+          viewedBannerAnnouncementKeys: state.readAnnouncementKeys ?? [],
+        }
+      },
       partialize: (state) => ({
         lastReadNotice: state.lastReadNotice,
         readAnnouncementKeys: state.readAnnouncementKeys,
+        viewedBannerAnnouncementKeys: state.viewedBannerAnnouncementKeys,
         closedUntilDate: state.closedUntilDate,
       }),
     }

@@ -114,8 +114,6 @@ user.quota_change_zero: "額度變更量不能為0"
 quota.negative: "額度不能為負數！"
 quota.exceed_max: "額度值超出有效範圍"
 quota.insufficient: "額度不足"
-quota.warning_invalid: "無效的預警類型"
-quota.threshold_gt_zero: "預警閾值必須大於0"
 
 # Subscription messages
 subscription.not_enabled: "訂閱方案未啟用"
@@ -284,3 +282,6 @@ custom_oauth.name_empty: "供應者名稱不能為空"
 custom_oauth.has_bindings: "無法刪除已有使用者綁定的供應者"
 custom_oauth.binding_not_found: "OAuth 綁定不存在"
 custom_oauth.provider_id_field_invalid: "無法從供應者響應中提取使用者 ID"
+
+user.qq_email_numeric_required: "已開啟信箱別名限制，QQ 信箱僅支援純數字帳號，例如 12345678@qq.com。"
+user.email_alias_restricted: "已開啟信箱別名限制，信箱帳號中不能包含 + 或 .。"

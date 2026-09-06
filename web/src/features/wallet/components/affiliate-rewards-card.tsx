@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Share2 } from 'lucide-react'
+import { ArrowUpRight, Gift, Share2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
@@ -37,99 +37,141 @@ interface AffiliateRewardsCardProps {
   loading?: boolean
 }
 
-export function AffiliateRewardsCard({
-  user,
-  affiliateLink,
-  onTransfer,
-  complianceConfirmed = true,
-  loading,
-}: AffiliateRewardsCardProps) {
+export function AffiliateRewardsCard(props: AffiliateRewardsCardProps) {
   const { t } = useTranslation()
-  if (loading) {
+  if (props.loading) {
     return (
-      <Card data-card-hover='false' className='bg-muted/20 py-0'>
-        <CardContent className='grid gap-4 p-3 sm:p-4 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,0.72fr)_minmax(320px,1.15fr)] lg:items-center'>
-          <div>
-            <Skeleton className='h-5 w-32' />
-            <Skeleton className='mt-2 h-4 w-48' />
-          </div>
-          <Skeleton className='h-14 rounded-lg' />
-          <Skeleton className='h-10 rounded-lg' />
+      <Card data-card-hover='false' className='py-0'>
+        <CardContent className='space-y-4 p-4 sm:p-5'>
+          <Skeleton className='h-6 w-32' />
+          <Skeleton className='h-24 w-full rounded-lg' />
+          <Skeleton className='h-9 w-full rounded-lg' />
         </CardContent>
       </Card>
     )
   }
 
-  const hasRewards = (user?.aff_quota ?? 0) > 0
+  const user = props.user
+  const available = user?.aff_quota ?? 0
+  const total = user?.aff_history_quota ?? 0
+  const topUpIncome = user?.aff_topup_quota ?? 0
+  const compliant = props.complianceConfirmed !== false
 
   return (
-    <Card data-card-hover='false' className='bg-muted/20 py-0'>
-      <CardContent className='grid gap-3 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[minmax(200px,1fr)_minmax(180px,0.65fr)_minmax(280px,1fr)] lg:items-center'>
-        <div className='flex min-w-0 items-center gap-2.5'>
-          <IconBadge tone='chart-3'>
-            <Share2 />
-          </IconBadge>
-          <div className='min-w-0'>
-            <h3 className='truncate text-sm font-semibold'>
-              {t('Referral Program')}
-            </h3>
-            <p className='text-muted-foreground line-clamp-1 text-xs'>
+    <Card data-card-hover='false' className='py-0'>
+      <CardContent className='space-y-5 p-4 sm:p-5'>
+        <div className='flex flex-wrap items-center justify-between gap-3'>
+          <div className='flex items-center gap-2.5'>
+            <IconBadge tone='chart-3'>
+              <Share2 aria-hidden='true' />
+            </IconBadge>
+            <h3 className='text-base font-semibold'>{t('Invite Program')}</h3>
+          </div>
+          <div
+            role='group'
+            aria-label={t('Available rewards')}
+            className='flex items-baseline gap-2'
+          >
+            <span className='text-muted-foreground text-xs'>
+              {t('Available rewards')}
+            </span>
+            <span className='text-lg font-semibold tabular-nums'>
+              {formatQuota(available)}
+            </span>
+          </div>
+        </div>
+
+        <div className='grid gap-3 md:grid-cols-2'>
+          <div className='bg-muted/35 rounded-xl p-3.5'>
+            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
+              <Gift aria-hidden='true' className='size-3.5' />
+              {t('When your friend signs up')}
+            </div>
+            <div className='mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium'>
+              <span>
+                {t('You receive {{amount}}', {
+                  amount: formatQuota(user?.aff_inviter_reward ?? 0),
+                })}
+              </span>
+              <span>
+                {t('Your friend receives {{amount}}', {
+                  amount: formatQuota(user?.aff_invitee_reward ?? 0),
+                })}
+              </span>
+            </div>
+          </div>
+          <div className='bg-muted/35 rounded-xl p-3.5'>
+            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
+              <ArrowUpRight aria-hidden='true' className='size-3.5' />
               {t(
-                'Earn rewards when users join through your referral link. Transfer accumulated rewards to your balance anytime.'
+                'Every time your friend tops up, subscribes or redeems a code'
               )}
+            </div>
+            <p className='mt-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400'>
+              {t('Earn {{percent}}% of the amount as rewards', {
+                percent: user?.aff_topup_reward_percent ?? 8,
+              })}
             </p>
           </div>
         </div>
 
-        <div className='grid grid-cols-3 gap-1.5 text-center'>
+        <div className='grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4'>
           {[
-            [t('Pending'), formatQuota(user?.aff_quota ?? 0)],
-            [t('Total Earned'), formatQuota(user?.aff_history_quota ?? 0)],
-            [t('Invites'), String(user?.aff_count ?? 0)],
+            [t('Top-up earnings'), formatQuota(topUpIncome)],
+            [
+              t('Signup earnings'),
+              formatQuota(Math.max(0, total - topUpIncome)),
+            ],
+            [t('Invited Users'), String(user?.aff_count ?? 0)],
+            [t('Total Earned'), formatQuota(total)],
           ].map(([label, value]) => (
-            <div key={label}>
-              <div className='text-muted-foreground truncate text-[10px] font-medium tracking-wider uppercase'>
-                {label}
-              </div>
-              <div className='mt-0.5 truncate text-sm font-semibold tabular-nums'>
+            <div
+              key={label}
+              role='group'
+              aria-label={label}
+              className='min-w-0'
+            >
+              <div className='text-muted-foreground text-xs'>{label}</div>
+              <div className='mt-1 text-sm font-semibold break-all tabular-nums'>
                 {value}
               </div>
             </div>
           ))}
         </div>
 
-        <div className='flex items-center gap-2'>
-          <Input
-            value={affiliateLink}
-            readOnly
-            className='border-muted bg-background/70 h-9 min-w-0 flex-1 font-mono text-xs'
-          />
-          <CopyButton
-            value={affiliateLink}
-            variant='outline'
-            className='bg-background size-9 shrink-0'
-            iconClassName='size-4'
-            tooltip={t('Copy referral link')}
-            aria-label={t('Copy referral link')}
-          />
-          {hasRewards && (
-            <Button
-              onClick={onTransfer}
-              disabled={!complianceConfirmed}
-              className='h-9 shrink-0 px-3'
-              size='sm'
-            >
-              {t('Transfer to Balance')}
-            </Button>
-          )}
+        <div className='flex flex-wrap items-center gap-2 border-t pt-4'>
+          <div className='flex min-w-0 flex-1 basis-60 gap-2'>
+            <Input
+              value={props.affiliateLink}
+              readOnly
+              aria-label={t('Invitation link')}
+              className='h-9 min-w-0 flex-1 font-mono text-xs'
+            />
+            <CopyButton
+              value={props.affiliateLink}
+              variant='outline'
+              className='size-9 shrink-0'
+              iconClassName='size-4'
+              tooltip={t('Copy invitation link')}
+              aria-label={t('Copy invitation link')}
+            />
+          </div>
+          <Button
+            onClick={props.onTransfer}
+            disabled={available <= 0 || !compliant}
+            className='h-9 shrink-0 px-3'
+            size='sm'
+          >
+            {t('Transfer to Balance')}
+          </Button>
         </div>
-        {!complianceConfirmed ? (
-          <p className='text-muted-foreground text-xs lg:col-span-3'>
+        {!compliant && (
+          <p className='text-muted-foreground text-xs leading-relaxed'>
             {t(
-              'Referral reward transfer is disabled until the administrator confirms compliance terms.'
+              'Invitation rewards are paused until payment compliance is confirmed.'
             )}
           </p>
-        ) : null}
+        )}
       </CardContent>
     </Card>
   )

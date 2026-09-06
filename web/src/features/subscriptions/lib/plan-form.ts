@@ -39,6 +39,35 @@ export function getPlanFormSchema(t: TFunction) {
       'custom',
     ]),
     quota_reset_custom_seconds: z.coerce.number().min(0).optional(),
+    quota_limits: z
+      .array(
+        z.object({
+          period_hours: z.coerce
+            .number()
+            .positive()
+            .max(366 * 24)
+            .refine(
+              (hours) => Number.isInteger(hours * 3600),
+              t('Cycle must be a whole number of seconds')
+            ),
+          amount_total: z.coerce
+            .number()
+            .positive()
+            .refine(
+              (amount) =>
+                parseQuotaFromDollars(amount) > 0 &&
+                Number.isSafeInteger(parseQuotaFromDollars(amount)),
+              t('Quota is out of range')
+            ),
+        })
+      )
+      .max(8)
+      .refine(
+        (limits) =>
+          new Set(limits.map((limit) => limit.period_hours)).size ===
+          limits.length,
+        t('Reset cycles must not repeat')
+      ),
     enabled: z.boolean(),
     sort_order: z.coerce.number(),
     allow_balance_pay: z.boolean(),
@@ -64,6 +93,7 @@ export const PLAN_FORM_DEFAULTS: PlanFormValues = {
   custom_seconds: 0,
   quota_reset_period: 'never',
   quota_reset_custom_seconds: 0,
+  quota_limits: [],
   enabled: true,
   sort_order: 0,
   allow_balance_pay: true,
@@ -87,6 +117,10 @@ export function planToFormValues(plan: SubscriptionPlan): PlanFormValues {
     custom_seconds: Number(plan.custom_seconds || 0),
     quota_reset_period: plan.quota_reset_period || 'never',
     quota_reset_custom_seconds: Number(plan.quota_reset_custom_seconds || 0),
+    quota_limits: (plan.quota_limits || []).map((limit) => ({
+      period_hours: limit.period_seconds / 3600,
+      amount_total: quotaUnitsToDollars(limit.amount_total),
+    })),
     enabled: plan.enabled !== false,
     sort_order: Number(plan.sort_order || 0),
     allow_balance_pay: plan.allow_balance_pay !== false,
@@ -117,6 +151,12 @@ export function formValuesToPlanPayload(values: PlanFormValues): PlanPayload {
       sort_order: Number(values.sort_order || 0),
       max_purchase_per_user: Number(values.max_purchase_per_user || 0),
       total_amount: parseQuotaFromDollars(Number(values.total_amount || 0)),
+      quota_limits: values.quota_limits.map((limit) => ({
+        period_seconds: Math.round(limit.period_hours * 3600),
+        amount_total: parseQuotaFromDollars(limit.amount_total),
+      })),
+      allow_wallet_overflow:
+        values.quota_limits.length > 0 ? false : values.allow_wallet_overflow,
       upgrade_group: values.upgrade_group || '',
       downgrade_group: values.downgrade_group || '',
     },

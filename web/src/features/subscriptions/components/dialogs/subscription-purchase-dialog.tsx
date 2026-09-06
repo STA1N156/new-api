@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Crown, CalendarClock, Package } from 'lucide-react'
+import { Crown, CalendarClock } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -45,7 +45,11 @@ import {
   paySubscriptionWaffoPancake,
   paySubscriptionBalance,
 } from '../../api'
-import { formatDuration, formatResetPeriod } from '../../lib'
+import {
+  formatDuration,
+  formatSubscriptionPrice,
+  getPlanQuotaRows,
+} from '../../lib'
 import type { PlanRecord } from '../../types'
 
 interface PaymentMethod {
@@ -97,8 +101,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
       ?.name ||
     selectedEpayMethod ||
     t('Select payment method')
-  const totalAmount = Number(plan.total_amount || 0)
-  const price = Number(plan.price_amount || 0).toFixed(2)
+  const price = formatSubscriptionPrice(plan.price_amount)
   const quotaPerUnit =
     currency?.quotaPerUnit && currency.quotaPerUnit > 0
       ? currency.quotaPerUnit
@@ -289,23 +292,24 @@ export function SubscriptionPurchaseDialog(props: Props) {
               {formatDuration(plan, t)}
             </span>
           </div>
-          {formatResetPeriod(plan, t) !== t('No Reset') && (
-            <div className='flex justify-between'>
-              <span className='text-muted-foreground text-sm'>
-                {t('Reset Period')}
+          {getPlanQuotaRows(plan, t).map((row) => (
+            <div
+              key={row.key}
+              className='flex items-center justify-between gap-3'
+            >
+              <span className='text-muted-foreground text-sm'>{row.label}</span>
+              <span className='text-sm'>
+                {row.amount > 0 ? formatQuota(row.amount) : t('Unlimited')}
               </span>
-              <span className='text-sm'>{formatResetPeriod(plan, t)}</span>
             </div>
+          ))}
+          {!!plan.quota_limits?.length && (
+            <p className='text-muted-foreground text-xs'>
+              {t(
+                'Wait for the exhausted cycle to reset; unused quota does not roll over.'
+              )}
+            </p>
           )}
-          <div className='flex items-center justify-between'>
-            <span className='text-muted-foreground text-sm'>
-              {t('Plan Quota')}
-            </span>
-            <span className='flex items-center gap-1 text-sm'>
-              <Package className='h-3.5 w-3.5' />
-              {totalAmount > 0 ? formatQuota(totalAmount) : t('Unlimited')}
-            </span>
-          </div>
           {plan.upgrade_group && (
             <div className='flex items-center justify-between'>
               <span className='text-muted-foreground text-sm'>
@@ -317,7 +321,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
           <Separator />
           <div className='flex items-center justify-between'>
             <span className='text-sm font-medium'>{t('Amount Due')}</span>
-            <span className='text-primary text-lg font-bold'>${price}</span>
+            <span className='text-primary text-lg font-bold'>{price}</span>
           </div>
         </div>
 
@@ -405,12 +409,10 @@ export function SubscriptionPurchaseDialog(props: Props) {
             {hasEpay && (
               <div className='grid grid-cols-[minmax(0,1fr)_auto] gap-2'>
                 <Select
-                  items={[
-                    ...(props.epayMethods || []).map((m) => ({
-                      value: m.type,
-                      label: m.name || m.type,
-                    })),
-                  ]}
+                  items={(props.epayMethods || []).map((m) => ({
+                    value: m.type,
+                    label: m.name || m.type,
+                  }))}
                   value={selectedEpayMethod}
                   onValueChange={(v) => v !== null && setSelectedEpayMethod(v)}
                   disabled={limitReached}

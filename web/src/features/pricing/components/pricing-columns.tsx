@@ -50,7 +50,6 @@ import { ModelBillingModeBadge } from './model-billing-mode-badge'
 export interface PricingColumnsOptions {
   tokenUnit?: TokenUnit
   priceRate?: number
-  usdExchangeRate?: number
   showRechargePrice?: boolean
   selectedGroup?: string
 }
@@ -62,7 +61,6 @@ export function usePricingColumns(
   const {
     tokenUnit = DEFAULT_TOKEN_UNIT,
     priceRate = 1,
-    usdExchangeRate = 1,
     showRechargePrice = false,
     selectedGroup,
   } = options
@@ -118,7 +116,6 @@ export function usePricingColumns(
           tokenUnit,
           showRechargePrice,
           priceRate,
-          usdExchangeRate,
           groupRatioMultiplier: getDynamicDisplayGroupRatio(
             model,
             selectedGroup
@@ -184,7 +181,6 @@ export function usePricingColumns(
               tokenUnit,
               showRechargePrice,
               priceRate,
-              usdExchangeRate,
               selectedGroup
             )
           )
@@ -195,7 +191,6 @@ export function usePricingColumns(
               tokenUnit,
               showRechargePrice,
               priceRate,
-              usdExchangeRate,
               selectedGroup
             )
           )
@@ -215,13 +210,7 @@ export function usePricingColumns(
         }
 
         const price = stripTrailingZeros(
-          formatRequestPrice(
-            model,
-            showRechargePrice,
-            priceRate,
-            usdExchangeRate,
-            selectedGroup
-          )
+          formatRequestPrice(model, showRechargePrice, priceRate, selectedGroup)
         )
 
         return (
@@ -247,7 +236,6 @@ export function usePricingColumns(
           tokenUnit,
           showRechargePrice,
           priceRate,
-          usdExchangeRate,
           groupRatioMultiplier: getDynamicDisplayGroupRatio(
             model,
             selectedGroup
@@ -295,7 +283,6 @@ export function usePricingColumns(
             tokenUnit,
             showRechargePrice,
             priceRate,
-            usdExchangeRate,
             selectedGroup
           )
         )

@@ -20,7 +20,6 @@ import type { ReactNode } from 'react'
 import type { FootnoteNode, ParsedNode } from 'stream-markdown-parser'
 
 import { getNodeKey } from './response-content'
-import type { FadeRun } from './response-fade'
 import {
   hasParsedChildren,
   isBlockquoteNode,
@@ -47,43 +46,24 @@ import {
 } from './response-renderer-blocks'
 import { renderDetails } from './response-renderer-details'
 import { renderFootnotes as renderFootnotesBlock } from './response-renderer-footnotes'
-import {
-  renderImage,
-  renderLink,
-  renderTextNode,
-} from './response-renderer-inline'
+import { renderImage, renderLink } from './response-renderer-inline'
 import { renderTable } from './response-renderer-table'
-import type { BlockRendererOptions, RenderChildren } from './response-types'
+import type { BlockRendererOptions } from './response-types'
 
-function createRenderChildren(fadeRun?: FadeRun): RenderChildren {
-  return (nodes) => renderChildren(nodes, fadeRun)
-}
-
-export function renderChildren(
-  nodes: ParsedNode[],
-  fadeRun?: FadeRun
-): ReactNode {
+export function renderChildren(nodes: ParsedNode[]): ReactNode {
   const options: BlockRendererOptions = {
-    fadeRun,
-    renderChildren: createRenderChildren(fadeRun),
+    renderChildren,
   }
   return nodes.map((node, index) =>
     renderNode(node, getNodeKey(node, index), options)
   )
 }
 
-export function renderFootnotes(
-  footnotes: FootnoteNode[],
-  fadeRun?: FadeRun
-): ReactNode {
+export function renderFootnotes(footnotes: FootnoteNode[]): ReactNode {
   return renderFootnotesBlock(footnotes, {
-    fadeRun,
-    renderChildren: createRenderChildren(fadeRun),
+    renderChildren,
   })
 }
-
-/** Settled (non-animated) renderChildren for skipped subtrees */
-const settledRenderChildren = createRenderChildren()
 
 function renderNode(
   node: ParsedNode,
@@ -91,7 +71,7 @@ function renderNode(
   options: BlockRendererOptions
 ): ReactNode {
   if (isTextNode(node)) {
-    return renderTextNode(node, options.fadeRun)
+    return node.content
   }
 
   if (isHeadingNode(node)) {
@@ -114,7 +94,6 @@ function renderNode(
     return renderList(node, key, options)
   }
 
-  // Skip list: code / math / html / image — no fade wrapping, offset not advanced
   if (isCodeBlockNode(node)) {
     return renderCodeBlock(node, key)
   }
@@ -233,9 +212,7 @@ function renderNode(
   }
 
   if (isHtmlBlockNode(node) && node.tag === 'details') {
-    return renderDetails(node, key, {
-      renderChildren: settledRenderChildren,
-    })
+    return renderDetails(node, key, options)
   }
 
   if (node.type === 'html_block' && 'content' in node) {

@@ -19,8 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import type { ReactNode } from 'react'
 import type { FootnoteNode, ParsedNode } from 'stream-markdown-parser'
 
-import type { FadeRun } from './response-fade'
-
 export type ResponseProps = {
   children?: ReactNode
   className?: string
@@ -46,5 +44,4 @@ export type RenderChildren = (nodes: ParsedNode[]) => ReactNode
 
 export type BlockRendererOptions = {
   renderChildren: RenderChildren
-  fadeRun?: FadeRun
 }

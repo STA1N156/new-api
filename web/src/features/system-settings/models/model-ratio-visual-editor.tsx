@@ -68,6 +68,7 @@ import { buildModelRatioColumns } from './model-ratio-table-columns'
 
 type ModelRatioVisualEditorProps = {
   savedModelPrice: string
+  savedModelDiscount: string
   savedModelRatio: string
   savedCacheRatio: string
   savedCreateCacheRatio: string
@@ -78,6 +79,7 @@ type ModelRatioVisualEditorProps = {
   savedBillingMode: string
   savedBillingExpr: string
   modelPrice: string
+  modelDiscount: string
   modelRatio: string
   cacheRatio: string
   createCacheRatio: string
@@ -107,6 +109,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
 >(function ModelRatioVisualEditor(
   {
     savedModelPrice,
+    savedModelDiscount,
     savedModelRatio,
     savedCacheRatio,
     savedCreateCacheRatio,
@@ -117,6 +120,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
     savedBillingMode,
     savedBillingExpr,
     modelPrice,
+    modelDiscount,
     modelRatio,
     cacheRatio,
     createCacheRatio,
@@ -191,6 +195,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
   const models = useMemo(() => {
     const savedRows = buildModelSnapshots({
       modelPrice: savedModelPrice,
+      modelDiscount: savedModelDiscount,
       modelRatio: savedModelRatio,
       cacheRatio: savedCacheRatio,
       createCacheRatio: savedCreateCacheRatio,
@@ -203,6 +208,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
     })
     const draftRows = buildModelSnapshots({
       modelPrice,
+      modelDiscount,
       modelRatio,
       cacheRatio,
       createCacheRatio,
@@ -246,6 +252,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
     candidateModelNames,
     filterMode,
     savedModelPrice,
+    savedModelDiscount,
     savedModelRatio,
     savedCacheRatio,
     savedCreateCacheRatio,
@@ -256,6 +263,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
     savedBillingMode,
     savedBillingExpr,
     modelPrice,
+    modelDiscount,
     modelRatio,
     cacheRatio,
     createCacheRatio,
@@ -300,6 +308,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
       setEditData({
         name: editableModel.name,
         price: editableModel.price,
+        discount: editableModel.discount,
         ratio: editableModel.ratio,
         cacheRatio: editableModel.cacheRatio,
         createCacheRatio: editableModel.createCacheRatio,
@@ -344,6 +353,10 @@ const ModelRatioVisualEditorComponent = forwardRef<
         fallback: {},
         silent: true,
       })
+      const discountMap = safeJsonParse<Record<string, number>>(modelDiscount, {
+        fallback: {},
+        silent: true,
+      })
       const ratioMap = safeJsonParse<Record<string, number>>(modelRatio, {
         fallback: {},
         silent: true,
@@ -382,6 +395,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
       )
 
       delete priceMap[name]
+      delete discountMap[name]
       delete ratioMap[name]
       delete cacheMap[name]
       delete createCacheMap[name]
@@ -393,6 +407,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
       delete billingExprMap[name]
 
       onChange('ModelPrice', JSON.stringify(priceMap, null, 2))
+      onChange('ModelDiscount', JSON.stringify(discountMap, null, 2))
       onChange('ModelRatio', JSON.stringify(ratioMap, null, 2))
       onChange('CacheRatio', JSON.stringify(cacheMap, null, 2))
       onChange('CreateCacheRatio', JSON.stringify(createCacheMap, null, 2))
@@ -420,6 +435,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
     },
     [
       modelPrice,
+      modelDiscount,
       modelRatio,
       cacheRatio,
       createCacheRatio,
@@ -484,6 +500,10 @@ const ModelRatioVisualEditorComponent = forwardRef<
         fallback: {},
         silent: true,
       })
+      const discountMap = safeJsonParse<Record<string, number>>(modelDiscount, {
+        fallback: {},
+        silent: true,
+      })
       const ratioMap = safeJsonParse<Record<string, number>>(modelRatio, {
         fallback: {},
         silent: true,
@@ -527,12 +547,13 @@ const ModelRatioVisualEditorComponent = forwardRef<
         value: string | undefined
       ) => {
         if (!value || value === '') return
-        const parsed = parseFloat(value)
+        const parsed = Number(value)
         if (Number.isFinite(parsed)) target[name] = parsed
       }
 
       targetNames.forEach((name) => {
         delete priceMap[name]
+        delete discountMap[name]
         delete ratioMap[name]
         delete cacheMap[name]
         delete createCacheMap[name]
@@ -542,6 +563,10 @@ const ModelRatioVisualEditorComponent = forwardRef<
         delete audioCompletionMap[name]
         delete billingModeMap[name]
         delete billingExprMap[name]
+
+        if (data.billingMode === 'per-token') {
+          setIfPresent(discountMap, name, data.discount)
+        }
 
         if (data.billingMode === 'tiered_expr') {
           const combined = combineBillingExpr(
@@ -578,6 +603,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
       })
 
       onChange('ModelPrice', JSON.stringify(priceMap, null, 2))
+      onChange('ModelDiscount', JSON.stringify(discountMap, null, 2))
       onChange('ModelRatio', JSON.stringify(ratioMap, null, 2))
       onChange('CacheRatio', JSON.stringify(cacheMap, null, 2))
       onChange('CreateCacheRatio', JSON.stringify(createCacheMap, null, 2))
@@ -599,6 +625,7 @@ const ModelRatioVisualEditorComponent = forwardRef<
     },
     [
       modelPrice,
+      modelDiscount,
       modelRatio,
       cacheRatio,
       createCacheRatio,
@@ -832,6 +859,7 @@ export const ModelRatioVisualEditor = memo(
   (prevProps, nextProps) => {
     return (
       prevProps.savedModelPrice === nextProps.savedModelPrice &&
+      prevProps.savedModelDiscount === nextProps.savedModelDiscount &&
       prevProps.savedModelRatio === nextProps.savedModelRatio &&
       prevProps.savedCacheRatio === nextProps.savedCacheRatio &&
       prevProps.savedCreateCacheRatio === nextProps.savedCreateCacheRatio &&
@@ -843,6 +871,7 @@ export const ModelRatioVisualEditor = memo(
       prevProps.savedBillingMode === nextProps.savedBillingMode &&
       prevProps.savedBillingExpr === nextProps.savedBillingExpr &&
       prevProps.modelPrice === nextProps.modelPrice &&
+      prevProps.modelDiscount === nextProps.modelDiscount &&
       prevProps.modelRatio === nextProps.modelRatio &&
       prevProps.cacheRatio === nextProps.cacheRatio &&
       prevProps.createCacheRatio === nextProps.createCacheRatio &&

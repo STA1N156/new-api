@@ -234,6 +234,22 @@ func GetHomePageContent(c *gin.Context) {
 	return
 }
 
+func allowEmailAlias(c *gin.Context, email string) bool {
+	if !common.EmailAliasRestrictionEnabled {
+		return true
+	}
+	localPart, domain, _ := strings.Cut(email, "@")
+	if domain == "qq.com" && (localPart == "" || strings.Trim(localPart, "0123456789") != "") {
+		common.ApiErrorI18n(c, i18n.MsgQQEmailNumericRequired)
+		return false
+	}
+	if strings.ContainsAny(localPart, "+.") {
+		common.ApiErrorI18n(c, i18n.MsgEmailAliasRestricted)
+		return false
+	}
+	return true
+}
+
 func SendEmailVerification(c *gin.Context) {
 	email := model.NormalizeEmail(c.Query("email"))
 	if err := common.Validate.Var(email, "required,email"); err != nil {
@@ -248,7 +264,6 @@ func SendEmailVerification(c *gin.Context) {
 		})
 		return
 	}
-	localPart := parts[0]
 	domainPart := parts[1]
 	if common.EmailDomainRestrictionEnabled {
 		allowed := false
@@ -266,15 +281,8 @@ func SendEmailVerification(c *gin.Context) {
 			return
 		}
 	}
-	if common.EmailAliasRestrictionEnabled {
-		containsSpecialSymbols := strings.Contains(localPart, "+") || strings.Contains(localPart, ".")
-		if containsSpecialSymbols {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": "管理员已启用邮箱地址别名限制，您的邮箱地址由于包含特殊符号而被拒绝。",
-			})
-			return
-		}
+	if !allowEmailAlias(c, email) {
+		return
 	}
 
 	if model.IsEmailAlreadyTaken(email) {

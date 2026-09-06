@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CalendarClock, CreditCard, RefreshCw, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
+import { useFieldArray, useForm, type Resolver } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -109,6 +109,10 @@ export function SubscriptionsMutateDrawer({
   const form = useForm<PlanFormValues>({
     resolver: zodResolver(schema) as unknown as Resolver<PlanFormValues>,
     defaultValues: PLAN_FORM_DEFAULTS,
+  })
+  const quotaLimits = useFieldArray({
+    control: form.control,
+    name: 'quota_limits',
   })
 
   useEffect(() => {
@@ -323,7 +327,7 @@ export function SubscriptionsMutateDrawer({
                   name='price_amount'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('Plan Price')}</FormLabel>
+                      <FormLabel>{t('Plan Price')} (¥)</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -377,7 +381,7 @@ export function SubscriptionsMutateDrawer({
                       </FormControl>
                       <FormDescription>
                         {t(
-                          'Total quota included in the plan, usable per billing period. 0 means unlimited.'
+                          'Quota available in each main reset cycle. Without resets, this is the quota for the entire validity period. 0 means unlimited.'
                         )}
                       </FormDescription>
                       <FormMessage />
@@ -571,7 +575,10 @@ export function SubscriptionsMutateDrawer({
                       </FormLabel>
                       <FormControl>
                         <Switch
-                          checked={field.value}
+                          checked={
+                            quotaLimits.fields.length > 0 ? false : field.value
+                          }
+                          disabled={quotaLimits.fields.length > 0}
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
@@ -690,7 +697,7 @@ export function SubscriptionsMutateDrawer({
                   name='quota_reset_period'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('Reset Cycle')}</FormLabel>
+                      <FormLabel>{t('Main Reset Cycle')}</FormLabel>
                       <Select
                         items={resetPeriodOpts.map((o) => ({
                           value: o.value,
@@ -743,6 +750,101 @@ export function SubscriptionsMutateDrawer({
                   )}
                 />
               </div>
+            </SideDrawerSection>
+
+            <SideDrawerSection>
+              <h3 className='text-sm font-medium'>
+                {t('Additional quota cycles')}
+              </h3>
+              <p className='text-muted-foreground text-xs'>
+                {t(
+                  'Wait for the exhausted cycle to reset; unused quota does not roll over.'
+                )}
+              </p>
+              <p className='text-muted-foreground text-xs'>
+                {t(
+                  'Example: main quota 300 every 7 days, additional quota 50 every 5 hours. Cycles start at purchase and do not extend the subscription validity.'
+                )}
+              </p>
+              {quotaLimits.fields.map((limit, index) => (
+                <div key={limit.id} className='space-y-2 rounded-md border p-3'>
+                  <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                    <FormField
+                      control={form.control}
+                      name={`quota_limits.${index}.period_hours`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('Cycle (hours)')}</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type='number'
+                              min={0.01}
+                              max={8784}
+                              step='any'
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`quota_limits.${index}.amount_total`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {t('Quota per cycle ({{currency}})', {
+                              currency: currencyLabel,
+                            })}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type='number'
+                              min={0}
+                              step={tokensOnly ? 1 : 0.01}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => quotaLimits.remove(index)}
+                  >
+                    {t('Remove')}
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                disabled={quotaLimits.fields.length >= 8}
+                onClick={() => {
+                  quotaLimits.append({ period_hours: 5, amount_total: 50 })
+                  form.setValue('allow_wallet_overflow', false)
+                }}
+              >
+                {t('Add quota cycle')}
+              </Button>
+              {(form.formState.errors.quota_limits?.root?.message ||
+                form.formState.errors.quota_limits?.message) && (
+                <p role='alert' className='text-destructive text-sm'>
+                  {form.formState.errors.quota_limits.root?.message ||
+                    form.formState.errors.quota_limits.message}
+                </p>
+              )}
+              <p className='text-muted-foreground text-xs'>
+                {t(
+                  'Additional cycles apply to new subscriptions. Wallet fallback is disabled for subscriptions with additional cycles.'
+                )}
+              </p>
             </SideDrawerSection>
 
             {/* Payment Config */}

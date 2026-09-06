@@ -113,8 +113,6 @@ user.quota_change_zero: "Quota change amount cannot be zero"
 quota.negative: "Quota cannot be negative!"
 quota.exceed_max: "Quota value exceeds valid range"
 quota.insufficient: "Insufficient quota"
-quota.warning_invalid: "Invalid warning type"
-quota.threshold_gt_zero: "Warning threshold must be greater than 0"
 
 # Subscription messages
 subscription.not_enabled: "Subscription plan is not enabled"
@@ -283,3 +281,6 @@ custom_oauth.name_empty: "Provider name cannot be empty"
 custom_oauth.has_bindings: "Cannot delete provider with existing user bindings"
 custom_oauth.binding_not_found: "OAuth binding not found"
 custom_oauth.provider_id_field_invalid: "Could not extract user ID from provider response"
+
+user.qq_email_numeric_required: "With email alias restrictions enabled, QQ email addresses must contain only digits before @qq.com."
+user.email_alias_restricted: "Email aliases containing + or . are not allowed."

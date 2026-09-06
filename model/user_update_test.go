@@ -84,8 +84,8 @@ func TestUserUpdateDoesNotOverwriteConcurrentAccountingOrTokenChanges(t *testing
 	assert.Equal(t, 420, got.UsedQuota)
 	assert.Equal(t, 4, got.RequestCount)
 	assert.Equal(t, 3, got.AffCount)
-	assert.Equal(t, 300, got.AffQuota)
-	assert.Equal(t, 1700, got.AffHistoryQuota)
+	assert.EqualValues(t, 300, got.AffQuota)
+	assert.EqualValues(t, 1700, got.AffHistoryQuota)
 	assert.Equal(t, "rotated-token", got.GetAccessToken())
 }
 
@@ -172,8 +172,8 @@ func TestUpdateUserAccessTokenOnlyUpdatesAccessToken(t *testing.T) {
 	assert.Equal(t, "rotated-token", got.GetAccessToken())
 	assert.Equal(t, "concurrent-update", got.DisplayName)
 	assert.Equal(t, 1500, got.Quota)
-	assert.Equal(t, 300, got.AffQuota)
-	assert.Equal(t, 1200, got.AffHistoryQuota)
+	assert.EqualValues(t, 300, got.AffQuota)
+	assert.EqualValues(t, 1200, got.AffHistoryQuota)
 }
 
 func TestUpdateUserAccessTokenRejectsSoftDeletedUser(t *testing.T) {

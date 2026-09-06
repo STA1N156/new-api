@@ -58,21 +58,21 @@ func creditInvitationReward(tx *gorm.DB, source interface{}, userId int, credite
 	}).Error
 }
 
-// Subscription prices use the payment gateway's currency. Convert the saved
-// order amount to raw quota; cycle allowances and later plan edits are irrelevant.
+// Convert the saved payment amount to quota using the configured recharge price;
+// display exchange rates, cycle allowances and later plan edits are irrelevant.
 func subscriptionInvitationQuota(order *SubscriptionOrder) (int, error) {
 	if order.PaymentProvider == PaymentProviderBalance || order.PaymentMethod == PaymentMethodBalance ||
 		order.Money <= 0 || !operation_setting.IsPaymentComplianceConfirmed() {
 		return 0, nil
 	}
-	for _, value := range []float64{order.Money, operation_setting.USDExchangeRate, common.QuotaPerUnit} {
+	for _, value := range []float64{order.Money, operation_setting.Price, common.QuotaPerUnit} {
 		if value <= 0 || math.IsNaN(value) || math.IsInf(value, 0) {
 			return 0, errors.New("invalid subscription reward conversion")
 		}
 	}
 	quota := decimal.NewFromFloat(order.Money).
 		Mul(decimal.NewFromFloat(common.QuotaPerUnit)).
-		Div(decimal.NewFromFloat(operation_setting.USDExchangeRate)).Floor()
+		Div(decimal.NewFromFloat(operation_setting.Price)).Floor()
 	return common.QuotaFromDecimalStrict(quota)
 }
 

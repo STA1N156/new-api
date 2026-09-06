@@ -135,7 +135,7 @@ Do NOT directly import or call `encoding/json` in business code. `json.RawMessag
 
 ### Invitation rewards
 
-- Wallet top-ups and redemption codes award 8% of credited quota to the direct inviter. Gateway subscription purchases also award 8% of the saved payment amount converted using USDExchangeRate; balance purchases and admin bindings do not. Keep settlement and the source reward snapshot in the same transaction. See `docs/invitation-rewards.md`.
+- Wallet top-ups and redemption codes award 8% of credited quota to the direct inviter. Gateway subscription purchases also award 8% of the saved payment amount converted using the recharge price (`Price`) at settlement, not the display exchange rate; balance purchases and admin bindings do not. Keep settlement and the source reward snapshot in the same transaction. See `docs/invitation-rewards.md`.
 - Keep signup income, top-up income, lifetime income, and available rewards distinct. Reward transfers must not generate further commission or overwrite lifetime totals.
 
 ### Frontend Rules

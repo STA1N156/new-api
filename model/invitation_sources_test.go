@@ -13,9 +13,11 @@ import (
 
 func newInvitationSubscriptionPlan(t *testing.T) *SubscriptionPlan {
 	t.Helper()
-	oldExchangeRate := operation_setting.USDExchangeRate
+	oldPrice, oldExchangeRate := operation_setting.Price, operation_setting.USDExchangeRate
+	operation_setting.Price = 1
 	operation_setting.USDExchangeRate = 10
 	t.Cleanup(func() {
+		operation_setting.Price = oldPrice
 		operation_setting.USDExchangeRate = oldExchangeRate
 		_ = getSubscriptionPlanCache().Purge()
 	})
@@ -29,7 +31,7 @@ func TestInvitationPaidSubscriptionRewardsOrderAmountExactlyOnce(t *testing.T) {
 		t.Run(provider, func(t *testing.T) {
 			inviter, invitee := setupInvitationTest(t)
 			plan := newInvitationSubscriptionPlan(t)
-			order := SubscriptionOrder{UserId: invitee.Id, PlanId: plan.Id, Money: 100, TradeNo: "sub-reward-" + provider, PaymentProvider: provider, PaymentMethod: provider, Status: common.TopUpStatusPending}
+			order := SubscriptionOrder{UserId: invitee.Id, PlanId: plan.Id, Money: 600, TradeNo: "sub-reward-" + provider, PaymentProvider: provider, PaymentMethod: provider, Status: common.TopUpStatusPending}
 			require.NoError(t, order.Insert())
 			const callbacks = 4
 			errs := make([]error, callbacks)
@@ -45,11 +47,13 @@ func TestInvitationPaidSubscriptionRewardsOrderAmountExactlyOnce(t *testing.T) {
 			for _, err := range errs {
 				require.NoError(t, err)
 			}
+			operation_setting.Price = 2
+			require.NoError(t, CompleteSubscriptionOrder(order.TradeNo, "", provider, ""))
 			require.NoError(t, ManualCompleteTopUp(order.TradeNo, ""))
 			require.NoError(t, DB.First(&inviter, inviter.Id).Error)
 			require.NoError(t, DB.First(&invitee, invitee.Id).Error)
-			assert.EqualValues(t, 400000, inviter.AffTopUpQuota, "100 paid / 10 exchange rate * 500000 quota units * 8%, independent of the current plan price or cycle allowance")
-			assert.EqualValues(t, 400700, inviter.AffQuota)
+			assert.EqualValues(t, 24000000, inviter.AffTopUpQuota, "600 paid / 1 recharge price * 500000 quota units * 8% = 480 cookies at 10 cookies per USD")
+			assert.EqualValues(t, 24000700, inviter.AffQuota)
 			assert.Zero(t, invitee.Quota, "subscription payments do not top up the friend's wallet")
 			count, err := CountUserSubscriptionsByPlan(invitee.Id, plan.Id)
 			require.NoError(t, err)
@@ -57,7 +61,38 @@ func TestInvitationPaidSubscriptionRewardsOrderAmountExactlyOnce(t *testing.T) {
 			record := GetTopUpByTradeNo(order.TradeNo)
 			require.NotNil(t, record)
 			assert.Equal(t, inviter.Id, record.RewardInviterId)
-			assert.Equal(t, 400000, record.RewardQuota)
+			assert.Equal(t, 24000000, record.RewardQuota)
+		})
+	}
+}
+
+func TestInvitationSubscriptionRechargePriceConversion(t *testing.T) {
+	setupInvitationTest(t)
+	newInvitationSubscriptionPlan(t)
+	for _, tc := range []struct {
+		name    string
+		price   float64
+		money   float64
+		quota   int
+		wantErr bool
+	}{
+		{"fractional price", 2.5, 600, 120000000, false},
+		{"round down raw quota", 3, 0.01, 1666, false},
+		{"zero price", 0, 600, 0, true},
+		{"negative price", -1, 600, 0, true},
+		{"invalid price", math.NaN(), 600, 0, true},
+		{"infinite price", math.Inf(1), 600, 0, true},
+		{"quota overflow", 1e-12, 600, 0, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			operation_setting.Price = tc.price
+			quota, err := subscriptionInvitationQuota(&SubscriptionOrder{Money: tc.money, PaymentProvider: PaymentProviderEpay})
+			if tc.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.quota, quota)
 		})
 	}
 }

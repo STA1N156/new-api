@@ -35,9 +35,11 @@ const i18n = createInstance()
 await i18n.init({ lng: 'zh', resources: { zh } })
 const initialConfig = useSystemConfigStore.getState().config
 let subscriptions: UserSubscriptionRecord[] = []
+let allowBalancePay: boolean | undefined
 
 beforeEach(() => {
   subscriptions = []
+  allowBalancePay = undefined
   useSystemConfigStore.getState().setConfig({
     currency: {
       ...DEFAULT_CURRENCY_CONFIG,
@@ -57,6 +59,7 @@ beforeEach(() => {
                 id: 1,
                 title: '月度套餐',
                 price_amount: 28,
+                allow_balance_pay: allowBalancePay,
                 currency: 'USD',
                 duration_unit: 'day',
                 duration_value: 28,
@@ -171,4 +174,27 @@ it('shows yuan prices and both quota cycles on the card and purchase dialog', as
   expect(
     dialog.getByRole('button', { name: i18n.t('Pay with Balance') })
   ).toBeDisabled()
+})
+
+it('hides the entire balance payment section when the plan disallows balance purchases', async () => {
+  allowBalancePay = false
+  const user = userEvent.setup()
+  render(
+    <I18nextProvider i18n={i18n}>
+      <SubscriptionPlansCard topupInfo={null} />
+    </I18nextProvider>
+  )
+  await user.click(
+    await screen.findByRole('button', { name: i18n.t('Subscribe Now') })
+  )
+  const dialog = within(await screen.findByRole('dialog'))
+  expect(dialog.getByText('¥28.00')).toBeVisible()
+  expect(dialog.queryByText(i18n.t('Required'))).not.toBeInTheDocument()
+  expect(dialog.queryByText(i18n.t('Available'))).not.toBeInTheDocument()
+  expect(
+    dialog.queryByText(i18n.t('This plan does not allow balance redemption'))
+  ).not.toBeInTheDocument()
+  expect(
+    dialog.queryByRole('button', { name: i18n.t('Pay with Balance') })
+  ).not.toBeInTheDocument()
 })

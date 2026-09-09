@@ -335,7 +335,7 @@ export const ModelPricingEditorPanel = forwardRef<
   const handleModeChange = (value: string) => {
     const nextMode = value as PricingMode
     setPricingMode(nextMode)
-    if (nextMode !== 'per-token') setFormValue('discount', '')
+    if (nextMode === 'per-request') setFormValue('discount', '')
     if (nextMode === 'tiered_expr' && !billingExpr) {
       setBillingExpr('tier("base", p * 0 + c * 0)')
     }
@@ -445,7 +445,7 @@ export const ModelPricingEditorPanel = forwardRef<
         name: values.name.trim(),
         billingMode: pricingMode,
         price: values.price || '',
-        discount: pricingMode === 'per-token' ? values.discount || '' : '',
+        discount: pricingMode === 'per-request' ? '' : values.discount || '',
         ratio: values.ratio || '',
         cacheRatio: values.cacheRatio || '',
         createCacheRatio: values.createCacheRatio || '',
@@ -558,32 +558,35 @@ export const ModelPricingEditorPanel = forwardRef<
                     </TabsTrigger>
                   </TabsList>
 
+                  {pricingMode !== 'per-request' && (
+                    <FormField
+                      control={form.control}
+                      name='discount'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {t('Display discount (out of 10)')}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              inputMode='decimal'
+                              placeholder='5.5'
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t(
+                              'Display only; does not change billing. Leave blank to hide.'
+                            )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
                   <TabsContent value='per-token' className='pt-0'>
                     <FieldGroup className='gap-5'>
-                      <FormField
-                        control={form.control}
-                        name='discount'
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              {t('Display discount (out of 10)')}
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                inputMode='decimal'
-                                placeholder='5.5'
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              {t(
-                                'Display only; does not change billing. Leave blank to hide.'
-                              )}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                       <Field>
                         <FieldLabel>{t('Input price')}</FieldLabel>
                         <PriceInput

@@ -5354,6 +5354,7 @@
     "Every time your friend tops up, subscribes or redeems a code": "При каждом пополнении, покупке подписки или активации кода другом",
     "Earn {{percent}}% of the amount as rewards": "Получайте {{percent}}% от суммы в качестве награды",
     "{{percent}}% off official price": "Скидка {{percent}}% от официальной цены",
+    "Official list price": "Официальная цена",
     "Display discount (out of 10)": "Отображаемая ставка (из 10)",
     "Display only; does not change billing. Leave blank to hide.": "Только для отображения, не влияет на списания. Оставьте пустым, чтобы скрыть.",
     "Enter a discount greater than 0 and no more than 10": "Введите значение больше 0 и не больше 10"

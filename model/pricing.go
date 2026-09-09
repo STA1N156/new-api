@@ -407,7 +407,7 @@ func updatePricing() {
 				pricing.BillingExpr = expr
 			}
 		}
-		if pricing.QuotaType == 0 && pricing.BillingMode == "" {
+		if pricing.QuotaType == 0 || pricing.BillingMode == "tiered_expr" {
 			if discount, ok := ratio_setting.GetModelDiscount(model); ok {
 				pricing.ModelDiscount = &discount
 			}

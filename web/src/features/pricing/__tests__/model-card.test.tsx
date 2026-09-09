@@ -250,3 +250,71 @@ it('shows the Chinese discount scale as 官方价5.5折', async () => {
   )
   expect(screen.getByText('官方价5.5折')).toBeVisible()
 })
+
+it.each([0, 1])(
+  'shows the discount before dynamic billing even with legacy quota type %s',
+  (quota_type) => {
+    render(
+      <ModelCard
+        model={{
+          ...model,
+          quota_type,
+          model_discount: 5.5,
+          billing_mode: 'tiered_expr',
+          billing_expr: 'tier("base", p * 2 + c * 4)',
+        }}
+        onClick={vi.fn()}
+      />
+    )
+    const discount = screen.getByText('45% off official price')
+    const billing = screen.getByText('Dynamic Pricing')
+    expect(discount).toHaveClass('text-emerald-600')
+    expect(discount.parentElement).toHaveClass('flex', 'items-center')
+    expect(discount.parentElement).toContainElement(billing)
+    expect(
+      discount.compareDocumentPosition(billing) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  }
+)
+
+it.each([undefined, 'tiered_expr'])(
+  'shows 官方原价 for a ten-out-of-ten discount in %s mode',
+  async (billing_mode) => {
+    const locale = await import('@/i18n/locales/zh.json')
+    i18next.addResourceBundle('zh', 'translation', locale.default.translation)
+    await i18next.changeLanguage('zh')
+    render(
+      <ModelCard
+        model={{
+          ...model,
+          model_discount: 10,
+          billing_mode,
+          billing_expr: 'tier("base", p * 2)',
+        }}
+        onClick={vi.fn()}
+      />
+    )
+    expect(screen.getByText('官方原价')).toHaveClass('text-emerald-600')
+    expect(screen.queryByText('官方价10折')).not.toBeInTheDocument()
+  }
+)
+
+it('hides endpoint protocol names while retaining model tags', () => {
+  render(
+    <ModelCard
+      model={{
+        ...model,
+        supported_endpoint_types: ['openai', 'anthropic', 'gemini'],
+        tags: 'reasoning,vision',
+      }}
+      onClick={vi.fn()}
+    />
+  )
+  for (const protocol of ['openai', 'anthropic', 'gemini']) {
+    expect(screen.queryByText(protocol)).not.toBeInTheDocument()
+  }
+  expect(screen.queryByText('+1')).not.toBeInTheDocument()
+  expect(screen.getByText('reasoning')).toBeVisible()
+  expect(screen.getByText('vision')).toBeVisible()
+})

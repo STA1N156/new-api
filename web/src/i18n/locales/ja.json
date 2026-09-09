@@ -5354,6 +5354,7 @@
     "Every time your friend tops up, subscribes or redeems a code": "友達のチャージ・サブスクリプション購入・コード引き換えごとに",
     "Earn {{percent}}% of the amount as rewards": "金額の {{percent}}% を報酬として獲得",
     "{{percent}}% off official price": "公式価格より{{percent}}%オフ",
+    "Official list price": "公式通常価格",
     "Display discount (out of 10)": "表示割引（10段階）",
     "Display only; does not change billing. Leave blank to hide.": "表示のみで課金額は変わりません。空欄で非表示。",
     "Enter a discount greater than 0 and no more than 10": "0より大きく10以下の値を入力してください"

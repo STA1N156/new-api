@@ -564,7 +564,10 @@ const ModelRatioVisualEditorComponent = forwardRef<
         delete billingModeMap[name]
         delete billingExprMap[name]
 
-        if (data.billingMode === 'per-token') {
+        if (
+          data.billingMode === 'per-token' ||
+          data.billingMode === 'tiered_expr'
+        ) {
           setIfPresent(discountMap, name, data.discount)
         }
 

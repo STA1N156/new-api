@@ -40,12 +40,14 @@ const defaults = {
 
 function PricingForm(props: {
   onSave: (values: typeof defaults) => Promise<void>
+  initialValues?: typeof defaults
 }) {
-  const form = useForm({ defaultValues: defaults })
+  const initialValues = props.initialValues ?? defaults
+  const form = useForm({ defaultValues: initialValues })
   return (
     <ModelRatioForm
       form={form}
-      savedValues={defaults}
+      savedValues={initialValues}
       onSave={props.onSave}
       onReset={vi.fn()}
       isSaving={false}
@@ -113,5 +115,62 @@ it('blocks an out-of-range discount before saving', async () => {
   ).toBeVisible()
   expect(discount).toHaveAttribute('aria-invalid', 'true')
   expect(onSave).not.toHaveBeenCalled()
+  client.clear()
+})
+
+it('saves a dynamic model discount without altering its expression or other models', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  const client = new QueryClient()
+  const initialValues = {
+    ...defaults,
+    BillingMode: '{"中文模型":"tiered_expr"}',
+    BillingExpr: JSON.stringify({ 中文模型: 'tier("base", p * 2 + c * 4)' }),
+  }
+  render(
+    <QueryClientProvider client={client}>
+      <PricingForm initialValues={initialValues} onSave={onSave} />
+    </QueryClientProvider>
+  )
+  fireEvent.click(screen.getByText('中文模型'))
+  const discount = screen.getByRole('textbox', {
+    name: 'Display discount (out of 10)',
+  })
+  expect(discount).toHaveValue('5.5')
+  fireEvent.change(discount, { target: { value: '10' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Save model prices' }))
+  await waitFor(() => expect(onSave).toHaveBeenCalledOnce())
+  const saved = onSave.mock.calls[0][0]
+  expect(JSON.parse(saved.ModelDiscount)).toEqual({ 中文模型: 10, other: 8 })
+  expect(JSON.parse(saved.BillingMode)).toEqual(
+    JSON.parse(initialValues.BillingMode)
+  )
+  expect(JSON.parse(saved.BillingExpr)).toEqual(
+    JSON.parse(initialValues.BillingExpr)
+  )
+  expect(JSON.parse(saved.ModelPrice)).toEqual(JSON.parse(defaults.ModelPrice))
+  expect(JSON.parse(saved.ModelRatio).other).toBe(2)
+  client.clear()
+})
+
+it('preserves the discount between token and expression modes and hides it for request pricing', () => {
+  const client = new QueryClient()
+  render(
+    <QueryClientProvider client={client}>
+      <PricingForm onSave={vi.fn()} />
+    </QueryClientProvider>
+  )
+  fireEvent.click(screen.getByText('中文模型'))
+  fireEvent.click(screen.getByRole('tab', { name: 'Expression' }))
+  expect(
+    screen.getByRole('textbox', { name: 'Display discount (out of 10)' })
+  ).toHaveValue('5.5')
+  fireEvent.click(screen.getByRole('tab', { name: 'Per-token' }))
+  expect(
+    screen.getByRole('textbox', { name: 'Display discount (out of 10)' })
+  ).toHaveValue('5.5')
+  fireEvent.click(screen.getByRole('tab', { name: 'Per-request' }))
+  expect(
+    screen.queryByRole('textbox', { name: 'Display discount (out of 10)' })
+  ).not.toBeInTheDocument()
   client.clear()
 })

@@ -65,7 +65,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const isTokenBased = isTokenBasedModel(props.model)
   const tokenUnitLabel = tokenUnit === 'K' ? t('thousand') : t('million')
   const tags = parseTags(props.model.tags)
-  const endpoints = props.model.supported_endpoint_types || []
   const modelIconKey = props.model.icon || props.model.vendor_icon
   const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 28) : null
   const initial = props.model.model_name?.charAt(0).toUpperCase() || '?'
@@ -86,9 +85,8 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     : null
 
   const discount = props.model.model_discount
-  const bottomTags = [...endpoints.slice(0, 2), ...tags.slice(0, 2)]
-  const hiddenCount =
-    Math.max(endpoints.length - 2, 0) + Math.max(tags.length - 2, 0)
+  const bottomTags = tags.slice(0, 2)
+  const hiddenCount = Math.max(tags.length - 2, 0)
 
   let priceSummary: ReactNode
   if (dynamicSummary) {
@@ -205,34 +203,37 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       {/* Footer: left metadata and right performance summary share row alignment */}
       <div className='mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-1 sm:mt-4'>
         <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
-          {!isDynamicPricing &&
-            isTokenBased &&
+          {(isTokenBased || isDynamicPricing) &&
             discount != null &&
             discount > 0 &&
             discount <= 10 && (
               <span className='text-sm font-medium text-emerald-600 dark:text-emerald-400'>
-                {t('{{percent}}% off official price', {
-                  discount,
-                  percent: Number(((10 - discount) * 10).toFixed(2)),
-                })}
+                {discount === 10
+                  ? t('Official list price')
+                  : t('{{percent}}% off official price', {
+                      discount,
+                      percent: Number(((10 - discount) * 10).toFixed(2)),
+                    })}
               </span>
             )}
           <ModelBillingModeBadge model={props.model} />
         </div>
         <ModelPerfBadge perf={props.perf} className='row-span-2 self-start' />
 
-        <div className='flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 sm:gap-x-3 sm:gap-y-1'>
-          {bottomTags.map((item) => (
-            <span key={item} className='text-muted-foreground/70 text-xs'>
-              {item}
-            </span>
-          ))}
-          {hiddenCount > 0 && (
-            <span className='text-muted-foreground/40 text-xs'>
-              +{hiddenCount}
-            </span>
-          )}
-        </div>
+        {bottomTags.length > 0 && (
+          <div className='flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 sm:gap-x-3 sm:gap-y-1'>
+            {bottomTags.map((item) => (
+              <span key={item} className='text-muted-foreground/70 text-xs'>
+                {item}
+              </span>
+            ))}
+            {hiddenCount > 0 && (
+              <span className='text-muted-foreground/40 text-xs'>
+                +{hiddenCount}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

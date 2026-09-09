@@ -104,7 +104,7 @@ function SegmentedControl(props: {
     <div
       role='group'
       aria-label={props.ariaLabel}
-      className='bg-muted/60 inline-flex h-8 items-center rounded-lg border p-0.5'
+      className='bg-muted/60 inline-flex h-8 shrink-0 items-center rounded-lg border p-0.5'
     >
       {props.options.map((option) => {
         const Icon = option.icon
@@ -134,7 +134,7 @@ function SegmentedControl(props: {
 
         return (
           <Tooltip key={option.value}>
-            <TooltipTrigger render={button}></TooltipTrigger>
+            <TooltipTrigger render={button} />
             <TooltipContent side='bottom' className='text-xs'>
               {option.tooltip}
             </TooltipContent>
@@ -168,7 +168,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
   return (
     <div className='rounded-xl border p-3'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
           <Button
             type='button'
             variant='outline'
@@ -185,7 +185,17 @@ export function PricingToolbar(props: PricingToolbarProps) {
             )}
           </Button>
 
-          <div className='text-muted-foreground flex items-baseline gap-1 text-sm'>
+          <SegmentedControl
+            options={[
+              { value: 'standard', label: t('Standard') },
+              { value: 'recharge', label: t('Recharge') },
+            ]}
+            value={props.showRechargePrice ? 'recharge' : 'standard'}
+            onChange={handleRechargePriceChange}
+            ariaLabel={t('Price display mode')}
+          />
+
+          <div className='text-muted-foreground ml-auto flex items-baseline gap-1 text-sm sm:ml-0'>
             <span className='text-foreground font-semibold tabular-nums'>
               {props.filteredCount.toLocaleString()}
             </span>
@@ -200,15 +210,6 @@ export function PricingToolbar(props: PricingToolbarProps) {
 
         <div className='flex flex-wrap items-center gap-2'>
           <div className='hidden items-center gap-2 sm:flex'>
-            <SegmentedControl
-              options={[
-                { value: 'standard', label: t('Standard') },
-                { value: 'recharge', label: t('Recharge') },
-              ]}
-              value={props.showRechargePrice ? 'recharge' : 'standard'}
-              onChange={handleRechargePriceChange}
-              ariaLabel={t('Price display mode')}
-            />
             <SegmentedControl
               options={[
                 { value: 'M', label: '/1M' },

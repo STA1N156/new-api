@@ -5354,6 +5354,7 @@
     "Every time your friend tops up, subscribes or redeems a code": "À chaque recharge, abonnement ou échange de code de votre ami",
     "Earn {{percent}}% of the amount as rewards": "Recevez {{percent}} % du montant en récompense",
     "{{percent}}% off official price": "−{{percent}} % sur le prix officiel",
+    "Official list price": "Tarif officiel",
     "Display discount (out of 10)": "Tarif affiché (sur 10)",
     "Display only; does not change billing. Leave blank to hide.": "Affichage uniquement, sans modifier la facturation. Laisser vide pour masquer.",
     "Enter a discount greater than 0 and no more than 10": "Saisissez une valeur supérieure à 0 et inférieure ou égale à 10"

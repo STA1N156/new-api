@@ -5354,6 +5354,7 @@
     "Every time your friend tops up, subscribes or redeems a code": "好友每次充值/订阅/兑换",
     "Earn {{percent}}% of the amount as rewards": "获得 {{percent}}% 金额奖励",
     "{{percent}}% off official price": "官方价{{discount}}折",
+    "Official list price": "官方原价",
     "Display discount (out of 10)": "展示折扣（几折）",
     "Display only; does not change billing. Leave blank to hide.": "仅用于展示，不改变实际扣费；留空不显示。",
     "Enter a discount greater than 0 and no more than 10": "请输入大于 0 且不超过 10 的折扣"

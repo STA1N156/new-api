@@ -29,7 +29,6 @@ func newQuotaLimitedSubscription(t *testing.T) (*SubscriptionPlan, *UserSubscrip
 
 func TestSubscriptionQuotaLimitsPreConsumeSettlementAndRefund(t *testing.T) {
 	_, sub := newQuotaLimitedSubscription(t)
-	assert.False(t, sub.AllowWalletOverflow)
 	first, err := PreConsumeUserSubscription("limited-request", sub.UserId, "", 0, 20)
 	require.NoError(t, err)
 	repeated, err := PreConsumeUserSubscription("limited-request", sub.UserId, "", 0, 20)

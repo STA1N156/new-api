@@ -39,16 +39,14 @@ afterEach(() => {
 })
 
 it('saves hours and displayed quota, then restores them when editing a plan', () => {
-  useSystemConfigStore
-    .getState()
-    .setConfig({
-      currency: {
-        ...DEFAULT_CURRENCY_CONFIG,
-        quotaDisplayType: 'CUSTOM',
-        customCurrencySymbol: '🍪',
-        customCurrencyExchangeRate: 2,
-      },
-    })
+  useSystemConfigStore.getState().setConfig({
+    currency: {
+      ...DEFAULT_CURRENCY_CONFIG,
+      quotaDisplayType: 'CUSTOM',
+      customCurrencySymbol: '🍪',
+      customCurrencyExchangeRate: 2,
+    },
+  })
   const values = {
     ...PLAN_FORM_DEFAULTS,
     title: 'Plan',
@@ -59,7 +57,6 @@ it('saves hours and displayed quota, then restores them when editing a plan', ()
   expect(payload.plan.quota_limits).toEqual([
     { period_seconds: 18000, amount_total: 12500000 },
   ])
-  expect(payload.plan.allow_wallet_overflow).toBe(false)
   const plan = subscriptionPlanSchema.parse({ id: 1, ...payload.plan })
   expect(planToFormValues(plan).quota_limits).toEqual(values.quota_limits)
   expect(

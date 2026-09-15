@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { GlobeIcon, PaperclipIcon, Trash2Icon } from 'lucide-react'
+import { CameraIcon, ImageIcon, PaperclipIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import {
   PromptInputButton,
   PromptInputTools,
+  usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
@@ -38,12 +39,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-import {
-  ATTACHMENT_ACTIONS,
-  getAttachmentActionNotice,
-  getSearchActionNotice,
-} from '../../lib'
 import type { ParameterEnabled, PlaygroundConfig } from '../../types'
+import { PlaygroundCamera } from './playground-camera'
 import { PlaygroundParameterPanel } from './playground-parameter-panel'
 
 type PlaygroundInputToolsProps = {
@@ -74,17 +71,8 @@ export function PlaygroundInputTools({
   const { t } = useTranslation()
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
 
-  const handleFileAction = (action: string) => {
-    const notice = getAttachmentActionNotice(action)
-    toast.info(t(notice.title), {
-      description: notice.description,
-    })
-  }
-
-  const handleSearchAction = () => {
-    const notice = getSearchActionNotice()
-    toast.info(t(notice.title))
-  }
+  const attachments = usePromptInputAttachments()
+  const [cameraOpen, setCameraOpen] = useState(false)
 
   const handleClearMessages = () => {
     onClearMessages?.()
@@ -117,36 +105,16 @@ export function PlaygroundInputTools({
               <p>{t('Attach')}</p>
             </TooltipContent>
             <DropdownMenuContent align='start'>
-              {ATTACHMENT_ACTIONS.map(({ action, icon: Icon, label }) => (
-                <DropdownMenuItem
-                  key={action}
-                  onClick={() => handleFileAction(action)}
-                >
-                  <Icon className='mr-2' size={16} />
-                  {t(label)}
-                </DropdownMenuItem>
-              ))}
+              <DropdownMenuItem onClick={attachments.openFileDialog}>
+                <ImageIcon className='mr-2' size={16} />
+                {t('Upload photo')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCameraOpen(true)}>
+                <CameraIcon className='mr-2' size={16} />
+                {t('Take photo')}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <PromptInputButton
-                aria-label={t('Search')}
-                className='text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
-                disabled={disabled}
-                onClick={handleSearchAction}
-                variant='ghost'
-              >
-                <GlobeIcon size={16} />
-              </PromptInputButton>
-            }
-          />
-          <TooltipContent>
-            <p>{t('Search')}</p>
-          </TooltipContent>
         </Tooltip>
 
         <PlaygroundParameterPanel
@@ -176,6 +144,16 @@ export function PlaygroundInputTools({
           </TooltipContent>
         </Tooltip>
       </PromptInputTools>
+
+      {cameraOpen && (
+        <PlaygroundCamera
+          onClose={() => setCameraOpen(false)}
+          onCapture={(file) => {
+            attachments.add([file])
+            setCameraOpen(false)
+          }}
+        />
+      )}
 
       <ConfirmDialog
         destructive

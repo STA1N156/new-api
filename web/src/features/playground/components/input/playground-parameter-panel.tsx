@@ -34,8 +34,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Tooltip,
   TooltipContent,
@@ -45,7 +45,6 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 
 import {
-  getParameterControlValueText,
   normalizeParameterNumberValue,
   PLAYGROUND_PARAMETER_CONTROLS,
   PLAYGROUND_PARAMETER_PANEL_SCROLL_CLASS,
@@ -81,18 +80,6 @@ function PlaygroundParameterContent({
 }: PlaygroundParameterContentProps) {
   const { t } = useTranslation()
 
-  const updateParameterConfig = (
-    key: PlaygroundParameterKey,
-    value: number | null
-  ) => {
-    if (key === 'seed') {
-      onConfigChange('seed', value)
-      return
-    }
-
-    onConfigChange(key, value ?? 0)
-  }
-
   return (
     <div
       className={cn(
@@ -101,6 +88,23 @@ function PlaygroundParameterContent({
         compact ? 'px-4 pb-4' : 'p-1'
       )}
     >
+      <div className='grid gap-2 p-1'>
+        <label
+          className='text-sm font-medium'
+          htmlFor='playground-system-prompt'
+        >
+          {t('System prompt')}
+        </label>
+        <Textarea
+          id='playground-system-prompt'
+          className='min-h-28 resize-y'
+          disabled={disabled}
+          value={config.system_prompt}
+          onChange={(event) =>
+            onConfigChange('system_prompt', event.target.value)
+          }
+        />
+      </div>
       {PLAYGROUND_PARAMETER_CONTROLS.map((control) => {
         const enabled = parameterEnabled[control.key]
         const value = config[control.key]
@@ -127,7 +131,7 @@ function PlaygroundParameterContent({
                     className='h-5 max-w-24 shrink-0 px-1.5 font-mono text-[11px]'
                     variant='outline'
                   >
-                    {t(getParameterControlValueText(control.key, value))}
+                    {value}
                   </Badge>
                 </div>
                 <p className='text-muted-foreground text-xs leading-4'>
@@ -148,46 +152,22 @@ function PlaygroundParameterContent({
               />
             </div>
 
-            {control.valueType === 'slider' ? (
-              <Slider
-                className='py-1.5'
-                disabled={disabled || !enabled}
-                id={controlId}
-                max={control.max}
-                min={control.min}
-                onValueChange={(nextValue) => {
-                  const firstValue = Array.isArray(nextValue)
-                    ? nextValue[0]
-                    : nextValue
-                  updateParameterConfig(
-                    control.key,
-                    normalizeParameterNumberValue(control.key, firstValue)
-                  )
-                }}
-                step={control.step}
-                value={[Number(value)]}
-              />
-            ) : (
-              <Input
-                disabled={disabled || !enabled}
-                id={controlId}
-                inputMode='numeric'
-                max={control.max}
-                min={control.min}
-                onChange={(event) => {
-                  updateParameterConfig(
-                    control.key,
-                    normalizeParameterNumberValue(
-                      control.key,
-                      event.target.value
-                    )
-                  )
-                }}
-                step={control.step}
-                type='number'
-                value={value ?? ''}
-              />
-            )}
+            <Input
+              disabled={disabled || !enabled}
+              id={controlId}
+              inputMode='numeric'
+              max={control.max}
+              min={control.min}
+              onChange={(event) => {
+                onConfigChange(
+                  control.key,
+                  normalizeParameterNumberValue(control.key, event.target.value)
+                )
+              }}
+              step={control.step}
+              type='number'
+              value={value}
+            />
           </div>
         )
       })}

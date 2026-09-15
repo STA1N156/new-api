@@ -18,10 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { TFunction } from 'i18next'
 
-import type { UptimeDayPoint } from './mock-stats'
+export type SuccessRatePoint = {
+  date: string
+  uptime_pct: number
+}
 
 export function buildSuccessRateChartSpec(
-  series: UptimeDayPoint[],
+  series: SuccessRatePoint[],
   textColor: string,
   gridColor: string,
   t: TFunction

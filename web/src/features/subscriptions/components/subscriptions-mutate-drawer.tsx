@@ -564,27 +564,6 @@ export function SubscriptionsMutateDrawer({
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name='allow_wallet_overflow'
-                  render={({ field }) => (
-                    <FormItem className={sideDrawerSwitchItemClassName()}>
-                      <FormLabel className='!mt-0'>
-                        {t('Allow wallet balance after quota used up')}
-                      </FormLabel>
-                      <FormControl>
-                        <Switch
-                          checked={
-                            quotaLimits.fields.length > 0 ? false : field.value
-                          }
-                          disabled={quotaLimits.fields.length > 0}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
               </div>
             </SideDrawerSection>
 
@@ -826,10 +805,9 @@ export function SubscriptionsMutateDrawer({
                 variant='outline'
                 size='sm'
                 disabled={quotaLimits.fields.length >= 8}
-                onClick={() => {
+                onClick={() =>
                   quotaLimits.append({ period_hours: 5, amount_total: 50 })
-                  form.setValue('allow_wallet_overflow', false)
-                }}
+                }
               >
                 {t('Add quota cycle')}
               </Button>
@@ -842,7 +820,7 @@ export function SubscriptionsMutateDrawer({
               )}
               <p className='text-muted-foreground text-xs'>
                 {t(
-                  'Additional cycles apply to new subscriptions. Wallet fallback is disabled for subscriptions with additional cycles.'
+                  'Additional cycles apply to new subscriptions. Wallet fallback follows the user’s billing preference.'
                 )}
               </p>
             </SideDrawerSection>

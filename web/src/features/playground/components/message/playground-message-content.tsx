@@ -136,6 +136,18 @@ export function PlaygroundMessageContent({
 
       {!isError && showMessageContent && (
         <>
+          {message.imageUrls && (
+            <div className='mb-2 flex flex-wrap gap-2'>
+              {[...new Set(message.imageUrls)].map((url) => (
+                <img
+                  key={url}
+                  src={url}
+                  alt={t('Image')}
+                  className='max-h-64 max-w-full rounded-lg object-contain'
+                />
+              ))}
+            </div>
+          )}
           {isSourceVisible ? (
             <CodeBlock
               code={versionContent}

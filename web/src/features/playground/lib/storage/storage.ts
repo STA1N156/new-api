@@ -25,6 +25,7 @@ import {
 } from '../message/message-streaming-utils'
 import { completeAssistantTiming } from '../message/message-timing-utils'
 import { hasMessageContent } from '../message/message-utils'
+import { accessMessageStore } from './message-store'
 import {
   MAX_LOADED_MESSAGE_CHARS,
   MAX_LOADED_MESSAGES_CHARS,
@@ -336,11 +337,12 @@ export function saveParameterEnabled(
 }
 
 /**
- * Load messages from localStorage
+ * Load chat history, including legacy localStorage messages.
  */
-export function loadMessages(): Message[] | null {
+export async function loadMessages(): Promise<Message[] | null> {
   try {
-    const saved = readStoredMessagesValue()
+    const stored = await accessMessageStore().catch(() => null)
+    const saved = stored ?? readStoredMessagesValue()
     if (!saved) return null
 
     const parsed = messagesSchema.parse(unwrapStoredValue(saved)) as Message[]
@@ -358,7 +360,7 @@ export function loadMessages(): Message[] | null {
       sizeTrimmed !== trimmed ||
       sanitized !== sizeTrimmed
     ) {
-      saveMessages(sanitized)
+      await saveMessages(sanitized)
     }
 
     return sanitized
@@ -370,13 +372,14 @@ export function loadMessages(): Message[] | null {
 }
 
 /**
- * Save messages to localStorage
+ * Save messages and images in the browser.
  */
-export function saveMessages(messages: Message[]): void {
+export async function saveMessages(messages: Message[]): Promise<void> {
   try {
     const trimmed = trimMessages(messages)
     const parsed = messagesSchema.parse(trimmed) as Message[]
-    writeStoredValue(STORAGE_KEYS.MESSAGES, parsed)
+    await accessMessageStore(parsed)
+    localStorage.removeItem(STORAGE_KEYS.MESSAGES)
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Failed to save messages:', error)
@@ -386,8 +389,9 @@ export function saveMessages(messages: Message[]): void {
 /**
  * Clear all playground data
  */
-export function clearPlaygroundData(): void {
+export async function clearPlaygroundData(): Promise<void> {
   try {
+    await accessMessageStore([])
     localStorage.removeItem(STORAGE_KEYS.CONFIG)
     localStorage.removeItem(STORAGE_KEYS.PARAMETER_ENABLED)
     localStorage.removeItem(STORAGE_KEYS.MESSAGES)

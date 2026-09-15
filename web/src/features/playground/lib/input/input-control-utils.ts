@@ -26,6 +26,7 @@ type InputControlStateOptions = {
   isModelLoading?: boolean
   models: ModelOption[]
   text: string
+  hasAttachments?: boolean
 }
 
 type InputControlState = {
@@ -36,17 +37,18 @@ type InputControlState = {
 
 type SubmittableInputMessage = {
   text?: string | null
+  files?: { url: string }[]
 }
 
 export function getSubmittableInputText(
   message: SubmittableInputMessage,
   disabled?: boolean
 ): string | null {
-  if (disabled || !message.text?.trim()) {
+  if (disabled || (!message.text?.trim() && !message.files?.length)) {
     return null
   }
 
-  return message.text
+  return message.text ?? ''
 }
 
 export function getInputControlState({
@@ -57,11 +59,15 @@ export function getInputControlState({
   isModelLoading,
   models,
   text,
+  hasAttachments,
 }: InputControlStateOptions): InputControlState {
   const hasModels = models.length > 0
 
   return {
-    canSubmit: !disabled && hasModels && text.trim().length > 0,
+    canSubmit:
+      !disabled &&
+      hasModels &&
+      (text.trim().length > 0 || Boolean(hasAttachments)),
     isSelectorDisabled: disabled || isModelLoading || groups.length === 0,
     shouldShowStop: Boolean(isGenerating && hasStopHandler),
   }

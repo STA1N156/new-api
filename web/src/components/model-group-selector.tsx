@@ -687,7 +687,7 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
     <div
       className={cn(
         'min-w-0 space-y-2',
-        !isMobile && modelGroupSelectorLayoutClasses.groupColumn
+        modelGroupSelectorLayoutClasses.groupColumn
       )}
     >
       <div className='text-muted-foreground px-1 text-[11px] leading-4 font-medium'>
@@ -696,7 +696,7 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
       <div
         className={cn(
           'grid gap-1',
-          !isMobile && modelGroupSelectorLayoutClasses.groupScroll
+          modelGroupSelectorLayoutClasses.groupScroll
         )}
         ref={groupScrollContainerRef}
       >
@@ -737,7 +737,7 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
     <Command
       className={cn(
         'min-w-0 rounded-lg border-0 bg-transparent p-1',
-        !isMobile && modelGroupSelectorLayoutClasses.modelCommand
+        modelGroupSelectorLayoutClasses.modelCommand
       )}
       filter={() => 1}
       shouldFilter={false}
@@ -748,11 +748,7 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
         placeholder={t('Search models...')}
         value={searchQuery}
       />
-      <CommandList
-        className={
-          isMobile ? 'max-h-[45vh]' : modelGroupSelectorLayoutClasses.modelList
-        }
-      >
+      <CommandList className={modelGroupSelectorLayoutClasses.modelList}>
         {filteredModels.length === 0 ? (
           <div className='text-muted-foreground px-3 py-8 text-center text-[12px] leading-5'>
             {t('No model found.')}
@@ -804,7 +800,7 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
     <div
       className={
         isMobile
-          ? 'grid gap-3 p-2 md:grid-cols-[9.5rem_minmax(0,1fr)]'
+          ? 'grid h-[55vh] min-h-0 grid-cols-[7rem_minmax(0,1fr)] gap-2 p-2'
           : modelGroupSelectorLayoutClasses.desktopContent
       }
     >
@@ -812,7 +808,7 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
       <div
         className={cn(
           'min-w-0 overflow-hidden rounded-lg border',
-          !isMobile && modelGroupSelectorLayoutClasses.modelColumn
+          modelGroupSelectorLayoutClasses.modelColumn
         )}
       >
         {renderModelList()}

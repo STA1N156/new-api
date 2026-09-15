@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, HeartPulse, Timer } from 'lucide-react'
+import { HeartPulse, Timer } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -30,7 +30,7 @@ import {
 import type { PerformanceGroup } from '@/features/performance-metrics/types'
 import { cn } from '@/lib/utils'
 
-import type { UptimeDayPoint } from '../lib/mock-stats'
+import type { SuccessRatePoint } from '../lib/success-rate'
 import type { PricingModel } from '../types'
 import { SuccessRateTrendChart } from './model-details-charts'
 
@@ -71,15 +71,13 @@ function toUptimePct(value: number): number {
   return Math.round(clamped * 100) / 100
 }
 
-function toUptimeSeries(groups: PerformanceGroup[]): UptimeDayPoint[] {
-  const byTs = new Map<number, { rates: number[]; incidents: number }>()
+function toUptimeSeries(groups: PerformanceGroup[]): SuccessRatePoint[] {
+  const byTs = new Map<number, number[]>()
   for (const group of groups) {
     for (const point of group.series) {
-      const current = byTs.get(point.ts) ?? { rates: [], incidents: 0 }
+      const current = byTs.get(point.ts) ?? []
       if (Number.isFinite(point.success_rate)) {
-        const successRate = toUptimePct(point.success_rate)
-        current.rates.push(successRate)
-        if (successRate < 100) current.incidents += 1
+        current.push(toUptimePct(point.success_rate))
       }
       byTs.set(point.ts, current)
     }
@@ -88,15 +86,12 @@ function toUptimeSeries(groups: PerformanceGroup[]): UptimeDayPoint[] {
     .sort(([a], [b]) => a - b)
     .map(([ts, value]) => {
       const uptime =
-        value.rates.length > 0
-          ? value.rates.reduce((sum, rate) => sum + rate, 0) /
-            value.rates.length
+        value.length > 0
+          ? value.reduce((sum, rate) => sum + rate, 0) / value.length
           : 0
       return {
         date: new Date(ts * 1000).toISOString(),
         uptime_pct: toUptimePct(uptime),
-        incidents: value.incidents,
-        outage_minutes: 0,
       }
     })
 }
@@ -104,8 +99,8 @@ function toUptimeSeries(groups: PerformanceGroup[]): UptimeDayPoint[] {
 export function ModelDetailsPerformance(props: { model: PricingModel }) {
   const { t } = useTranslation()
   const metricsQuery = useQuery({
-    queryKey: ['perf-metrics', props.model.model_name],
-    queryFn: () => getPerfMetrics(props.model.model_name, 24),
+    queryKey: ['perf-metrics', props.model.model_name, 6],
+    queryFn: () => getPerfMetrics(props.model.model_name, 6),
     staleTime: 60 * 1000,
   })
   const groups = useMemo(
@@ -135,7 +130,6 @@ export function ModelDetailsPerformance(props: { model: PricingModel }) {
       ? successRates.reduce((sum, value) => sum + value, 0) /
         successRates.length
       : 0
-  const incidentCount = uptimeSeries.reduce((s, p) => s + p.incidents, 0)
 
   return (
     <div className='flex flex-col gap-4'>
@@ -150,57 +144,20 @@ export function ModelDetailsPerformance(props: { model: PricingModel }) {
           icon={HeartPulse}
           label={t('Success rate')}
           value={formatUptimePct(successRate)}
-          hint={
-            incidentCount > 0
-              ? t('{{count}} incidents in the last 24 hours', {
-                  count: incidentCount,
-                })
-              : t('No incidents in the last 24 hours')
-          }
+          hint={t('Last 6 hours')}
           valueClassName={getSuccessRateTextClass(successRate)}
         />
       </div>
 
       <section>
-        <SectionHeader
-          icon={HeartPulse}
-          title={t('Success rate (last 24h)')}
-          accent={
-            incidentCount > 0 ? (
-              <span className='inline-flex items-center gap-1 text-amber-600 dark:text-amber-400'>
-                <AlertTriangle className='size-3.5' />
-                {t('{{count}} incidents', {
-                  count: incidentCount,
-                })}
-              </span>
-            ) : null
-          }
-        />
-        <SuccessRateTrendChart series={uptimeSeries} />
-      </section>
-    </div>
-  )
-}
-
-function SectionHeader(props: {
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  accent?: React.ReactNode
-}) {
-  const Icon = props.icon
-  return (
-    <div className='mb-2 flex flex-wrap items-center justify-between gap-2'>
-      <div className='flex min-w-0 items-center gap-2'>
-        <Icon className='text-muted-foreground/70 size-3.5 shrink-0' />
-        <div className='min-w-0'>
+        <div className='mb-2 flex items-center gap-2'>
+          <HeartPulse className='text-muted-foreground/70 size-3.5 shrink-0' />
           <div className='text-foreground text-sm font-semibold'>
-            {props.title}
+            {t('Success rate (last 6h)')}
           </div>
         </div>
-      </div>
-      {props.accent && (
-        <div className='shrink-0 text-xs font-medium'>{props.accent}</div>
-      )}
+        <SuccessRateTrendChart series={uptimeSeries} />
+      </section>
     </div>
   )
 }

@@ -24,8 +24,6 @@ import { buildSuccessRateChartSpec } from '../lib/success-rate'
 const first = {
   date: '2026-09-06T08:05:00Z',
   uptime_pct: 98,
-  incidents: 0,
-  outage_minutes: 0,
 }
 const later = { ...first, date: '2026-09-06T08:45:00Z', uptime_pct: 100 }
 

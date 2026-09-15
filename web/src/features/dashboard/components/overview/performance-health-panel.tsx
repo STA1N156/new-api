@@ -33,7 +33,7 @@ import {
 import type { PerfModelSummary } from '@/features/performance-metrics/types'
 import { cn } from '@/lib/utils'
 
-const PERFORMANCE_WINDOW_HOURS = 24
+const PERFORMANCE_WINDOW_HOURS = 6
 const TOP_MODEL_LIMIT = 6
 
 type WeightedMetric = 'avg_latency_ms' | 'avg_tps' | 'success_rate'
@@ -98,7 +98,7 @@ export function PerformanceHealthPanel() {
         </IconBadge>
         <h3 className='text-sm font-semibold'>{t('Performance health')}</h3>
         <span className='text-muted-foreground ml-auto text-xs'>
-          {t('Performance metrics for the last 24 hours')}
+          {t('Performance metrics for the last 6 hours')}
         </span>
       </div>
 

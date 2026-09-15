@@ -162,7 +162,7 @@ type SubscriptionPlan struct {
 
 	AllowBalancePay *bool `json:"allow_balance_pay"`
 
-	// Allow falling back to wallet balance after subscription quota is exhausted (empty = true)
+	// Legacy field retained for compatibility; wallet fallback follows the user's billing preference.
 	AllowWalletOverflow *bool `json:"allow_wallet_overflow"`
 
 	StripePriceId         string `json:"stripe_price_id" gorm:"type:varchar(128);default:''"`
@@ -276,7 +276,7 @@ type UserSubscription struct {
 	// Downgrade target group on expiry (snapshot from plan; empty = revert to PrevUserGroup)
 	DowngradeGroup string `json:"downgrade_group" gorm:"type:varchar(64);default:''"`
 
-	// Whether wallet fallback is allowed after this subscription's quota is exhausted (snapshot from plan)
+	// Legacy snapshot retained for compatibility; no longer restricts wallet fallback.
 	AllowWalletOverflow bool `json:"allow_wallet_overflow"`
 
 	CreatedAt int64 `json:"created_at" gorm:"bigint"`
@@ -538,9 +538,6 @@ func CreateUserSubscriptionFromPlanTx(tx *gorm.DB, userId int, plan *Subscriptio
 	allowWalletOverflow := true
 	if plan.AllowWalletOverflow != nil {
 		allowWalletOverflow = *plan.AllowWalletOverflow
-	}
-	if len(plan.QuotaLimits) > 0 {
-		allowWalletOverflow = false
 	}
 	sub := &UserSubscription{
 		UserId:              userId,
@@ -887,24 +884,6 @@ func HasActiveUserSubscription(userId int) (bool, error) {
 		return false, err
 	}
 	return count > 0, nil
-}
-
-// UserActiveSubscriptionsAllowWalletOverflow returns whether wallet balance may be used
-// after the user's subscription quota is exhausted. A single active subscription that
-// disallows wallet overflow (allow_wallet_overflow = false) blocks the fallback.
-func UserActiveSubscriptionsAllowWalletOverflow(userId int) (bool, error) {
-	if userId <= 0 {
-		return false, errors.New("invalid userId")
-	}
-	now := common.GetTimestamp()
-	var strictCount int64
-	if err := DB.Model(&UserSubscription{}).
-		Where("user_id = ? AND status = ? AND end_time > ? AND allow_wallet_overflow = ?",
-			userId, "active", now, false).
-		Count(&strictCount).Error; err != nil {
-		return false, err
-	}
-	return strictCount == 0, nil
 }
 
 // GetAllUserSubscriptions returns all subscriptions (active and expired) for a user.

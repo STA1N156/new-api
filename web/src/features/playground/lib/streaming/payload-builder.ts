@@ -37,35 +37,20 @@ export function buildChatCompletionPayload(
     .filter(isValidMessage)
     .map(formatMessageForAPI)
 
+  if (config.system_prompt.trim()) {
+    processedMessages.unshift({ role: 'system', content: config.system_prompt })
+  }
+
   const payload: ChatCompletionRequest = {
     model: config.model,
     group: config.group,
     messages: processedMessages,
     stream: config.stream,
-  }
-
-  if (parameterEnabled.temperature) {
-    payload.temperature = config.temperature
-  }
-
-  if (parameterEnabled.top_p) {
-    payload.top_p = config.top_p
+    temperature: 1,
   }
 
   if (parameterEnabled.max_tokens) {
     payload.max_tokens = config.max_tokens
-  }
-
-  if (parameterEnabled.frequency_penalty) {
-    payload.frequency_penalty = config.frequency_penalty
-  }
-
-  if (parameterEnabled.presence_penalty) {
-    payload.presence_penalty = config.presence_penalty
-  }
-
-  if (parameterEnabled.seed && config.seed !== null) {
-    payload.seed = config.seed
   }
 
   return payload

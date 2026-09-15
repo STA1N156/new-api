@@ -44,11 +44,11 @@ it('adds and removes cycles, rejects duplicates and saves distinct cycle limits'
   )
   await user.type(screen.getByLabelText('Plan Title'), 'Multi-cycle plan')
   await user.click(screen.getByRole('button', { name: 'Add quota cycle' }))
-  const overflow = screen.getByRole('switch', {
-    name: 'Allow wallet balance after quota used up',
-  })
-  expect(overflow).toHaveAttribute('aria-disabled', 'true')
-  expect(overflow).not.toBeChecked()
+  expect(
+    screen.queryByRole('switch', {
+      name: 'Allow wallet balance after quota used up',
+    })
+  ).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Remove' }))
   expect(screen.queryByLabelText('Cycle (hours)')).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Add quota cycle' }))
@@ -69,7 +69,6 @@ it('adds and removes cycles, rejects duplicates and saves distinct cycle limits'
             { period_seconds: 18000, amount_total: 25000000 },
             { period_seconds: 86400, amount_total: 25000000 },
           ],
-          allow_wallet_overflow: false,
         }),
       })
     )

@@ -24,8 +24,10 @@ import { useChartTheme } from '@/lib/use-chart-theme'
 import { cn } from '@/lib/utils'
 import { VCHART_OPTION } from '@/lib/vchart'
 
-import type { UptimeDayPoint } from '../lib/mock-stats'
-import { buildSuccessRateChartSpec } from '../lib/success-rate'
+import {
+  buildSuccessRateChartSpec,
+  type SuccessRatePoint,
+} from '../lib/success-rate'
 
 function getChartThemeTokens(resolvedTheme: string) {
   return {
@@ -41,11 +43,11 @@ function getChartThemeTokens(resolvedTheme: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Success rate over the last 24 hours.
+// Success rate over the requested time window.
 // ---------------------------------------------------------------------------
 
 export function SuccessRateTrendChart(props: {
-  series: UptimeDayPoint[]
+  series: SuccessRatePoint[]
   className?: string
 }) {
   const { t } = useTranslation()

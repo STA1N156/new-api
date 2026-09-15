@@ -97,7 +97,7 @@ export function Playground() {
       <div className='mx-auto w-full max-w-4xl'>
         <PlaygroundInput
           config={config}
-          disabled={isGenerating}
+          disabled={isGenerating || isLoadingMessages}
           groups={groups}
           groupValue={config.group}
           isGenerating={isGenerating}

@@ -74,15 +74,15 @@ export function usePlaygroundState() {
 
     messagesSaveTimerRef.current = window.setTimeout(() => {
       messagesSaveTimerRef.current = null
-      saveMessages(latestMessagesRef.current)
+      void saveMessages(latestMessagesRef.current)
     }, MESSAGE_SAVE_DEBOUNCE_MS)
   }, [])
 
   useEffect(() => {
     let cancelled = false
 
-    window.setTimeout(() => {
-      const loadedMessages = loadMessages() ?? []
+    void loadMessages().then((loaded) => {
+      const loadedMessages = loaded ?? []
       if (cancelled) {
         return
       }
@@ -91,7 +91,7 @@ export function usePlaygroundState() {
       hasLoadedMessagesRef.current = true
       setMessages(loadedMessages)
       setIsLoadingMessages(false)
-    }, 0)
+    })
 
     return () => {
       cancelled = true
@@ -102,7 +102,7 @@ export function usePlaygroundState() {
     () => () => {
       if (messagesSaveTimerRef.current !== null) {
         window.clearTimeout(messagesSaveTimerRef.current)
-        saveMessages(latestMessagesRef.current)
+        void saveMessages(latestMessagesRef.current)
       }
     },
     []

@@ -33,7 +33,7 @@ import {
 import type { PerfModelSummary } from '@/features/performance-metrics/types'
 import { cn } from '@/lib/utils'
 
-const PERFORMANCE_WINDOW_HOURS = 24
+const PERFORMANCE_WINDOW_HOURS = 6
 const TOP_MODEL_LIMIT = 6
 
 type WeightedMetric = 'avg_latency_ms' | 'avg_tps' | 'success_rate'

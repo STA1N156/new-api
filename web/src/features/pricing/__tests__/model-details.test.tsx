@@ -63,7 +63,7 @@ beforeEach(() => {
 })
 afterEach(() => client.clear())
 
-it('keeps only the summary and success rate chart in the performance tab', async () => {
+it('loads six-hour performance data without incident counts', async () => {
   render(
     <ThemeProvider>
       <QueryClientProvider client={client}>
@@ -71,13 +71,16 @@ it('keeps only the summary and success rate chart in the performance tab', async
       </QueryClientProvider>
     </ThemeProvider>
   )
-  expect(await screen.findByText('Success rate (last 24h)')).toBeVisible()
+  expect(await screen.findByText('Success rate (last 6h)')).toBeVisible()
+  expect(perfApi.getPerfMetrics).toHaveBeenCalledWith(model.model_name, 6)
   expect(screen.queryByText('Availability (last 24h)')).not.toBeInTheDocument()
   expect(screen.queryByText('Per-group performance')).not.toBeInTheDocument()
   expect(screen.queryByText('Latency trend (last 24h)')).not.toBeInTheDocument()
   expect(screen.queryByRole('table')).not.toBeInTheDocument()
   expect(screen.getByText('TPS')).toBeVisible()
   expect(screen.getByText('Success rate')).toBeVisible()
+  expect(screen.getByText('Last 6 hours')).toBeVisible()
+  expect(screen.queryByText(/incidents/i)).not.toBeInTheDocument()
 })
 
 it('keeps the model-name copy button working inside Details', async () => {
@@ -101,5 +104,6 @@ it('keeps the model-name copy button working inside Details', async () => {
   expect(await navigator.clipboard.readText()).toBe('example-model')
   expect(screen.getByRole('button', { name: 'Copied' })).toBeVisible()
   fireEvent.click(screen.getByRole('tab', { name: 'Performance' }))
-  expect(await screen.findByText('Success rate (last 24h)')).toBeVisible()
+  expect(await screen.findByText('Success rate (last 6h)')).toBeVisible()
+  expect(perfApi.getPerfMetrics).toHaveBeenCalledWith(model.model_name, 6)
 })

@@ -32,8 +32,10 @@ import { FestivalWheel } from './festival-wheel'
 export function FestivalDrawPanel(props: {
   data: FestivalStatus
   onRefresh: () => void
+  onDrawSnapshotChange?: (snapshot: FestivalStatus | null) => void
 }) {
   const { t } = useTranslation()
+  const { onDrawSnapshotChange } = props
   const userId = useAuthStore((state) => state.auth.user?.id)
   const storageKey = `festival-draw:${props.data.campaign}:${userId}`
   const [pendingId, setPendingId] = useState(() =>
@@ -42,7 +44,10 @@ export function FestivalDrawPanel(props: {
   const [rotation, setRotation] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const [result, setResult] = useState<number | null>(null)
-  const finishSpin = useCallback(() => setSpinning(false), [])
+  const finishSpin = useCallback(() => {
+    setSpinning(false)
+    onDrawSnapshotChange?.(null)
+  }, [onDrawSnapshotChange])
 
   function clearPending() {
     sessionStorage.removeItem(storageKey)
@@ -79,6 +84,7 @@ export function FestivalDrawPanel(props: {
     onSuccess: (response) => {
       clearPending()
       if (!response.success) {
+        onDrawSnapshotChange?.(null)
         toast.error(t(response.message || 'Draw failed'))
         props.onRefresh()
         return
@@ -87,6 +93,7 @@ export function FestivalDrawPanel(props: {
       props.onRefresh()
     },
     onError: () => {
+      onDrawSnapshotChange?.(null)
       toast.error(
         t(
           'The result could not be confirmed. Retry safely; the same draw will not be charged twice.'
@@ -120,6 +127,7 @@ export function FestivalDrawPanel(props: {
             const id = pendingId || crypto.randomUUID()
             sessionStorage.setItem(storageKey, id)
             setPendingId(id)
+            onDrawSnapshotChange?.(props.data)
             draw.mutate(id)
           }}
         >

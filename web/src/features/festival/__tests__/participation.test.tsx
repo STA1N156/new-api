@@ -24,11 +24,13 @@ import {
   RouterProvider,
 } from '@tanstack/react-router'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 
+import { Festival } from '..'
 import type { FestivalStatus } from '../api'
 import { FestivalDrawPanel } from '../components/festival-draw-panel'
 import { FestivalProgress } from '../components/festival-progress'
@@ -84,11 +86,11 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-async function renderPanel() {
+async function renderPanel(content?: ReactNode) {
   const root = createRootRoute({
     component: () => (
       <QueryClientProvider client={client}>
-        <FestivalDrawPanel data={status} onRefresh={refresh} />
+        {content ?? <FestivalDrawPanel data={status} onRefresh={refresh} />}
       </QueryClientProvider>
     ),
   })
@@ -141,6 +143,62 @@ it('uses the server prize, blocks another draw during animation, and shows the c
   expect(screen.getByText('You won 300🍪!')).toBeVisible()
   expect(screen.getByRole('button', { name: 'Draw now' })).toBeEnabled()
   expect(sessionStorage.getItem('festival-draw:autumn-2026:42')).toBeNull()
+})
+
+it('reveals the updated total and history only after the wheel stops, even when status refreshes during the spin', async () => {
+  status.won_cookies = 50
+  status.remaining = 2
+  const previous = {
+    id: 1,
+    request_id: 'previous-draw',
+    number: 1,
+    cookies: 50,
+    created_at: status.server_time - 60,
+  }
+  const prize = {
+    id: 2,
+    request_id: 'current-draw',
+    number: 2,
+    cookies: 300,
+    created_at: status.server_time,
+  }
+  status.records = [previous]
+  client.setQueryData(['festival', 42], status)
+  vi.spyOn(api, 'post').mockResolvedValue({
+    data: { success: true, data: prize },
+  })
+  vi.spyOn(api, 'get').mockResolvedValue({
+    data: {
+      success: true,
+      data: {
+        ...status,
+        won_cookies: 350,
+        remaining: 1,
+        records: [prize, previous],
+      },
+    },
+  })
+  const button = await renderPanel(<Festival />)
+  vi.useFakeTimers()
+  await act(async () => {
+    fireEvent.click(button)
+  })
+  await act(async () => {
+    vi.advanceTimersByTime(0)
+    await client.refetchQueries({ queryKey: ['festival', 42] })
+  })
+  await act(async () => {
+    vi.advanceTimersByTime(3000)
+  })
+  expect(screen.getByRole('button', { name: 'Drawing…' })).toBeDisabled()
+  expect(screen.queryByText('350🍪')).not.toBeInTheDocument()
+  expect(screen.queryByText('+300🍪')).not.toBeInTheDocument()
+  await act(async () => {
+    vi.advanceTimersByTime(500)
+  })
+  expect(screen.getByText('You won 300🍪!')).toBeVisible()
+  expect(screen.getByText('350🍪')).toBeVisible()
+  expect(screen.getByText('+300🍪')).toBeVisible()
 })
 
 it('retries an uncertain network result with the same request ID instead of spending twice', async () => {

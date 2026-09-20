@@ -24,12 +24,13 @@ import {
   RefreshCw,
   Ticket,
 } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 
-import { useFestival } from './api'
+import { useFestival, type FestivalStatus } from './api'
 import { FestivalDrawPanel } from './components/festival-draw-panel'
 import { FestivalGate } from './components/festival-gate'
 import { FestivalProgress } from './components/festival-progress'
@@ -37,6 +38,9 @@ import { FestivalProgress } from './components/festival-progress'
 export function Festival() {
   const { t } = useTranslation()
   const { data, isPending, isError, refetch } = useFestival()
+  const [drawSnapshot, setDrawSnapshot] = useState<FestivalStatus | null>(null)
+  const wonCookies = drawSnapshot?.won_cookies ?? data?.won_cookies ?? 0
+  const records = drawSnapshot?.records ?? data?.records ?? []
   return (
     <SectionPageLayout>
       <SectionPageLayout.Title>{t('Autumn Festival')}</SectionPageLayout.Title>
@@ -124,7 +128,7 @@ export function Festival() {
                     },
                     {
                       label: t('Total prizes received'),
-                      value: `${data.won_cookies.toLocaleString()}🍪`,
+                      value: `${wonCookies.toLocaleString()}🍪`,
                       icon: Gift,
                     },
                   ].map(({ label, value, icon: Icon }) => (
@@ -147,10 +151,11 @@ export function Festival() {
                     <FestivalDrawPanel
                       data={data}
                       onRefresh={() => void refetch()}
+                      onDrawSnapshotChange={setDrawSnapshot}
                     />
                     <section className='order-2 rounded-2xl border p-5 sm:p-6 lg:order-none'>
                       <h3 className='font-semibold'>{t('My draw history')}</h3>
-                      {data.records.length === 0 ? (
+                      {records.length === 0 ? (
                         <p className='text-muted-foreground py-7 text-center text-sm'>
                           {t(
                             'Your first festival prize is waiting. Earn a chance to get started.'
@@ -158,7 +163,7 @@ export function Festival() {
                         </p>
                       ) : (
                         <ul className='mt-3 divide-y'>
-                          {data.records.map((record) => (
+                          {records.map((record) => (
                             <li
                               key={record.id}
                               className='flex flex-wrap items-center justify-between gap-2 py-3 text-sm'

@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import { Check } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Dialog } from '@/components/dialog'
@@ -28,6 +29,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { getPricing } from '@/features/pricing/api'
 import { getDisplayGroupRatio } from '@/features/pricing/lib/model-helpers'
 import { formatQuotaWithCurrency, getCurrencyDisplay } from '@/lib/currency'
@@ -44,6 +46,7 @@ export function SubscriptionScopeDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { t } = useTranslation()
+  const [billingFilter, setBillingFilter] = useState('all')
   const user = useAuthStore((state) => state.auth.user)
   const { config, meta } = getCurrencyDisplay()
   const { data, isPending, isError, refetch } = useQuery({
@@ -61,16 +64,32 @@ export function SubscriptionScopeDialog({
   const models = new Map(
     (data?.data || []).map((model) => [model.model_name, model])
   )
-  const names = restricted ? plan.allowed_models || [] : [...models.keys()]
+  const names = [
+    ...(restricted ? plan.allowed_models || [] : models.keys()),
+  ].sort((a, b) =>
+    a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' })
+  )
+  const visibleModels = names
+    .map((name) => {
+      const model = models.get(name)
+      const perRequest =
+        model?.quota_type === 1 && model.billing_mode !== 'tiered_expr'
+      return { name, model, perRequest }
+    })
+    .filter(
+      ({ model, perRequest }) =>
+        billingFilter === 'all' ||
+        (model && perRequest === (billingFilter === 'request'))
+    )
   const cycles = getPlanQuotaRows(plan, t).map((cycle) => {
     let label = formatQuotaPeriodLabel(cycle.periodSeconds, t, 'available')
     if (!Number.isFinite(cycle.periodSeconds)) {
-      label = t('Available during validity')
+      label = t('Total available during validity')
     } else if (
       cycle.key === 'primary' &&
       plan.quota_reset_period === 'monthly'
     ) {
-      label = t('Available every month')
+      label = t('Total available every month')
     }
     return { ...cycle, label }
   })
@@ -88,13 +107,32 @@ export function SubscriptionScopeDialog({
       <p className='text-muted-foreground text-sm'>
         {t(
           restricted
-            ? 'Only selected models can use this plan quota.'
-            : 'This plan quota can be used with all models.'
+            ? 'The following models can use this plan quota. Expand to view each cycle limit.'
+            : 'This plan quota applies to all models. Expand to view each cycle limit.'
         )}
       </p>
-      <p className='text-muted-foreground text-sm'>
-        {t('Models share the plan quota. Each cycle shows its full allowance.')}
-      </p>
+      <ToggleGroup
+        value={[billingFilter]}
+        onValueChange={([value]) => value && setBillingFilter(value)}
+        variant='outline'
+        size='sm'
+        aria-label={t('Billing Mode')}
+      >
+        {[
+          { value: 'all', label: t('All') },
+          { value: 'request', label: t('Per-request') },
+          { value: 'usage', label: t('By usage') },
+        ].map(({ value, label }) => (
+          <ToggleGroupItem
+            key={value}
+            value={value}
+            disabled={value !== 'all' && !data}
+            className='data-pressed:bg-primary/15 data-pressed:text-primary data-pressed:hover:bg-primary/20 min-w-16'
+          >
+            {label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
       {isError && (
         <div className='text-muted-foreground flex items-center justify-between gap-2 text-xs'>
           <span>
@@ -110,13 +148,15 @@ export function SubscriptionScopeDialog({
           {t('Loading...')}
         </p>
       )}
+      {!isPending && !isError && visibleModels.length === 0 && (
+        <p className='text-muted-foreground py-4 text-center text-sm'>
+          {t('No models match the selected filters')}
+        </p>
+      )}
       <Accordion multiple aria-label={t('Available Models')}>
-        {names.map((name) => {
-          const model = models.get(name)
-          const perRequest =
-            model?.quota_type === 1 && model.billing_mode !== 'tiered_expr'
+        {visibleModels.map(({ name, model, perRequest }) => {
           const price =
-            perRequest && typeof model.model_price === 'number'
+            perRequest && typeof model?.model_price === 'number'
               ? model.model_price *
                 getDisplayGroupRatio(
                   { ...model, group_ratio: data?.group_ratio },
@@ -161,13 +201,6 @@ export function SubscriptionScopeDialog({
                       )
                     })}
                   </dl>
-                )}
-                {showCalls && (
-                  <p className='text-muted-foreground mt-2 text-xs'>
-                    {t(
-                      'Call counts are estimated from current model and group prices, rounded to the nearest integer.'
-                    )}
-                  </p>
                 )}
               </AccordionContent>
             </AccordionItem>

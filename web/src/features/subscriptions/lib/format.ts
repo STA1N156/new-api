@@ -34,7 +34,7 @@ export function formatQuotaPeriodLabel(
   if (seconds % 86400 === 0) {
     return t(
       kind === 'available'
-        ? 'Available every {{count}} days'
+        ? 'Total available every {{count}} days'
         : 'Quota per {{count}} days',
       { count: seconds / 86400 }
     )
@@ -42,7 +42,7 @@ export function formatQuotaPeriodLabel(
   if (seconds % 3600 === 0) {
     return t(
       kind === 'available'
-        ? 'Available every {{count}} hours'
+        ? 'Total available every {{count}} hours'
         : 'Quota per {{count}} hours',
       { count: seconds / 3600 }
     )
@@ -50,14 +50,14 @@ export function formatQuotaPeriodLabel(
   if (seconds % 60 === 0) {
     return t(
       kind === 'available'
-        ? 'Available every {{count}} minutes'
+        ? 'Total available every {{count}} minutes'
         : 'Quota per {{count}} minutes',
       { count: seconds / 60 }
     )
   }
   return t(
     kind === 'available'
-      ? 'Available every {{count}} seconds'
+      ? 'Total available every {{count}} seconds'
       : 'Quota per {{count}} seconds',
     { count: seconds }
   )

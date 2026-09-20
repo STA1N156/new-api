@@ -170,10 +170,9 @@ it('shows purchased subscription usage as separate cycle percentages', async () 
       <SubscriptionPlansCard topupInfo={null} />
     </I18nextProvider>
   )
-  expect(await screen.findByRole('meter', { name: '每7天额度' })).toHaveAttribute(
-    'aria-valuenow',
-    '40'
-  )
+  expect(
+    await screen.findByRole('meter', { name: '每7天额度' })
+  ).toHaveAttribute('aria-valuenow', '40')
   expect(screen.getByRole('meter', { name: '每5小时额度' })).toHaveAttribute(
     'aria-valuenow',
     '100'
@@ -250,8 +249,8 @@ it('expands each model separately and shows every cycle allowance without starti
   expect(await panel.findByText('50🍪')).toBeVisible()
   expect(panel.getByText('270🍪')).toBeVisible()
   expect(panel.getAllByRole('term').map((item) => item.textContent)).toEqual([
-    '每5小时可用',
-    '每7天可用',
+    '每5小时总可用',
+    '每7天总可用',
   ])
   expect(second).toHaveAttribute('aria-expanded', 'false')
   await user.click(second)

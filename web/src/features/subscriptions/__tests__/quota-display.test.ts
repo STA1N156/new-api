@@ -43,10 +43,10 @@ describe('subscription quota descriptions', () => {
         i18n.t
       )
     ).toEqual([
-      { key: '18000', label: '5小时额度', amount: 50, periodSeconds: 18000 },
+      { key: '18000', label: '每5小时额度', amount: 50, periodSeconds: 18000 },
       {
         key: 'primary',
-        label: '7天额度',
+        label: '每7天额度',
         amount: 270,
         periodSeconds: 604800,
       },
@@ -78,7 +78,7 @@ describe('subscription quota descriptions', () => {
         },
         i18n.t
       ).map((row) => row.label)
-    ).toEqual(['5小时额度', i18n.t('Daily Quota'), '7天额度'])
+    ).toEqual(['每5小时额度', i18n.t('Daily Quota'), '每7天额度'])
     expect(
       getPlanQuotaRows(
         {

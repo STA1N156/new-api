@@ -26,6 +26,51 @@ import { api } from '@/lib/api'
 import { SubscriptionsMutateDrawer } from '../components/subscriptions-mutate-drawer'
 import { SubscriptionsProvider } from '../components/subscriptions-provider'
 
+it('requires a selection when model restrictions are enabled and saves the selected models', async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  vi.spyOn(api, 'get').mockImplementation(async (url) => ({
+    data: {
+      success: true,
+      data: url === '/api/channel/models_enabled' ? ['model-a', 'model-b'] : [],
+    },
+  }))
+  const post = vi
+    .spyOn(api, 'post')
+    .mockResolvedValue({ data: { success: true } })
+  const user = userEvent.setup()
+  render(
+    <QueryClientProvider client={client}>
+      <SubscriptionsProvider>
+        <SubscriptionsMutateDrawer open onOpenChange={() => undefined} />
+      </SubscriptionsProvider>
+    </QueryClientProvider>
+  )
+  await user.type(screen.getByLabelText('Plan Title'), 'Selected models')
+  await user.click(
+    screen.getByRole('switch', { name: 'Restrict available models' })
+  )
+  await user.click(screen.getByRole('button', { name: 'Save changes' }))
+  expect(
+    await screen.findByText('Select at least one available model')
+  ).toBeVisible()
+  expect(post).not.toHaveBeenCalled()
+  await user.click(screen.getByPlaceholderText('Search or enter model names'))
+  await user.click(await screen.findByRole('option', { name: 'model-a' }))
+  await user.keyboard('{Escape}')
+  await user.click(screen.getByRole('button', { name: 'Save changes' }))
+  await waitFor(() =>
+    expect(post).toHaveBeenCalledWith(
+      '/api/subscription/admin/plans',
+      expect.objectContaining({
+        plan: expect.objectContaining({ allowed_models: ['model-a'] }),
+      })
+    )
+  )
+  client.clear()
+})
+
 it('adds and removes cycles, rejects duplicates and saves distinct cycle limits', async () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },

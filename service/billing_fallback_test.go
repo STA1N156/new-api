@@ -24,6 +24,7 @@ func TestBillingSubscriptionFallback(t *testing.T) {
 		token         int
 		wantSource    string
 		wantErrorCode types.ErrorCode
+		allowedModels model.SubscriptionModels
 	}{
 		{name: "short cycle has 3 but request needs 4", preference: "subscription_first", primaryLeft: 200, cycleLeft: 3, wallet: 20, token: 20, wantSource: BillingSourceWallet},
 		{name: "short cycle exhausted", preference: "subscription_first", primaryLeft: 200, cycleLeft: 0, wallet: 20, token: 20, wantSource: BillingSourceWallet},
@@ -31,6 +32,9 @@ func TestBillingSubscriptionFallback(t *testing.T) {
 		{name: "subscription exactly covers request", preference: "subscription_first", primaryLeft: 200, cycleLeft: 4, wallet: 20, token: 20, wantSource: BillingSourceSubscription},
 		{name: "subscription only does not charge wallet", preference: "subscription_only", primaryLeft: 200, cycleLeft: 3, wallet: 20, token: 20, wantErrorCode: types.ErrorCodeInsufficientUserQuota},
 		{name: "neither source covers request", preference: "subscription_first", primaryLeft: 200, cycleLeft: 3, wallet: 3, token: 20, wantErrorCode: types.ErrorCodeInsufficientUserQuota},
+		{name: "allowed model uses subscription", preference: "subscription_first", primaryLeft: 200, cycleLeft: 50, wallet: 20, token: 20, allowedModels: model.SubscriptionModels{"public-model"}, wantSource: BillingSourceSubscription},
+		{name: "unselected model falls back to wallet", preference: "subscription_first", primaryLeft: 200, cycleLeft: 50, wallet: 20, token: 20, allowedModels: model.SubscriptionModels{"upstream-model"}, wantSource: BillingSourceWallet},
+		{name: "subscription only rejects unselected model", preference: "subscription_only", primaryLeft: 200, cycleLeft: 50, wallet: 20, token: 20, allowedModels: model.SubscriptionModels{"upstream-model"}, wantErrorCode: types.ErrorCodeInsufficientUserQuota},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -54,6 +58,7 @@ func TestBillingSubscriptionFallback(t *testing.T) {
 			user := model.User{Id: 1, Username: "billing-user", Quota: tc.wallet}
 			token := model.Token{Id: 1, UserId: user.Id, Key: "billing-token", RemainQuota: tc.token}
 			plan := model.SubscriptionPlan{Id: 1, Title: "Weekly and five-hour", QuotaResetPeriod: model.SubscriptionResetNever}
+			plan.AllowedModels = tc.allowedModels
 			now := common.GetTimestamp()
 			sub := model.UserSubscription{
 				UserId: user.Id, PlanId: plan.Id, Status: "active", StartTime: now, EndTime: now + 28*86400,
@@ -68,6 +73,7 @@ func TestBillingSubscriptionFallback(t *testing.T) {
 			model.InvalidateSubscriptionPlanCache(plan.Id)
 			info := &relaycommon.RelayInfo{
 				RequestId: "fallback-request", UserId: user.Id, TokenId: token.Id, TokenKey: token.Key, ForcePreConsume: true,
+				OriginModelName: "public-model",
 			}
 			info.UserSetting.BillingPreference = tc.preference
 			ctx, _ := gin.CreateTestContext(nil)

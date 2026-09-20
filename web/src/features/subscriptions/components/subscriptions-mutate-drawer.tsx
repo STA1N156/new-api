@@ -31,6 +31,7 @@ import {
   sideDrawerHeaderClassName,
   sideDrawerSwitchItemClassName,
 } from '@/components/drawer-layout'
+import { MultiSelect, type Option } from '@/components/multi-select'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -61,6 +62,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
+import { getEnabledModels } from '@/features/channels/api'
 import { getCurrencyDisplay, getCurrencyLabel } from '@/lib/currency'
 
 import {
@@ -100,6 +102,7 @@ export function SubscriptionsMutateDrawer({
   const currencyLabel = getCurrencyLabel()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [groupOptions, setGroupOptions] = useState<string[]>([])
+  const [modelOptions, setModelOptions] = useState<Option[]>([])
   const [creatingPancakeProduct, setCreatingPancakeProduct] = useState(false)
   const [pancakeProducts, setPancakeProducts] = useState<
     { id: string; name: string; status: string }[]
@@ -127,6 +130,15 @@ export function SubscriptionsMutateDrawer({
           if (res.success) setGroupOptions(res.data || [])
         })
         .catch(() => {})
+      getEnabledModels()
+        .then((res) => {
+          if (res.success) {
+            setModelOptions(
+              (res.data || []).map((name) => ({ label: name, value: name }))
+            )
+          }
+        })
+        .catch(() => {})
       // Best-effort — empty list still lets the operator use "+ Create".
       listWaffoPancakeSubscriptionProductOptions()
         .then((res) => {
@@ -149,6 +161,7 @@ export function SubscriptionsMutateDrawer({
 
   const durationUnit = form.watch('duration_unit')
   const resetPeriod = form.watch('quota_reset_period')
+  const restrictModels = form.watch('restrict_models')
   // Gate "+ Create on Pancake" on the same checks the mint handler runs.
   const watchedTitle = form.watch('title')
   const watchedPrice = form.watch('price_amount')
@@ -565,6 +578,56 @@ export function SubscriptionsMutateDrawer({
                   )}
                 />
               </div>
+            </SideDrawerSection>
+
+            <SideDrawerSection>
+              <FormField
+                control={form.control}
+                name='restrict_models'
+                render={({ field }) => (
+                  <FormItem className={sideDrawerSwitchItemClassName()}>
+                    <div className='space-y-1'>
+                      <FormLabel>{t('Restrict available models')}</FormLabel>
+                      <FormDescription>
+                        {t(
+                          'When disabled, the plan covers all models. Changes also apply to existing subscribers.'
+                        )}
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              {restrictModels && (
+                <FormField
+                  control={form.control}
+                  name='allowed_models'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('Available Models')}</FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={modelOptions}
+                          selected={field.value}
+                          onChange={field.onChange}
+                          placeholder={t('Search or enter model names')}
+                          allowCreate
+                          maxVisibleChips={6}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t('Only selected models can use this plan quota.')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </SideDrawerSection>
 
             {/* Duration Settings */}

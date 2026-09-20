@@ -16,9 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { render, screen, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render as renderUI, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createInstance } from 'i18next'
+import type { ReactElement } from 'react'
 import { I18nextProvider } from 'react-i18next'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
@@ -26,6 +28,7 @@ import type { UserSubscriptionRecord } from '@/features/subscriptions/types'
 import { SubscriptionPlansCard } from '@/features/wallet/components/subscription-plans-card'
 import zh from '@/i18n/locales/zh.json'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   DEFAULT_CURRENCY_CONFIG,
   useSystemConfigStore,
@@ -36,10 +39,32 @@ await i18n.init({ lng: 'zh', resources: { zh } })
 const initialConfig = useSystemConfigStore.getState().config
 let subscriptions: UserSubscriptionRecord[] = []
 let allowBalancePay: boolean | undefined
+let allowedModels: string[] | undefined
+let planUpgradeGroup: string | undefined
+let pricingFails = false
+let requestPrice = 20
+let queryClient: QueryClient
+const initialUser = useAuthStore.getState().auth.user
+
+function render(ui: ReactElement) {
+  return renderUI(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  )
+}
 
 beforeEach(() => {
   subscriptions = []
   allowBalancePay = undefined
+  allowedModels = undefined
+  planUpgradeGroup = undefined
+  pricingFails = false
+  requestPrice = 20
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  useAuthStore
+    .getState()
+    .auth.setUser({ id: 1, username: 'test', role: 1, group: 'default' })
   useSystemConfigStore.getState().setConfig({
     currency: {
       ...DEFAULT_CURRENCY_CONFIG,
@@ -49,6 +74,28 @@ beforeEach(() => {
     },
   })
   vi.spyOn(api, 'get').mockImplementation(async (url) => {
+    if (url === '/api/pricing') {
+      if (pricingFails) throw new Error('offline')
+      return {
+        data: {
+          success: true,
+          data: [
+            {
+              model_name: 'model-a',
+              quota_type: 0,
+              enable_groups: ['default'],
+            },
+            {
+              model_name: 'model-b',
+              quota_type: 1,
+              model_price: requestPrice,
+              enable_groups: ['default', 'cheaper', 'premium'],
+            },
+          ],
+          group_ratio: { default: 2, cheaper: 0.5, premium: 4 },
+        },
+      }
+    }
     if (url === '/api/subscription/plans') {
       return {
         data: {
@@ -60,6 +107,8 @@ beforeEach(() => {
                 title: '月度套餐',
                 price_amount: 28,
                 allow_balance_pay: allowBalancePay,
+                allowed_models: allowedModels,
+                upgrade_group: planUpgradeGroup,
                 currency: 'USD',
                 duration_unit: 'day',
                 duration_value: 28,
@@ -121,17 +170,17 @@ it('shows purchased subscription usage as separate cycle percentages', async () 
       <SubscriptionPlansCard topupInfo={null} />
     </I18nextProvider>
   )
-  expect(await screen.findByRole('meter', { name: '7天额度' })).toHaveAttribute(
+  expect(await screen.findByRole('meter', { name: '每7天额度' })).toHaveAttribute(
     'aria-valuenow',
     '40'
   )
-  expect(screen.getByRole('meter', { name: '5小时额度' })).toHaveAttribute(
+  expect(screen.getByRole('meter', { name: '每5小时额度' })).toHaveAttribute(
     'aria-valuenow',
     '100'
   )
   expect(screen.getByText(i18n.t('Waiting for reset'))).toBeVisible()
   for (const region of screen.getAllByRole('region', {
-    name: /^(7天|5小时)额度$/,
+    name: /^每(7天|5小时)额度$/,
   })) {
     expect(region).toHaveTextContent('🍪')
     expect(region).toHaveTextContent('%')
@@ -139,6 +188,8 @@ it('shows purchased subscription usage as separate cycle percentages', async () 
 })
 
 afterEach(() => {
+  queryClient.clear()
+  useAuthStore.getState().auth.setUser(initialUser)
   useSystemConfigStore.getState().setConfig(initialConfig)
   localStorage.clear()
 })
@@ -151,29 +202,136 @@ it('shows yuan prices and both quota cycles on the card and purchase dialog', as
     </I18nextProvider>
   )
   expect(await screen.findByText('¥28.00')).toBeVisible()
-  expect(screen.getByText(/7天额度:.*270/)).toBeVisible()
-  expect(screen.getByText(/5小时额度:.*50/)).toBeVisible()
+  expect(screen.getByText(/每7天额度:.*270/)).toBeVisible()
+  expect(screen.getByText(/每5小时额度:.*50/)).toBeVisible()
   expect(screen.queryByText(/^总额度:/)).not.toBeInTheDocument()
   expect(
     screen
-      .getAllByText(/^(5小时|7天)额度:/)
+      .getAllByText(/^每(5小时|7天)额度:/)
       .map((element) => element.textContent?.split(':')[0])
-  ).toEqual(['5小时额度', '7天额度'])
+  ).toEqual(['每5小时额度', '每7天额度'])
   await user.click(
     screen.getByRole('button', { name: i18n.t('Subscribe Now') })
   )
   const dialog = within(await screen.findByRole('dialog'))
   expect(dialog.getByText('¥28.00')).toBeVisible()
-  expect(dialog.getByText('7天额度')).toBeVisible()
-  expect(dialog.getByText('5小时额度')).toBeVisible()
+  expect(dialog.getByText('每7天额度')).toBeVisible()
+  expect(dialog.getByText('每5小时额度')).toBeVisible()
   expect(
     dialog
-      .getAllByText(/^(5小时|7天)额度$/)
+      .getAllByText(/^每(5小时|7天)额度$/)
       .map((element) => element.textContent)
-  ).toEqual(['5小时额度', '7天额度'])
+  ).toEqual(['每5小时额度', '每7天额度'])
   expect(
     dialog.getByRole('button', { name: i18n.t('Pay with Balance') })
   ).toBeDisabled()
+})
+
+it('expands each model separately and shows every cycle allowance without starting a purchase', async () => {
+  allowedModels = ['model-a', 'model-b']
+  const user = userEvent.setup()
+  render(
+    <I18nextProvider i18n={i18n}>
+      <SubscriptionPlansCard topupInfo={null} />
+    </I18nextProvider>
+  )
+  await user.click(
+    await screen.findByRole('button', { name: i18n.t('Usage scope') })
+  )
+  const dialog = within(
+    await screen.findByRole('dialog', { name: i18n.t('Usage scope') })
+  )
+  const first = dialog.getByRole('button', { name: 'model-a' })
+  const second = dialog.getByRole('button', { name: 'model-b' })
+  expect(first).toHaveAttribute('aria-expanded', 'false')
+  expect(second).toHaveAttribute('aria-expanded', 'false')
+  await user.click(first)
+  const panel = within(await dialog.findByRole('region', { name: 'model-a' }))
+  expect(await panel.findByText('50🍪')).toBeVisible()
+  expect(panel.getByText('270🍪')).toBeVisible()
+  expect(panel.getAllByRole('term').map((item) => item.textContent)).toEqual([
+    '每5小时可用',
+    '每7天可用',
+  ])
+  expect(second).toHaveAttribute('aria-expanded', 'false')
+  await user.click(second)
+  expect(first).toHaveAttribute('aria-expanded', 'true')
+  expect(second).toHaveAttribute('aria-expanded', 'true')
+  expect(
+    dialog.queryByRole('button', { name: i18n.t('Pay with Balance') })
+  ).not.toBeInTheDocument()
+})
+
+it.each([
+  { upgrade: undefined, price: 20, counts: ['1 次', '7 次'] },
+  { upgrade: 'premium', price: 20, counts: ['1 次', '3 次'] },
+  { upgrade: undefined, price: 10, counts: ['3 次', '14 次'] },
+])(
+  'rounds per-request counts using the applicable group ($upgrade)',
+  async ({ upgrade, price, counts }) => {
+    allowedModels = ['model-b']
+    planUpgradeGroup = upgrade
+    requestPrice = price
+    useSystemConfigStore.getState().setConfig({
+      currency: {
+        ...useSystemConfigStore.getState().config.currency,
+        customCurrencyExchangeRate: 10,
+      },
+    })
+    const user = userEvent.setup()
+    render(
+      <I18nextProvider i18n={i18n}>
+        <SubscriptionPlansCard topupInfo={null} />
+      </I18nextProvider>
+    )
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('Usage scope') })
+    )
+    await user.click(await screen.findByRole('button', { name: 'model-b' }))
+    const panel = within(await screen.findByRole('region', { name: 'model-b' }))
+    for (const count of counts) {
+      expect(await panel.findByText(count)).toBeVisible()
+    }
+    expect(panel.queryByText(/🍪/)).not.toBeInTheDocument()
+  }
+)
+
+it('keeps cycle quotas visible when model pricing cannot be loaded', async () => {
+  allowedModels = ['model-b']
+  pricingFails = true
+  const user = userEvent.setup()
+  render(
+    <I18nextProvider i18n={i18n}>
+      <SubscriptionPlansCard topupInfo={null} />
+    </I18nextProvider>
+  )
+  await user.click(
+    await screen.findByRole('button', { name: i18n.t('Usage scope') })
+  )
+  await user.click(await screen.findByRole('button', { name: 'model-b' }))
+  expect(
+    await screen.findByText(
+      i18n.t('Pricing unavailable; showing quota instead of call counts.')
+    )
+  ).toBeVisible()
+  const panel = within(await screen.findByRole('region', { name: 'model-b' }))
+  expect(await panel.findByText('50🍪')).toBeVisible()
+  expect(panel.getByText('270🍪')).toBeVisible()
+  expect(panel.queryByText(/次$/)).not.toBeInTheDocument()
+})
+
+it('shows unrestricted scope for legacy plans without a model list', async () => {
+  const user = userEvent.setup()
+  render(
+    <I18nextProvider i18n={i18n}>
+      <SubscriptionPlansCard topupInfo={null} />
+    </I18nextProvider>
+  )
+  await user.click(
+    await screen.findByRole('button', { name: i18n.t('Usage scope') })
+  )
+  const dialog = within(await screen.findByRole('dialog'))
+  expect(dialog.getByText(i18n.t('All Models'))).toBeVisible()
 })
 
 it('hides the entire balance payment section when the plan disallows balance purchases', async () => {

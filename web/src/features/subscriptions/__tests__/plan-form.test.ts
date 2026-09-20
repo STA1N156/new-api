@@ -38,6 +38,29 @@ afterEach(() => {
   localStorage.clear()
 })
 
+it('requires a model for restricted plans and explicitly clears restrictions when disabled', () => {
+  const schema = getPlanFormSchema(i18next.t)
+  const values = { ...PLAN_FORM_DEFAULTS, title: 'Plan', restrict_models: true }
+  expect(schema.safeParse(values).success).toBe(false)
+  const restricted = schema.parse({
+    ...values,
+    allowed_models: ['model-a', 'model-b'],
+  })
+  const payload = formValuesToPlanPayload(restricted)
+  expect(payload.plan.allowed_models).toEqual(['model-a', 'model-b'])
+  expect(payload.plan).not.toHaveProperty('restrict_models')
+  const plan = subscriptionPlanSchema.parse({ id: 1, ...payload.plan })
+  expect(planToFormValues(plan).restrict_models).toBe(true)
+  expect(planToFormValues(plan).allowed_models).toEqual(['model-a', 'model-b'])
+  expect(
+    formValuesToPlanPayload({ ...restricted, restrict_models: false }).plan
+      .allowed_models
+  ).toEqual([])
+  expect(
+    planToFormValues({ ...plan, allowed_models: undefined }).restrict_models
+  ).toBe(false)
+})
+
 it('saves hours and displayed quota, then restores them when editing a plan', () => {
   useSystemConfigStore.getState().setConfig({
     currency: {

@@ -24,61 +24,71 @@ import { parseQuotaFromDollars, quotaUnitsToDollars } from '@/lib/format'
 import type { SubscriptionPlan, PlanPayload } from '../types'
 
 export function getPlanFormSchema(t: TFunction) {
-  return z.object({
-    title: z.string().min(1, t('Please enter plan title')),
-    subtitle: z.string().optional(),
-    price_amount: z.coerce.number().min(0, t('Please enter amount')),
-    duration_unit: z.enum(['year', 'month', 'day', 'hour', 'custom']),
-    duration_value: z.coerce.number().min(1),
-    custom_seconds: z.coerce.number().min(0).optional(),
-    quota_reset_period: z.enum([
-      'never',
-      'daily',
-      'weekly',
-      'monthly',
-      'custom',
-    ]),
-    quota_reset_custom_seconds: z.coerce.number().min(0).optional(),
-    quota_limits: z
-      .array(
-        z.object({
-          period_hours: z.coerce
-            .number()
-            .positive()
-            .max(366 * 24)
-            .refine(
-              (hours) => Number.isInteger(hours * 3600),
-              t('Cycle must be a whole number of seconds')
-            ),
-          amount_total: z.coerce
-            .number()
-            .positive()
-            .refine(
-              (amount) =>
-                parseQuotaFromDollars(amount) > 0 &&
-                Number.isSafeInteger(parseQuotaFromDollars(amount)),
-              t('Quota is out of range')
-            ),
-        })
-      )
-      .max(8)
-      .refine(
-        (limits) =>
-          new Set(limits.map((limit) => limit.period_hours)).size ===
-          limits.length,
-        t('Reset cycles must not repeat')
-      ),
-    enabled: z.boolean(),
-    sort_order: z.coerce.number(),
-    allow_balance_pay: z.boolean(),
-    max_purchase_per_user: z.coerce.number().min(0),
-    total_amount: z.coerce.number().min(0),
-    upgrade_group: z.string().optional(),
-    downgrade_group: z.string().optional(),
-    stripe_price_id: z.string().optional(),
-    creem_product_id: z.string().optional(),
-    waffo_pancake_product_id: z.string().optional(),
-  })
+  return z
+    .object({
+      title: z.string().min(1, t('Please enter plan title')),
+      subtitle: z.string().optional(),
+      price_amount: z.coerce.number().min(0, t('Please enter amount')),
+      duration_unit: z.enum(['year', 'month', 'day', 'hour', 'custom']),
+      duration_value: z.coerce.number().min(1),
+      custom_seconds: z.coerce.number().min(0).optional(),
+      quota_reset_period: z.enum([
+        'never',
+        'daily',
+        'weekly',
+        'monthly',
+        'custom',
+      ]),
+      quota_reset_custom_seconds: z.coerce.number().min(0).optional(),
+      quota_limits: z
+        .array(
+          z.object({
+            period_hours: z.coerce
+              .number()
+              .positive()
+              .max(366 * 24)
+              .refine(
+                (hours) => Number.isInteger(hours * 3600),
+                t('Cycle must be a whole number of seconds')
+              ),
+            amount_total: z.coerce
+              .number()
+              .positive()
+              .refine(
+                (amount) =>
+                  parseQuotaFromDollars(amount) > 0 &&
+                  Number.isSafeInteger(parseQuotaFromDollars(amount)),
+                t('Quota is out of range')
+              ),
+          })
+        )
+        .max(8)
+        .refine(
+          (limits) =>
+            new Set(limits.map((limit) => limit.period_hours)).size ===
+            limits.length,
+          t('Reset cycles must not repeat')
+        ),
+      enabled: z.boolean(),
+      sort_order: z.coerce.number(),
+      allow_balance_pay: z.boolean(),
+      restrict_models: z.boolean(),
+      allowed_models: z.array(z.string().trim().min(1)),
+      max_purchase_per_user: z.coerce.number().min(0),
+      total_amount: z.coerce.number().min(0),
+      upgrade_group: z.string().optional(),
+      downgrade_group: z.string().optional(),
+      stripe_price_id: z.string().optional(),
+      creem_product_id: z.string().optional(),
+      waffo_pancake_product_id: z.string().optional(),
+    })
+    .refine(
+      (values) => !values.restrict_models || values.allowed_models.length > 0,
+      {
+        message: t('Select at least one available model'),
+        path: ['allowed_models'],
+      }
+    )
 }
 
 export type PlanFormValues = z.infer<ReturnType<typeof getPlanFormSchema>>
@@ -96,6 +106,8 @@ export const PLAN_FORM_DEFAULTS: PlanFormValues = {
   enabled: true,
   sort_order: 0,
   allow_balance_pay: true,
+  restrict_models: false,
+  allowed_models: [],
   max_purchase_per_user: 0,
   total_amount: 0,
   upgrade_group: '',
@@ -122,6 +134,8 @@ export function planToFormValues(plan: SubscriptionPlan): PlanFormValues {
     enabled: plan.enabled !== false,
     sort_order: Number(plan.sort_order || 0),
     allow_balance_pay: plan.allow_balance_pay !== false,
+    restrict_models: !!plan.allowed_models?.length,
+    allowed_models: plan.allowed_models || [],
     max_purchase_per_user: Number(plan.max_purchase_per_user || 0),
     total_amount: quotaUnitsToDollars(Number(plan.total_amount || 0)),
     upgrade_group: plan.upgrade_group || '',
@@ -133,9 +147,11 @@ export function planToFormValues(plan: SubscriptionPlan): PlanFormValues {
 }
 
 export function formValuesToPlanPayload(values: PlanFormValues): PlanPayload {
+  const { restrict_models, ...planValues } = values
   return {
     plan: {
-      ...values,
+      ...planValues,
+      allowed_models: restrict_models ? values.allowed_models : [],
       price_amount: Number(values.price_amount || 0),
       currency: 'USD',
       duration_value: Number(values.duration_value || 0),

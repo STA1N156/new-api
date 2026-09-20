@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestAdminSubscriptionQuotaLimitsSavePreserveAndClear(t *testing.T) {
+func TestAdminSubscriptionPlanLimitsSavePreserveAndClear(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
 	require.NoError(t, db.AutoMigrate(&model.SubscriptionPlan{}))
@@ -42,8 +42,9 @@ func TestAdminSubscriptionQuotaLimitsSavePreserveAndClear(t *testing.T) {
 		"title": "多周期套餐", "price_amount": 28,
 		"duration_unit": "month", "duration_value": 1,
 		"quota_reset_period": "custom", "quota_reset_custom_seconds": 604800,
-		"total_amount": 300,
-		"quota_limits": []map[string]int64{{"period_seconds": 18000, "amount_total": 50}},
+		"total_amount":   300,
+		"quota_limits":   []map[string]int64{{"period_seconds": 18000, "amount_total": 50}},
+		"allowed_models": []string{" model-a ", "model-b", "model-a"},
 	}
 	send := func(method, path string, success bool) {
 		t.Helper()
@@ -64,12 +65,21 @@ func TestAdminSubscriptionQuotaLimitsSavePreserveAndClear(t *testing.T) {
 	require.NoError(t, db.First(&saved).Error)
 	require.Len(t, saved.QuotaLimits, 1)
 	assert.EqualValues(t, 50, saved.QuotaLimits[0].AmountTotal)
+	assert.Equal(t, model.SubscriptionModels{"model-a", "model-b"}, saved.AllowedModels)
 	path := "/plans/" + strconv.Itoa(saved.Id)
 
 	delete(plan, "quota_limits")
+	delete(plan, "allowed_models")
 	send(http.MethodPut, path, true)
 	require.NoError(t, db.First(&saved, saved.Id).Error)
 	require.Len(t, saved.QuotaLimits, 1)
+	assert.Equal(t, model.SubscriptionModels{"model-a", "model-b"}, saved.AllowedModels)
+
+	plan["allowed_models"] = []string{" "}
+	send(http.MethodPut, path, false)
+	require.NoError(t, db.First(&saved, saved.Id).Error)
+	assert.Equal(t, model.SubscriptionModels{"model-a", "model-b"}, saved.AllowedModels)
+	plan["allowed_models"] = []string{"model-c"}
 
 	plan["quota_limits"] = []map[string]int64{{"period_seconds": 0, "amount_total": 50}}
 	send(http.MethodPut, path, false)
@@ -80,13 +90,16 @@ func TestAdminSubscriptionQuotaLimitsSavePreserveAndClear(t *testing.T) {
 	send(http.MethodPut, path, true)
 	require.NoError(t, db.First(&saved, saved.Id).Error)
 	require.Len(t, saved.QuotaLimits, 2)
+	assert.Equal(t, model.SubscriptionModels{"model-c"}, saved.AllowedModels)
 	assert.EqualValues(t, 60, saved.QuotaLimits[0].AmountTotal)
 
 	plan["quota_limits"] = []map[string]int64{}
+	plan["allowed_models"] = []string{}
 	send(http.MethodPut, path, true)
 	saved = model.SubscriptionPlan{Id: saved.Id}
 	require.NoError(t, db.First(&saved, saved.Id).Error)
 	assert.Empty(t, saved.QuotaLimits)
+	assert.Empty(t, saved.AllowedModels)
 	assert.Equal(t, "多周期套餐", saved.Title)
 	assert.EqualValues(t, 300, saved.TotalAmount)
 	assert.EqualValues(t, 604800, saved.QuotaResetCustomSeconds)

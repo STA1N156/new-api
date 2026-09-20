@@ -50,6 +50,7 @@ import {
   updateBillingPreference,
 } from '@/features/subscriptions/api'
 import { SubscriptionPurchaseDialog } from '@/features/subscriptions/components/dialogs/subscription-purchase-dialog'
+import { SubscriptionScopeDialog } from '@/features/subscriptions/components/dialogs/subscription-scope-dialog'
 import { SubscriptionQuotaUsage } from '@/features/subscriptions/components/subscription-quota-usage'
 import {
   formatDuration,
@@ -118,6 +119,7 @@ export function SubscriptionPlansCard({
 
   const [purchaseOpen, setPurchaseOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<PlanRecord | null>(null)
+  const [scopePlan, setScopePlan] = useState<PlanRecord | null>(null)
 
   const enableStripe = !!topupInfo?.enable_stripe_topup
   const enableCreem = !!topupInfo?.enable_creem_topup
@@ -519,6 +521,13 @@ export function SubscriptionPlansCard({
 
                     <Separator className='mb-3' />
 
+                    <Button
+                      variant='outline'
+                      className='mb-2 w-full'
+                      onClick={() => setScopePlan(p)}
+                    >
+                      {t('Usage scope')}
+                    </Button>
                     {reached ? (
                       <Tooltip>
                         <TooltipTrigger render={<div />}>
@@ -553,6 +562,15 @@ export function SubscriptionPlansCard({
           </p>
         )}
       </TitledCard>
+
+      {scopePlan && (
+        <SubscriptionScopeDialog
+          plan={scopePlan.plan}
+          onOpenChange={(open) => {
+            if (!open) setScopePlan(null)
+          }}
+        />
+      )}
 
       <SubscriptionPurchaseDialog
         open={purchaseOpen}

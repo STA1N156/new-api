@@ -26,17 +26,41 @@ export function formatSubscriptionPrice(amount: number): string {
   return `¥${Number(amount || 0).toFixed(2)}`
 }
 
-export function formatQuotaPeriodLabel(seconds: number, t: TFunction): string {
+export function formatQuotaPeriodLabel(
+  seconds: number,
+  t: TFunction,
+  kind: 'quota' | 'available' = 'quota'
+): string {
   if (seconds % 86400 === 0) {
-    return t('Quota per {{count}} days', { count: seconds / 86400 })
+    return t(
+      kind === 'available'
+        ? 'Available every {{count}} days'
+        : 'Quota per {{count}} days',
+      { count: seconds / 86400 }
+    )
   }
   if (seconds % 3600 === 0) {
-    return t('Quota per {{count}} hours', { count: seconds / 3600 })
+    return t(
+      kind === 'available'
+        ? 'Available every {{count}} hours'
+        : 'Quota per {{count}} hours',
+      { count: seconds / 3600 }
+    )
   }
   if (seconds % 60 === 0) {
-    return t('Quota per {{count}} minutes', { count: seconds / 60 })
+    return t(
+      kind === 'available'
+        ? 'Available every {{count}} minutes'
+        : 'Quota per {{count}} minutes',
+      { count: seconds / 60 }
+    )
   }
-  return t('Quota per {{count}} seconds', { count: seconds })
+  return t(
+    kind === 'available'
+      ? 'Available every {{count}} seconds'
+      : 'Quota per {{count}} seconds',
+    { count: seconds }
+  )
 }
 
 export function getPlanQuotaRows(

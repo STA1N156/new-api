@@ -208,6 +208,10 @@ func AdminCreateSubscriptionPlan(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if err := req.Plan.ValidateAllowedModels(); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	err := model.DB.Create(&req.Plan).Error
 	if err != nil {
 		common.ApiError(c, err)
@@ -287,6 +291,10 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if err := req.Plan.ValidateAllowedModels(); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	err := model.DB.Transaction(func(tx *gorm.DB) error {
 		// update plan (allow zero values updates with map)
 		updateMap := map[string]interface{}{
@@ -313,6 +321,9 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 		// Omitted by older clients: preserve the existing additional limits.
 		if req.Plan.QuotaLimits != nil {
 			updateMap["quota_limits"] = req.Plan.QuotaLimits
+		}
+		if req.Plan.AllowedModels != nil {
+			updateMap["allowed_models"] = req.Plan.AllowedModels
 		}
 		if req.Plan.AllowBalancePay != nil {
 			updateMap["allow_balance_pay"] = *req.Plan.AllowBalancePay

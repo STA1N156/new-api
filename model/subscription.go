@@ -185,6 +185,8 @@ type SubscriptionPlan struct {
 	QuotaResetPeriod        string                  `json:"quota_reset_period" gorm:"type:varchar(16);default:'never'"`
 	QuotaResetCustomSeconds int64                   `json:"quota_reset_custom_seconds" gorm:"type:bigint;default:0"`
 	QuotaLimits             SubscriptionQuotaLimits `json:"quota_limits" gorm:"type:text"`
+	// Empty means all models. Changes also apply to existing subscriptions.
+	AllowedModels SubscriptionModels `json:"allowed_models" gorm:"type:text"`
 
 	CreatedAt int64 `json:"created_at" gorm:"bigint"`
 	UpdatedAt int64 `json:"updated_at" gorm:"bigint"`
@@ -1356,13 +1358,19 @@ func PreConsumeUserSubscription(requestId string, userId int, modelName string, 
 		if len(subs) == 0 {
 			return errors.New("no active subscription")
 		}
+		modelAllowed := false
 		for _, candidate := range subs {
 			sub := candidate
-			plan, err := getSubscriptionPlanByIdTx(tx, sub.PlanId)
-			if err != nil {
+			// Bypass the cache so model restrictions take effect immediately on every server.
+			var plan SubscriptionPlan
+			if err := tx.First(&plan, sub.PlanId).Error; err != nil {
 				return err
 			}
-			if err := maybeResetUserSubscriptionWithPlanTx(tx, &sub, plan, now); err != nil {
+			if !plan.AllowedModels.Allows(modelName) {
+				continue
+			}
+			modelAllowed = true
+			if err := maybeResetUserSubscriptionWithPlanTx(tx, &sub, &plan, now); err != nil {
 				return err
 			}
 			usedBefore := sub.AmountUsed
@@ -1402,6 +1410,9 @@ func PreConsumeUserSubscription(requestId string, userId int, modelName string, 
 			returnValue.AmountUsedBefore = usedBefore
 			returnValue.AmountUsedAfter = sub.AmountUsed
 			return nil
+		}
+		if !modelAllowed {
+			return ErrSubscriptionModelNotAllowed
 		}
 		return fmt.Errorf("subscription quota insufficient, need=%d", amount)
 	})

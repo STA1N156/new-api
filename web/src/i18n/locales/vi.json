@@ -3952,6 +3952,7 @@
     "Response": "Phản hồi",
     "Response Time": "Thời gian phản hồi",
     "Response time: {{duration}}": "Thời gian phản hồi: {{duration}}",
+    "Cost: {{cost}}": "Chi phí: {{cost}}",
     "Responses API Version": "Phiên bản API Phản hồi",
     "Restore defaults": "Khôi phục mặc định",
     "Restore global Auto": "Khôi phục Auto toàn cục",

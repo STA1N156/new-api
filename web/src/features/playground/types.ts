@@ -37,6 +37,7 @@ export interface Message {
   startedAt?: number
   completedAt?: number
   durationMs?: number
+  requestId?: string
   sources?: { href: string; title: string }[]
   reasoning?: {
     content: string
@@ -92,6 +93,7 @@ export interface ChatCompletionChunk {
 }
 
 export interface ChatCompletionResponse {
+  requestId?: string
   id: string
   object: string
   created: number

@@ -35,12 +35,26 @@ class FakeStreamSource {
   streamed = false
   private listeners = new Map<
     string,
-    Array<(event: Event & { data?: string; readyState?: number }) => void>
+    Array<
+      (
+        event: Event & {
+          data?: string
+          readyState?: number
+          headers?: Record<string, string[]>
+        }
+      ) => void
+    >
   >()
 
   addEventListener(
     type: string,
-    listener: (event: Event & { data?: string; readyState?: number }) => void
+    listener: (
+      event: Event & {
+        data?: string
+        readyState?: number
+        headers?: Record<string, string[]>
+      }
+    ) => void
   ) {
     const listeners = this.listeners.get(type) ?? []
     listeners.push(listener)
@@ -55,12 +69,15 @@ class FakeStreamSource {
     this.streamed = true
   }
 
-  emit(type: string, data?: string) {
+  emit(type: string, data?: string, headers?: Record<string, string[]>) {
     for (const listener of this.listeners.get(type) ?? []) {
-      listener({ data, readyState: this.readyState } as Event & {
-        data?: string
-        readyState?: number
-      })
+      listener(
+        Object.assign(new Event(type), {
+          data,
+          headers,
+          readyState: this.readyState,
+        })
+      )
     }
   }
 }
@@ -78,6 +95,37 @@ const noopCallbacks = {
 }
 
 describe('latest-wins stream request coordination', () => {
+  test('reports the server request ID for billing and ignores an old stream after replacement', async () => {
+    const sources: FakeStreamSource[] = []
+    const requestIds: string[] = []
+    const controller = createStreamRequestController({
+      getHeaders: async () => ({}),
+      createSource: () => {
+        const source = new FakeStreamSource()
+        sources.push(source)
+        return source
+      },
+      setStreaming: () => undefined,
+    })
+    const callbacks = {
+      ...noopCallbacks,
+      onRequestId: (id: string) => requestIds.push(id),
+    }
+    await controller.send(payload, callbacks)
+    sources[0]?.emit('open', undefined, {
+      'x-oneapi-request-id': ['first-request'],
+    })
+    await controller.send(payload, callbacks)
+    sources[0]?.emit('open', undefined, {
+      'x-oneapi-request-id': ['stale-request'],
+    })
+    sources[1]?.emit('open', undefined, {
+      'x-oneapi-request-id': ['second-request'],
+    })
+    expect(requestIds).toEqual(['first-request', 'second-request'])
+    controller.dispose()
+  })
+
   test('only creates a stream for the latest header request', async () => {
     const firstHeaders = deferred<Record<string, string>>()
     const secondHeaders = deferred<Record<string, string>>()

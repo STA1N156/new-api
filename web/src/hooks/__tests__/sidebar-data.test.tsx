@@ -21,6 +21,20 @@ import { expect, it } from 'vitest'
 
 import { useSidebarData } from '../use-sidebar-data'
 
+it('places Statistics immediately after Users and limits it to super administrators', () => {
+  const { result } = renderHook(() => useSidebarData())
+  const items =
+    result.current.navGroups.find((group) => group.id === 'admin')?.items ?? []
+  const usersIndex = items.findIndex(
+    (item) => 'url' in item && item.url === '/users'
+  )
+  expect(items[usersIndex + 1]).toMatchObject({
+    title: 'Statistics',
+    url: '/statistics',
+    requiredRole: 100,
+  })
+})
+
 it('provides a Model Square link in General without requiring an administrator role', () => {
   const { result } = renderHook(() => useSidebarData())
   const general = result.current.navGroups.find(
@@ -33,4 +47,7 @@ it('provides a Model Square link in General without requiring an administrator r
     (entry) => 'url' in entry && entry.url === '/pricing'
   )
   expect(item?.requiredRole).toBeUndefined()
+  expect(general?.items).toContainEqual(
+    expect.objectContaining({ title: 'Autumn Festival', url: '/festival' })
+  )
 })

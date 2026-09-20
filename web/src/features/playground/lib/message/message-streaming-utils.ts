@@ -207,7 +207,10 @@ export function applyChatCompletionResponse(
     return null
   }
 
-  return applyChatCompletionChoice(message, choice)
+  return applyChatCompletionChoice(
+    { ...message, requestId: response.requestId },
+    choice
+  )
 }
 
 /**

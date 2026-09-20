@@ -3952,6 +3952,7 @@
     "Response": "レスポンス",
     "Response Time": "応答時間",
     "Response time: {{duration}}": "応答時間: {{duration}}",
+    "Cost: {{cost}}": "費用: {{cost}}",
     "Responses API Version": "応答APIバージョン",
     "Restore defaults": "既定に戻す",
     "Restore global Auto": "グローバル Auto に戻す",

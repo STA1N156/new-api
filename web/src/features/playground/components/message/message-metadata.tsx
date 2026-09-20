@@ -16,12 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { TFunction } from 'i18next'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { formatQuotaWithCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
+import { useSystemConfigStore } from '@/stores/system-config-store'
 
-import type { MessageAlignment } from '../../lib'
+import { getChatCompletionQuota } from '../../api'
+import { isAssistantMessagePending, type MessageAlignment } from '../../lib'
 import type { Message } from '../../types'
 
 type MessageMetadataProps = {
@@ -41,27 +45,35 @@ function formatMessageTime(timestamp?: number): string | undefined {
   }).format(new Date(timestamp))
 }
 
-function formatDuration(
-  durationMs: number | undefined,
-  t: TFunction
-): string | undefined {
-  if (typeof durationMs !== 'number' || !Number.isFinite(durationMs)) {
-    return undefined
-  }
-
-  if (durationMs < 1000) {
-    return t('{{value}}ms', { value: Math.max(1, Math.round(durationMs)) })
-  }
-
-  return t('{{value}}s', { value: (durationMs / 1000).toFixed(2) })
-}
-
 export function MessageMetadata(props: MessageMetadataProps) {
   const { t } = useTranslation()
+  const userId = useAuthStore((state) => state.auth.user?.id)
+  useSystemConfigStore((state) => state.config.currency)
   const messageTime = formatMessageTime(props.message.createdAt)
-  const duration = formatDuration(props.message.durationMs, t)
+  const showCost =
+    props.message.from === 'assistant' &&
+    !isAssistantMessagePending(props.message)
+  const requestId = props.message.requestId ?? ''
+  const quotaQuery = useQuery({
+    queryKey: ['playground-cost', userId, requestId],
+    queryFn: () => getChatCompletionQuota(requestId).catch(() => null),
+    enabled: showCost && Boolean(userId && requestId),
+    staleTime: Infinity,
+    // Settlement can finish shortly after the final stream chunk arrives.
+    refetchInterval: (query) =>
+      query.state.data == null && query.state.dataUpdateCount < 10
+        ? 1000
+        : false,
+  })
+  const cost =
+    quotaQuery.data == null
+      ? '—'
+      : formatQuotaWithCurrency(quotaQuery.data, {
+          digitsSmall: 6,
+          abbreviate: false,
+        })
 
-  if (!messageTime && !duration) {
+  if (!messageTime && !showCost) {
     return null
   }
 
@@ -73,10 +85,10 @@ export function MessageMetadata(props: MessageMetadataProps) {
       )}
     >
       {messageTime && <time>{messageTime}</time>}
-      {duration && (
+      {showCost && (
         <>
           {messageTime && <span aria-hidden='true'>·</span>}
-          <span>{t('Response time: {{duration}}', { duration })}</span>
+          <span>{t('Cost: {{cost}}', { cost })}</span>
         </>
       )}
     </div>

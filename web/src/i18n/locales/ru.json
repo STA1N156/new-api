@@ -3952,6 +3952,7 @@
     "Response": "Ответ",
     "Response Time": "Время ответа",
     "Response time: {{duration}}": "Время ответа: {{duration}}",
+    "Cost: {{cost}}": "Стоимость: {{cost}}",
     "Responses API Version": "Версия API ответов",
     "Restore defaults": "Сбросить к значениям по умолчанию",
     "Restore global Auto": "Восстановить глобальный Auto",

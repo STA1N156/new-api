@@ -18,8 +18,15 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { beforeEach, expect, test, vi } from 'vitest'
 
+import { api } from '@/lib/api'
+
+import { sendChatCompletion } from '../../../api'
 import { STORAGE_KEYS } from '../../../constants'
-import { createUserMessage } from '../../message/message-utils'
+import { applyChatCompletionResponse } from '../../message/message-streaming-utils'
+import {
+  createLoadingAssistantMessage,
+  createUserMessage,
+} from '../../message/message-utils'
 import { accessMessageStore } from '../message-store'
 import { loadMessages, saveMessages } from '../storage'
 import { MAX_STORED_MESSAGES_BYTES } from '../storage-schema'
@@ -40,6 +47,32 @@ test('preserves image history larger than the legacy localStorage limit', async 
   const messages = [createUserMessage('', 1, [image])]
   await saveMessages(messages)
   expect(await loadMessages()).toEqual(messages)
+})
+
+test('keeps the non-streaming server request ID after saving and reopening the conversation', async () => {
+  vi.spyOn(api, 'post').mockResolvedValue({
+    headers: { 'x-oneapi-request-id': 'server-request-id' },
+    data: {
+      id: 'upstream-completion-id',
+      choices: [{ message: { content: 'Hello' } }],
+    },
+  })
+  const response = await sendChatCompletion({
+    model: 'test',
+    messages: [],
+    stream: false,
+  })
+  const message = applyChatCompletionResponse(
+    createLoadingAssistantMessage(),
+    response
+  )
+  expect(message).toMatchObject({
+    requestId: 'server-request-id',
+    status: 'complete',
+  })
+  if (!message) throw new Error('Missing response message')
+  await saveMessages([message])
+  expect(await loadMessages()).toEqual([message])
 })
 
 test('keeps legacy conversations and migrates them on the next save', async () => {

@@ -258,7 +258,15 @@ export function useChatHandler({
         payload,
         (type, chunk) => handleStreamUpdate(generation, type, chunk),
         () => handleStreamComplete(generation),
-        (error, errorCode) => handleStreamError(generation, error, errorCode)
+        (error, errorCode) => handleStreamError(generation, error, errorCode),
+        (requestId) =>
+          onMessageUpdate((prev) => {
+            if (generation !== requestGenerationRef.current) return prev
+            return updateLastAssistantMessage(prev, (message) => ({
+              ...message,
+              requestId,
+            }))
+          })
       )
     },
     [
@@ -269,6 +277,7 @@ export function useChatHandler({
       handleStreamUpdate,
       handleStreamComplete,
       handleStreamError,
+      onMessageUpdate,
     ]
   )
 

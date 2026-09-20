@@ -35,7 +35,13 @@ interface StreamEventSource {
   readyState?: number
   addEventListener: (
     type: string,
-    listener: (event: Event & { data?: string; readyState?: number }) => void
+    listener: (
+      event: Event & {
+        data?: string
+        readyState?: number
+        headers?: Record<string, string[]>
+      }
+    ) => void
   ) => void
   close: () => void
   stream: () => void
@@ -45,6 +51,7 @@ interface StreamRequestCallbacks {
   onUpdate: (type: 'reasoning' | 'content', chunk: string) => void
   onComplete: () => void
   onError: (error: string, errorCode?: string) => void
+  onRequestId?: (requestId: string) => void
 }
 
 interface StreamRequestControllerRuntime {
@@ -102,6 +109,13 @@ export function createStreamRequestController(
 
     const isCurrent = () =>
       generation === requestGeneration && source === nextSource
+
+    nextSource.addEventListener('open', (event) => {
+      const requestId = event.headers?.['x-oneapi-request-id']?.[0]
+      if (isCurrent() && !completed && requestId) {
+        callbacks.onRequestId?.(requestId)
+      }
+    })
 
     const handleError = (errorMessage: string, errorCode?: string) => {
       if (!isCurrent() || completed) return
@@ -206,12 +220,14 @@ export function useStreamRequest() {
       payload: ChatCompletionRequest,
       onUpdate: (type: 'reasoning' | 'content', chunk: string) => void,
       onComplete: () => void,
-      onError: (error: string, errorCode?: string) => void
+      onError: (error: string, errorCode?: string) => void,
+      onRequestId?: (requestId: string) => void
     ) =>
       controllerRef.current?.send(payload, {
         onUpdate,
         onComplete,
         onError,
+        onRequestId,
       }),
     []
   )

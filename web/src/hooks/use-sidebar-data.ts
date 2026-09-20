@@ -18,10 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import {
   Activity,
+  ChartNoAxesCombined,
   Box,
   CreditCard,
   FileText,
   FlaskConical,
+  Gift,
   Key,
   LayoutDashboard,
   ListTodo,
@@ -86,6 +88,11 @@ export function useSidebarData(): SidebarData {
             icon: Box,
           },
           {
+            title: t('Autumn Festival'),
+            url: '/festival',
+            icon: Gift,
+          },
+          {
             title: t('API Keys'),
             url: '/keys',
             icon: Key,
@@ -138,6 +145,12 @@ export function useSidebarData(): SidebarData {
             title: t('Users'),
             url: '/users',
             icon: Users,
+          },
+          {
+            title: t('Statistics'),
+            url: '/statistics',
+            icon: ChartNoAxesCombined,
+            requiredRole: ROLE.SUPER_ADMIN,
           },
           {
             title: t('Redemption Codes'),

@@ -37,7 +37,24 @@ export async function sendChatCompletion(
     signal,
     skipErrorHandler: true,
   } as Record<string, unknown>)
-  return res.data
+  return { ...res.data, requestId: res.headers['x-oneapi-request-id'] }
+}
+
+export async function getChatCompletionQuota(
+  requestId: string
+): Promise<number | null> {
+  const res = await api.get('/api/log/self', {
+    params: { request_id: requestId, type: 2, page_size: 1 },
+    skipErrorHandler: true,
+  })
+  const log = res.data?.data?.items?.find(
+    (item: { request_id: string; type: number }) =>
+      item.request_id === requestId && item.type === 2
+  )
+  if (!res.data?.success || !Number.isFinite(log?.quota) || log.quota < 0) {
+    return null
+  }
+  return log.quota
 }
 
 /**

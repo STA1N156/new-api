@@ -180,7 +180,10 @@ func Redeem(key string, userId int) (quota int, err error) {
 		if err := creditUserQuota(tx, userId, redemption.Quota, nil); err != nil {
 			return err
 		}
-		return creditInvitationReward(tx, redemption, userId, redemption.Quota)
+		if err := creditInvitationReward(tx, redemption, userId, redemption.Quota); err != nil {
+			return err
+		}
+		return creditFestivalQuota(tx, "redemption", redemption.Id, userId, redemption.Quota, common.GetTimestamp())
 	})
 	if err != nil {
 		common.SysError("redemption failed: " + err.Error())

@@ -105,7 +105,7 @@ export function FestivalProgress({ data }: { data: FestivalStatus }) {
               ).toLocaleString(),
               count: next.chances,
             })
-          : t('All 15 bonus draws have been unlocked.')}
+          : t('All 20 bonus draws have been unlocked.')}
       </p>
     </section>
   )

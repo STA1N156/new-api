@@ -67,7 +67,9 @@ beforeEach(() => {
       { cookies: 2000, chances: 2 },
       { cookies: 3000, chances: 3 },
       { cookies: 4000, chances: 3 },
-      { cookies: 5000, chances: 4 },
+      { cookies: 5000, chances: 3 },
+      { cookies: 6000, chances: 3 },
+      { cookies: 7000, chances: 3 },
     ],
     prizes: [
       { cookies: 50, weight: 5500 },
@@ -239,7 +241,17 @@ it.each([
   {
     credited: 4000,
     granted: 5,
-    next: '1,000🍪 more to unlock 4 additional draws',
+    next: '1,000🍪 more to unlock 3 additional draws',
+  },
+  {
+    credited: 5000,
+    granted: 6,
+    next: '1,000🍪 more to unlock 3 additional draws',
+  },
+  {
+    credited: 6000,
+    granted: 7,
+    next: '1,000🍪 more to unlock 3 additional draws',
   },
 ])(
   'shows earned milestones and the next target after $credited cookies',
@@ -250,7 +262,7 @@ it.each([
       name: 'Cumulative progress',
     })
     expect(progress).toHaveAttribute('aria-valuenow', String(credited))
-    expect(progress).toHaveAttribute('aria-valuemax', '5000')
+    expect(progress).toHaveAttribute('aria-valuemax', '7000')
     expect(screen.queryAllByText('Granted')).toHaveLength(granted)
     expect(screen.getByText(next)).toBeVisible()
   }
@@ -261,11 +273,11 @@ it('caps the progress bar at the last milestone while retaining the actual credi
   render(<FestivalProgress data={status} />)
   expect(screen.getByRole('progressbar')).toHaveAttribute(
     'aria-valuenow',
-    '5000'
+    '7000'
   )
   expect(screen.getByText('9,000🍪')).toBeVisible()
-  expect(screen.getAllByText('Granted')).toHaveLength(6)
+  expect(screen.getAllByText('Granted')).toHaveLength(8)
   expect(
-    screen.getByText('All 15 bonus draws have been unlocked.')
+    screen.getByText('All 20 bonus draws have been unlocked.')
   ).toBeVisible()
 })

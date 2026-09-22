@@ -38,7 +38,10 @@ func TestFestivalCreditMilestonesAndWindow(t *testing.T) {
 		{1000*festivalQuotaPerCookie - 1, 3}, {1, 5},
 		{1000 * festivalQuotaPerCookie, 8},
 		{1000*festivalQuotaPerCookie - 1, 8}, {1, 11},
-		{1000 * festivalQuotaPerCookie, 15}, {3000 * festivalQuotaPerCookie, 15},
+		{1000*festivalQuotaPerCookie - 1, 11}, {1, 14},
+		{1000*festivalQuotaPerCookie - 1, 14}, {1, 17},
+		{1000*festivalQuotaPerCookie - 1, 17}, {1, 20},
+		{1000 * festivalQuotaPerCookie, 20},
 	}
 	for index, credit := range credits {
 		require.NoError(t, creditFestivalQuota(DB, "topup", index+1, user.Id, credit.quota, festivalStart))
@@ -54,7 +57,7 @@ func TestFestivalCreditMilestonesAndWindow(t *testing.T) {
 	status, err := GetFestivalStatus(user.Id)
 	require.NoError(t, err)
 	assert.Equal(t, float64(8000), status.CreditedCookies)
-	assert.Equal(t, 15, status.Remaining)
+	assert.Equal(t, 20, status.Remaining)
 	other, err := GetFestivalStatus(user.Id + 1)
 	require.NoError(t, err)
 	assert.Zero(t, other.Earned)

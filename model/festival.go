@@ -54,7 +54,7 @@ type FestivalMilestone struct {
 }
 
 var festivalPrizes = []FestivalPrize{{50, 5500}, {100, 3500}, {200, 500}, {300, 250}, {500, 150}, {1000, 100}}
-var festivalMilestones = []FestivalMilestone{{500, 1}, {1000, 2}, {2000, 2}, {3000, 3}, {4000, 3}, {5000, 4}}
+var festivalMilestones = []FestivalMilestone{{500, 1}, {1000, 2}, {2000, 2}, {3000, 3}, {4000, 3}, {5000, 3}, {6000, 3}, {7000, 3}}
 
 type FestivalStatus struct {
 	Campaign        string              `json:"campaign"`

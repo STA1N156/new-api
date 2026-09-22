@@ -221,7 +221,7 @@ export function Festival() {
                     </li>
                     <li>
                       {t(
-                        'Reach 500 / 1000 / 2000 / 3000 / 4000 / 5000🍪 to receive 1 / 2 / 2 / 3 / 3 / 4 additional draws. Each milestone is granted once, for up to 15 draws in total.'
+                        'Reach 500 / 1000 / 2000 / 3000 / 4000 / 5000 / 6000 / 7000🍪 to receive 1 / 2 / 2 / 3 / 3 / 3 / 3 / 3 additional draws. Each milestone is granted once, for up to 20 draws in total.'
                       )}
                     </li>
                     <li>

@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Use first": "Utiliser en priorité",
+    "Using first": "Utilisé en priorité",
+    "No active subscriptions": "Aucun abonnement actif",
     "{{count}} transactions": "{{count}} transactions",
     "{{count}} transactions_one": "{{count}} transaction",
     "Direct {{online}} · Subscriptions {{subscriptions}}": "Recharge directe {{online}} · Abonnements {{subscriptions}}",

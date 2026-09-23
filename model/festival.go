@@ -4,9 +4,12 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -71,7 +74,7 @@ type FestivalStatus struct {
 	Records         []FestivalDraw      `json:"records"`
 }
 
-// Called inside the same transaction that credits a paid top-up or redemption.
+// Called inside the same transaction that completes a payment or redemption.
 // A unique source prevents retries from granting the same progress twice.
 func creditFestivalQuota(tx *gorm.DB, source string, sourceID, userID, quota int, completedAt int64) error {
 	if completedAt < festivalStart || completedAt >= festivalEnd || quota <= 0 {
@@ -81,6 +84,23 @@ func creditFestivalQuota(tx *gorm.DB, source string, sourceID, userID, quota int
 		Campaign: festivalCampaign, Source: source, SourceID: sourceID,
 		UserID: userID, Quota: quota, CreatedAt: completedAt,
 	}).Error
+}
+
+func creditFestivalSubscription(tx *gorm.DB, order *SubscriptionOrder) error {
+	if order.PaymentProvider == PaymentProviderBalance || order.PaymentMethod == PaymentMethodBalance ||
+		order.CompleteTime < festivalStart || order.CompleteTime >= festivalEnd || order.Money <= 0 {
+		return nil
+	}
+	if math.IsNaN(order.Money) || math.IsInf(order.Money, 0) {
+		return errors.New("invalid subscription payment amount")
+	}
+	// Campaign rule: ¥1 paid = 10 cookies, independent of the plan's quota or later exchange-rate changes.
+	quota, err := common.QuotaFromDecimalStrict(decimal.NewFromFloat(order.Money).
+		Mul(decimal.NewFromInt(10 * festivalQuotaPerCookie)).Floor())
+	if err != nil {
+		return err
+	}
+	return creditFestivalQuota(tx, "subscription", order.Id, order.UserId, quota, order.CompleteTime)
 }
 
 func getFestivalProgress(tx *gorm.DB, userID int) (int64, int, error) {

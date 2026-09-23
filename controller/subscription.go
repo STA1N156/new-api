@@ -97,6 +97,19 @@ func UpdateSubscriptionPreference(c *gin.Context) {
 	common.ApiSuccess(c, gin.H{"billing_preference": pref})
 }
 
+func UpdateSubscriptionPriority(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		common.ApiErrorMsg(c, "参数错误")
+		return
+	}
+	if err := model.SetPreferredUserSubscription(c.GetInt("id"), id); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, nil)
+}
+
 func SubscriptionRequestBalancePay(c *gin.Context) {
 	if !requirePaymentCompliance(c) {
 		return

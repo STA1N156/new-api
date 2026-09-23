@@ -47,7 +47,9 @@ export function FestivalProgress({ data }: { data: FestivalStatus }) {
         </span>
       </div>
       <p className='text-muted-foreground mt-2 text-sm'>
-        {t('Online top-ups and redemption codes both count toward progress.')}
+        {t(
+          'Top-ups and redemptions count by credited cookies. Externally paid subscriptions count at ¥1 = 10🍪.'
+        )}
       </p>
       <div className='relative mx-2 mt-6'>
         <Progress

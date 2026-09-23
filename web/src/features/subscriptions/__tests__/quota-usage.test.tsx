@@ -91,62 +91,23 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-it('adjusts complete square counts to the container width while preserving the usage percentage', () => {
-  let resize = (_width: number): void => {
-    throw new Error('ResizeObserver was not attached')
-  }
-  const disconnect = vi.fn()
-  vi.stubGlobal(
-    'ResizeObserver',
-    class {
-      callback: ResizeObserverCallback
-      constructor(callback: ResizeObserverCallback) {
-        this.callback = callback
-      }
-      observe(target: Element) {
-        resize = (width: number) =>
-          this.callback(
-            [
-              {
-                target,
-                contentRect: new DOMRect(0, 0, width, 6),
-                borderBoxSize: [],
-                contentBoxSize: [],
-                devicePixelContentBoxSize: [],
-              },
-            ],
-            this
-          )
-      }
-      unobserve() {}
-      disconnect = disconnect
-    }
-  )
-
-  const { unmount } = render(
+it.each([
+  [0, 0],
+  [120, 40],
+  [300, 100],
+  [400, 100],
+])('renders a continuous bar for %s used, clamped to %s%%', (used, percent) => {
+  render(
     <SubscriptionQuotaUsage
-      subscription={{ ...subscription, quota_limits: [] }}
-      active={false}
+      subscription={{ ...subscription, amount_used: used, quota_limits: [] }}
+      active
     />
   )
   const meter = screen.getByRole('meter')
-  for (const [width, expectedCount, expectedUsed] of [
-    [0, 0, 0],
-    [5.9, 0, 0],
-    [6, 1, 1],
-    [197.9, 24, 10],
-    [198, 25, 10],
-    [428.67, 53, 22],
-    [798, 100, 40],
-    [198, 25, 10],
-  ]) {
-    act(() => resize(width))
-    expect(meter.querySelectorAll('span')).toHaveLength(expectedCount)
-    expect(meter.querySelectorAll('.bg-current')).toHaveLength(expectedUsed)
-    expect(meter).toHaveAttribute('aria-valuenow', '40')
-  }
-  unmount()
-  expect(disconnect).toHaveBeenCalledOnce()
+  expect(meter).toHaveAttribute('aria-valuenow', String(percent))
+  expect(meter).toHaveClass('rounded-full', 'overflow-hidden')
+  expect(meter.firstElementChild).toHaveStyle({ width: `${percent}%` })
+  expect(meter.children).toHaveLength(1)
 })
 
 it('shows each cycle as an accessible percentage meter without raw quota amounts', () => {

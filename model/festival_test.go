@@ -15,12 +15,14 @@ import (
 func setupFestivalTest(t *testing.T) User {
 	t.Helper()
 	setupUserUpdateTestState(t)
+	require.NoError(t, getSubscriptionPlanCache().Purge())
 	require.NoError(t, DB.AutoMigrate(&Redemption{}))
 	start, end, clock := festivalStart, festivalEnd, festivalNow
 	now := time.Now()
 	festivalStart, festivalEnd = now.Unix()-60, now.Unix()+3600
 	festivalNow = func() time.Time { return now }
 	t.Cleanup(func() {
+		_ = getSubscriptionPlanCache().Purge()
 		festivalStart, festivalEnd, festivalNow = start, end, clock
 		DB.Exec("DELETE FROM redemptions")
 	})

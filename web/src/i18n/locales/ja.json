@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Use first": "優先して使用",
+    "Using first": "優先使用中",
+    "No active subscriptions": "有効なサブスクリプションはありません",
     "{{count}} transactions": "{{count}} 件",
     "Direct {{online}} · Subscriptions {{subscriptions}}": "直接チャージ {{online}} · サブスクリプション {{subscriptions}}",
     "Success rate (last 6h)": "成功率（直近6時間）",

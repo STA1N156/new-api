@@ -70,7 +70,7 @@ export function Festival() {
               </h1>
               <p className='text-muted-foreground mt-3 max-w-xl text-sm leading-relaxed'>
                 {t(
-                  'Top up or redeem during the festival. Reach milestones, unlock free draws, and receive your prize instantly.'
+                  'Top up, subscribe or redeem during the festival. Reach milestones, unlock free draws, and receive your prize instantly.'
                 )}
               </p>
               <p className='text-muted-foreground mt-4 flex items-center gap-2 text-sm'>
@@ -226,7 +226,7 @@ export function Festival() {
                     </li>
                     <li>
                       {t(
-                        'One credit can unlock several milestones. Existing balances, subscription purchases, invitation transfers and festival prizes do not add progress.'
+                        'One payment can unlock several milestones. Existing balances, balance subscription purchases, invitation transfers and festival prizes do not add progress.'
                       )}
                     </li>
                     <li>

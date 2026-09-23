@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Clock3 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { formatQuotaWithCurrency, getCurrencyDisplay } from '@/lib/currency'
@@ -30,41 +30,6 @@ interface Props {
   subscription: UserSubscription
   plan?: Partial<SubscriptionPlan>
   active: boolean
-}
-
-function QuotaSegments(props: { percent: number }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-    const observer = new ResizeObserver(([entry]) => {
-      // Each square is 6px, with 2px between squares and no trailing gap.
-      setCount(Math.max(0, Math.floor((entry.contentRect.width + 2) / 8)))
-    })
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
-
-  const used = Math.ceil((count * props.percent) / 100)
-  return (
-    <div
-      ref={ref}
-      aria-hidden='true'
-      className='flex h-[6px] gap-[2px] overflow-hidden'
-    >
-      {Array.from({ length: count }, (_, index) => (
-        <span
-          key={index}
-          className={cn(
-            'size-[6px] shrink-0',
-            index < used ? 'bg-current' : 'bg-foreground/[0.08]'
-          )}
-        />
-      ))}
-    </div>
-  )
 }
 
 function ResetCountdown(props: { resetTime: number }) {
@@ -192,9 +157,16 @@ export function SubscriptionQuotaUsage(props: Props) {
                 aria-valuemax={100}
                 aria-valuenow={percent}
                 aria-valuetext={t('{{percent}}% used', { percent })}
-                className={tone}
+                className={cn(
+                  'bg-foreground/[0.06] h-2 overflow-hidden rounded-full',
+                  tone
+                )}
               >
-                <QuotaSegments percent={ratio} />
+                <div
+                  aria-hidden='true'
+                  className='h-full rounded-full bg-current transition-[width] duration-500 ease-out motion-reduce:transition-none'
+                  style={{ width: `${ratio}%` }}
+                />
               </div>
             )}
             <div className='text-muted-foreground flex min-h-4 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] leading-relaxed'>

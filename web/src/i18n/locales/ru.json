@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Use first": "Использовать первым",
+    "Using first": "Используется первым",
+    "No active subscriptions": "Нет активных подписок",
     "{{count}} transactions": "{{count}} операций",
     "{{count}} transactions_one": "{{count}} операция",
     "{{count}} transactions_few": "{{count}} операции",

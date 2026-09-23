@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Use first": "Ưu tiên sử dụng",
+    "Using first": "Đang ưu tiên",
+    "No active subscriptions": "Không có gói đăng ký đang hoạt động",
     "{{count}} transactions": "{{count}} giao dịch",
     "Direct {{online}} · Subscriptions {{subscriptions}}": "Nạp trực tiếp {{online}} · Đăng ký {{subscriptions}}",
     "Success rate (last 6h)": "Tỷ lệ thành công (6 giờ qua)",

@@ -70,6 +70,7 @@ export const userSubscriptionSchema = z.object({
   user_id: z.number(),
   plan_id: z.number(),
   status: z.string(),
+  is_preferred: z.boolean().optional(),
   source: z.string().optional(),
   start_time: z.number(),
   end_time: z.number(),

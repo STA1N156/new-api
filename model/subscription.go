@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -260,6 +261,7 @@ type UserSubscription struct {
 
 	AmountTotal int64 `json:"amount_total" gorm:"type:bigint;not null;default:0"`
 	AmountUsed  int64 `json:"amount_used" gorm:"type:bigint;not null;default:0"`
+	IsPreferred bool  `json:"is_preferred" gorm:"not null;default:false"`
 
 	StartTime int64  `json:"start_time" gorm:"bigint"`
 	EndTime   int64  `json:"end_time" gorm:"bigint;index;index:idx_user_sub_active,priority:3"`
@@ -631,6 +633,9 @@ func CompleteSubscriptionOrder(tradeNo string, providerPayload string, expectedP
 		}
 		order.Status = common.TopUpStatusSuccess
 		order.CompleteTime = common.GetTimestamp()
+		if err := creditFestivalSubscription(tx, &order); err != nil {
+			return err
+		}
 		if providerPayload != "" {
 			order.ProviderPayload = providerPayload
 		}
@@ -856,6 +861,34 @@ func PurchaseSubscriptionWithBalance(userId int, planId int) error {
 	return nil
 }
 
+// SetPreferredUserSubscription only accepts a currently usable, owned subscription.
+func SetPreferredUserSubscription(userId, subscriptionId int) error {
+	if userId <= 0 || subscriptionId <= 0 {
+		return errors.New("invalid userId or subscriptionId")
+	}
+	now := GetDBTimestamp()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		var subs []UserSubscription
+		// Keep the same lock order as billing, regardless of the chosen priority.
+		if err := lockForUpdate(tx).
+			Where("user_id = ? AND status = ? AND end_time > ?", userId, "active", now).
+			Order("end_time asc, id asc").Find(&subs).Error; err != nil {
+			return err
+		}
+		ids := make([]int, 0, len(subs))
+		found := false
+		for _, sub := range subs {
+			ids = append(ids, sub.Id)
+			found = found || sub.Id == subscriptionId
+		}
+		if !found {
+			return errors.New("订阅不存在或已失效")
+		}
+		return tx.Model(&UserSubscription{}).Where("id IN ?", ids).
+			Update("is_preferred", gorm.Expr("id = ?", subscriptionId)).Error
+	})
+}
+
 // GetAllActiveUserSubscriptions returns all active subscriptions for a user.
 func GetAllActiveUserSubscriptions(userId int) ([]SubscriptionSummary, error) {
 	if userId <= 0 {
@@ -864,7 +897,7 @@ func GetAllActiveUserSubscriptions(userId int) ([]SubscriptionSummary, error) {
 	now := common.GetTimestamp()
 	var subs []UserSubscription
 	err := DB.Where("user_id = ? AND status = ? AND end_time > ?", userId, "active", now).
-		Order("end_time desc, id desc").
+		Order("is_preferred desc, end_time desc, id desc").
 		Find(&subs).Error
 	if err != nil {
 		return nil, err
@@ -1358,6 +1391,10 @@ func PreConsumeUserSubscription(requestId string, userId int, modelName string, 
 		if len(subs) == 0 {
 			return errors.New("no active subscription")
 		}
+		// Sort after locking so changing priority cannot change the lock order.
+		sort.SliceStable(subs, func(i, j int) bool {
+			return subs[i].IsPreferred && !subs[j].IsPreferred
+		})
 		modelAllowed := false
 		for _, candidate := range subs {
 			sub := candidate

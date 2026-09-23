@@ -48,6 +48,7 @@ import {
   getPublicPlans,
   getSelfSubscriptionFull,
   updateBillingPreference,
+  updateSubscriptionPriority,
 } from '@/features/subscriptions/api'
 import { SubscriptionPurchaseDialog } from '@/features/subscriptions/components/dialogs/subscription-purchase-dialog'
 import { SubscriptionScopeDialog } from '@/features/subscriptions/components/dialogs/subscription-scope-dialog'
@@ -106,9 +107,6 @@ export function SubscriptionPlansCard({
   const { t } = useTranslation()
 
   const [plans, setPlans] = useState<PlanRecord[]>([])
-  const [activeSubscriptions, setActiveSubscriptions] = useState<
-    UserSubscriptionRecord[]
-  >([])
   const [allSubscriptions, setAllSubscriptions] = useState<
     UserSubscriptionRecord[]
   >([])
@@ -116,6 +114,29 @@ export function SubscriptionPlansCard({
     useState('subscription_first')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [savingPriority, setSavingPriority] = useState(false)
+  const [now, setNow] = useState(Date.now)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const activeSubscriptions = useMemo(
+    () =>
+      allSubscriptions
+        .filter(
+          ({ subscription }) =>
+            subscription.status === 'active' &&
+            subscription.end_time * 1000 > now
+        )
+        .sort(
+          (a, b) =>
+            Number(!!b.subscription.is_preferred) -
+            Number(!!a.subscription.is_preferred)
+        ),
+    [allSubscriptions, now]
+  )
 
   const [purchaseOpen, setPurchaseOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<PlanRecord | null>(null)
@@ -148,7 +169,6 @@ export function SubscriptionPlansCard({
         setBillingPreference(
           res.data.billing_preference || 'subscription_first'
         )
-        setActiveSubscriptions(res.data.subscriptions || [])
         setAllSubscriptions(res.data.all_subscriptions || [])
       }
     } catch {
@@ -194,14 +214,37 @@ export function SubscriptionPlansCard({
   }
 
   const hasActive = activeSubscriptions.length > 0
-  const hasAny = allSubscriptions.length > 0
-  const isAvailable = loading || plans.length > 0 || hasAny
+  const isAvailable = loading || plans.length > 0 || hasActive
   const disablePref = !hasActive
   const isSubPref =
     billingPreference === 'subscription_first' ||
     billingPreference === 'subscription_only'
   const displayPref =
     disablePref && isSubPref ? 'wallet_first' : billingPreference
+
+  const handlePriorityChange = async (id: number) => {
+    setSavingPriority(true)
+    try {
+      const res = await updateSubscriptionPriority(id)
+      if (!res.success) {
+        toast.error(res.message || t('Update failed'))
+        return
+      }
+      setAllSubscriptions((items) =>
+        items.map((item) => ({
+          ...item,
+          subscription: {
+            ...item.subscription,
+            is_preferred: item.subscription.id === id,
+          },
+        }))
+      )
+    } catch {
+      toast.error(t('Request failed'))
+    } finally {
+      setSavingPriority(false)
+    }
+  }
 
   const planPurchaseCountMap = useMemo(() => {
     const map = new Map<number, number>()
@@ -230,8 +273,7 @@ export function SubscriptionPlansCard({
   const getRemainingDays = (sub: UserSubscriptionRecord) => {
     const endTime = sub?.subscription?.end_time || 0
     if (!endTime) return 0
-    const now = Date.now() / 1000
-    return Math.max(0, Math.ceil((endTime - now) / 86400))
+    return Math.max(0, Math.ceil((endTime - now / 1000) / 86400))
   }
 
   if (loading) {
@@ -252,7 +294,7 @@ export function SubscriptionPlansCard({
     )
   }
 
-  if (plans.length === 0 && !hasAny) {
+  if (plans.length === 0 && !hasActive) {
     return null
   }
 
@@ -277,15 +319,6 @@ export function SubscriptionPlansCard({
               >
                 {activeSubscriptions.length} {t('active')}
               </span>
-              {allSubscriptions.length > activeSubscriptions.length && (
-                <>
-                  <span className='text-muted-foreground/30'>·</span>
-                  <span className='text-muted-foreground'>
-                    {allSubscriptions.length - activeSubscriptions.length}{' '}
-                    {t('expired')}
-                  </span>
-                </>
-              )}
             </span>
           </>
         }
@@ -360,7 +393,7 @@ export function SubscriptionPlansCard({
               size='icon'
               className='h-8 w-8'
               onClick={handleRefresh}
-              disabled={refreshing}
+              disabled={refreshing || savingPriority}
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
@@ -386,62 +419,59 @@ export function SubscriptionPlansCard({
             </p>
           )}
 
-          {hasAny && (
+          {hasActive && (
             <div className='max-h-[32rem] space-y-4 overflow-y-auto pr-1'>
-              {allSubscriptions.map((sub) => {
+              {activeSubscriptions.map((sub) => {
                 const subscription = sub.subscription
                 const planTitle = planTitleMap.get(subscription?.plan_id) || ''
                 const remainDays = getRemainingDays(sub)
-                const now = Date.now() / 1000
-                const isExpired = (subscription?.end_time || 0) < now
-                const isCancelled = subscription?.status === 'cancelled'
-                const isActive = subscription?.status === 'active' && !isExpired
-                let statusBadge = (
-                  <StatusBadge
-                    label={t('Expired')}
-                    variant='neutral'
-                    copyable={false}
-                  />
-                )
-                if (isActive) {
-                  statusBadge = (
-                    <StatusBadge
-                      label={t('Active')}
-                      variant='success'
-                      copyable={false}
-                    />
-                  )
-                } else if (isCancelled) {
-                  statusBadge = (
-                    <StatusBadge
-                      label={t('Cancelled')}
-                      variant='neutral'
-                      copyable={false}
-                    />
-                  )
-                }
 
                 return (
-                  <div
+                  <article
                     key={subscription?.id}
+                    aria-label={`${t('Subscription')} #${subscription.id}`}
                     className='bg-background space-y-3 rounded-2xl border p-3.5 text-xs sm:p-4'
                   >
                     <div className='flex flex-wrap items-center justify-between gap-2'>
                       <div className='flex min-w-0 flex-wrap items-center gap-2'>
                         <span className='text-sm font-semibold'>
-                          {planTitle
-                            ? `${planTitle} · ${t('Subscription')} #${subscription?.id}`
-                            : `${t('Subscription')} #${subscription?.id}`}
+                          {planTitle || t('Subscription')}
                         </span>
-                        {statusBadge}
+                        <StatusBadge
+                          label={t('Active')}
+                          variant='success'
+                          copyable={false}
+                        />
                       </div>
-                      {isActive && (
+                      <div className='flex items-center gap-3'>
                         <span className='text-muted-foreground'>
                           {t('{{count}} days remaining', {
                             count: remainDays,
                           })}
                         </span>
-                      )}
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className={cn(
+                            'h-7 rounded-full px-3 text-xs',
+                            subscription.is_preferred &&
+                              'text-muted-foreground disabled:opacity-100'
+                          )}
+                          aria-pressed={!!subscription.is_preferred}
+                          disabled={
+                            savingPriority ||
+                            refreshing ||
+                            subscription.is_preferred
+                          }
+                          onClick={() => handlePriorityChange(subscription.id)}
+                        >
+                          {t(
+                            subscription.is_preferred
+                              ? 'Using first'
+                              : 'Use first'
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <SubscriptionQuotaUsage
                       subscription={subscription}
@@ -449,17 +479,17 @@ export function SubscriptionPlansCard({
                         plans.find((p) => p.plan.id === subscription.plan_id)
                           ?.plan
                       }
-                      active={isActive}
+                      active
                     />
-                  </div>
+                  </article>
                 )
               })}
             </div>
           )}
 
-          {!hasAny && (
+          {!hasActive && (
             <p className='text-muted-foreground mt-2 text-xs'>
-              {t('No subscription records')}
+              {t('No active subscriptions')}
             </p>
           )}
         </div>

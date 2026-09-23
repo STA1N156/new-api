@@ -41,7 +41,9 @@ export function FestivalCard() {
           <div>
             <h3 className='text-base font-semibold'>{t('Autumn Festival')}</h3>
             <p className='text-muted-foreground mt-1 text-sm'>
-              {t('September 25 – October 7 · Top up or redeem to earn draws')}
+              {t(
+                'September 25 – October 7 · Top up, subscribe or redeem to earn draws'
+              )}
             </p>
           </div>
         </div>

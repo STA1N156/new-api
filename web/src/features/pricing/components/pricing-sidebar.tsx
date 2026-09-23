@@ -30,14 +30,7 @@ import {
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
-import {
-  ENDPOINT_TYPES,
-  FILTER_ALL,
-  QUOTA_TYPES,
-  getEndpointTypeLabels,
-  getQuotaTypeLabels,
-} from '../constants'
-import { parseTags } from '../lib/filters'
+import { FILTER_ALL, QUOTA_TYPES, getQuotaTypeLabels } from '../constants'
 import type { PricingModel, PricingVendor } from '../types'
 
 type FilterOption = {
@@ -57,19 +50,14 @@ type FilterSectionProps = {
 
 export interface PricingSidebarProps {
   quotaTypeFilter: string
-  endpointTypeFilter: string
   vendorFilter: string
   groupFilter: string
-  tagFilter: string
   onQuotaTypeChange: (value: string) => void
-  onEndpointTypeChange: (value: string) => void
   onVendorChange: (value: string) => void
   onGroupChange: (value: string) => void
-  onTagChange: (value: string) => void
   vendors: PricingVendor[]
   groups: string[]
   groupRatios?: Record<string, number>
-  tags: string[]
   models: PricingModel[]
   hasActiveFilters: boolean
   onClearFilters: () => void
@@ -159,7 +147,6 @@ function FilterSection(props: FilterSectionProps) {
 export function PricingSidebar(props: PricingSidebarProps) {
   const { t } = useTranslation()
   const quotaTypeLabels = getQuotaTypeLabels(t)
-  const endpointTypeLabels = getEndpointTypeLabels(t)
 
   const vendorOptions: FilterOption[] = [
     {
@@ -210,48 +197,13 @@ export function PricingSidebar(props: PricingSidebarProps) {
     },
   ]
 
-  const tagOptions: FilterOption[] = [
-    {
-      value: FILTER_ALL,
-      label: t('All Tags'),
-      count: props.models.length,
-    },
-    ...props.tags.map((tag) => ({
-      value: tag,
-      label: tag,
-      count: countBy(props.models, (model) =>
-        parseTags(model.tags)
-          .map((item) => item.toLowerCase())
-          .includes(tag.toLowerCase())
-      ),
-    })),
-  ]
-
-  const endpointOptions: FilterOption[] = [
-    {
-      value: ENDPOINT_TYPES.ALL,
-      label: endpointTypeLabels[ENDPOINT_TYPES.ALL],
-      count: props.models.length,
-    },
-    ...Object.entries(endpointTypeLabels)
-      .filter(([value]) => value !== ENDPOINT_TYPES.ALL)
-      .map(([value, label]) => ({
-        value,
-        label,
-        count: countBy(
-          props.models,
-          (model) => model.supported_endpoint_types?.includes(value) ?? false
-        ),
-      })),
-  ]
-
   return (
     <aside className={cn('rounded-xl border p-3', props.className)}>
       <div className='mb-2.5 flex items-center justify-between gap-2'>
         <div>
           <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
           <p className='text-muted-foreground mt-1 text-xs'>
-            {t('Refine models by provider, group, type, and tags.')}
+            {t('Filter models by provider, group and pricing type.')}
           </p>
         </div>
         <Button
@@ -287,22 +239,10 @@ export function PricingSidebar(props: PricingSidebarProps) {
           onChange={props.onVendorChange}
         />
         <FilterSection
-          title={t('Model Tags')}
-          value={props.tagFilter}
-          options={tagOptions}
-          onChange={props.onTagChange}
-        />
-        <FilterSection
           title={t('Pricing Type')}
           value={props.quotaTypeFilter}
           options={quotaOptions}
           onChange={props.onQuotaTypeChange}
-        />
-        <FilterSection
-          title={t('Endpoint Type')}
-          value={props.endpointTypeFilter}
-          options={endpointOptions}
-          onChange={props.onEndpointTypeChange}
         />
       </div>
     </aside>

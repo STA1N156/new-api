@@ -1,5 +1,10 @@
 {
   "translation": {
+    "{{count}} transactions": "{{count}} операций",
+    "{{count}} transactions_one": "{{count}} операция",
+    "{{count}} transactions_few": "{{count}} операции",
+    "{{count}} transactions_many": "{{count}} операций",
+    "Direct {{online}} · Subscriptions {{subscriptions}}": "Прямое пополнение {{online}} · Подписки {{subscriptions}}",
     "Success rate (last 6h)": "Доля успешных запросов (за 6 часов)",
     "Last 6 hours": "Последние 6 часов",
     "No success rate data available": "Данные о доле успешных запросов недоступны",
@@ -2053,7 +2058,6 @@
     "Filter by username": "Фильтр по имени пользователя",
     "Filter by username, name or email...": "Фильтр по имени пользователя, имени или email...",
     "Filter Dashboard Models": "Фильтровать модели панели управления",
-    "Filter models by provider, group, type, endpoint, and tags.": "Фильтруйте модели по поставщику, группе, типу, endpoint и тегам.",
     "Filter models by type, endpoint, vendor, group and tags": "Фильтровать модели по типу, точке доступа, поставщику, группе и тегам",
     "Filter models...": "Фильтровать модели...",
     "Filter the model analytics view by time range and user.": "Фильтруйте представление аналитики моделей по периоду и пользователю.",
@@ -3777,7 +3781,7 @@
     "Reference Video": "Эталонное видео",
     "Referral link:": "Реферальная ссылка:",
     "Referral reward transfer is disabled until the administrator confirms compliance terms.": "Перевод реферальных наград отключен, пока администратор не подтвердит условия соответствия.",
-    "Refine models by provider, group, type, and tags.": "Уточняйте список моделей по поставщику, группе, типу и тегам.",
+    "Filter models by provider, group and pricing type.": "Фильтруйте модели по поставщику, группе и типу тарификации.",
     "Refresh": "Обновить",
     "Refresh Cache": "Обновить кэш",
     "Refresh credential": "Обновить учётные данные",

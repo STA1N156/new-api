@@ -33,6 +33,7 @@ interface HourlyChartProps {
   format: (value: number) => string
   formatAxis?: (value: number) => string
   wholeNumbers?: boolean
+  totalCount?: number
 }
 
 export function HourlyChart(props: HourlyChartProps) {
@@ -48,6 +49,8 @@ export function HourlyChart(props: HourlyChartProps) {
       </h3>
       <p className='mt-2 text-2xl font-semibold tabular-nums'>
         {props.format(total)}
+        {props.totalCount !== undefined &&
+          ` / ${t('{{count}} transactions', { count: props.totalCount })}`}
       </p>
       <p className='text-muted-foreground mt-1 min-h-8 text-xs leading-relaxed'>
         {props.detail}

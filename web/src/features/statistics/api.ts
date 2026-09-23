@@ -23,8 +23,10 @@ export interface StatisticsHour {
   requests: number
   consumed_quota: number
   redeemed_quota: number
+  redeemed_count: number
   online_topup: number
   subscription_topup: number
+  topup_count: number
 }
 
 export interface DailyStatistics {

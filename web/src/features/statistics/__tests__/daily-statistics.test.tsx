@@ -25,8 +25,10 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import i18next from 'i18next'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
+import zh from '@/i18n/locales/zh.json'
 import { api } from '@/lib/api'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
@@ -50,10 +52,12 @@ beforeEach(() => {
   })
 })
 
-afterEach(() => {
+afterEach(async () => {
   cleanup()
   client.clear()
   useSystemConfigStore.getState().setConfig(initialConfig)
+  await i18next.changeLanguage('en')
+  i18next.removeResourceBundle('zh', 'translation')
 })
 
 const statistics: DailyStatistics = {
@@ -64,8 +68,10 @@ const statistics: DailyStatistics = {
     requests: hour === 12 ? 12 : 0,
     consumed_quota: hour === 12 ? 235000 : 0,
     redeemed_quota: hour === 12 ? 50000000 : 0,
+    redeemed_count: hour === 12 ? 3 : Number(hour === 11) * 2,
     online_topup: hour === 12 ? 88.5 : 0,
     subscription_topup: hour === 12 ? 600 : 0,
+    topup_count: hour === 12 ? 2 : Number(hour === 11),
   })),
 }
 
@@ -92,14 +98,16 @@ it('shows all four daily totals and switches to a selected day from the last 30 
   ).toBeVisible()
   expect(
     within(screen.getByRole('region', { name: 'Redemption' })).getByText(
-      '🍪 1,000'
+      '🍪 1,000 / 5 transactions'
     )
   ).toBeVisible()
   expect(
-    within(screen.getByRole('region', { name: 'Top-up' })).getByText('¥688.50')
+    within(screen.getByRole('region', { name: 'Top-up' })).getByText(
+      '¥688.50 / 3 transactions'
+    )
   ).toBeVisible()
   expect(
-    screen.getByText('Online top-ups ¥88.50 · Subscription payments ¥600.00')
+    screen.getByText('Direct ¥88.50 · Subscriptions ¥600.00')
   ).toBeVisible()
   const selector = screen.getByRole('combobox', { name: 'Statistics date' })
   await user.click(selector)
@@ -117,7 +125,15 @@ it('shows all four daily totals and switches to a selected day from the last 30 
       data: {
         ...statistics,
         date: '2026-09-14',
-        hours: statistics.hours.map((hour) => ({ ...hour, requests: 0 })),
+        hours: statistics.hours.map((hour) => ({
+          ...hour,
+          requests: 0,
+          redeemed_quota: 0,
+          redeemed_count: 0,
+          online_topup: 0,
+          subscription_topup: 0,
+          topup_count: 0,
+        })),
       },
     },
   })
@@ -135,6 +151,30 @@ it('shows all four daily totals and switches to a selected day from the last 30 
       '0'
     ).length
   ).toBeGreaterThan(0)
+  expect(
+    within(screen.getByRole('region', { name: 'Redemption' })).getByText(
+      '🍪 0 / 0 transactions'
+    )
+  ).toBeVisible()
+  expect(
+    within(screen.getByRole('region', { name: 'Top-up' })).getByText(
+      '¥0.00 / 0 transactions'
+    )
+  ).toBeVisible()
+})
+
+it('uses 笔 for transaction totals and 直充/订阅 labels in Chinese', async () => {
+  i18next.addResourceBundle('zh', 'translation', zh.translation)
+  await i18next.changeLanguage('zh')
+  vi.spyOn(api, 'get').mockResolvedValue({
+    data: { success: true, data: statistics },
+  })
+  renderStatistics()
+  const redemption = await screen.findByRole('region', { name: '兑换' })
+  expect(within(redemption).getByText('🍪 1,000 / 5 笔')).toBeVisible()
+  const topup = screen.getByRole('region', { name: '充值' })
+  expect(within(topup).getByText('¥688.50 / 3 笔')).toBeVisible()
+  expect(within(topup).getByText('直充 ¥88.50 · 订阅 ¥600.00')).toBeVisible()
 })
 
 it('shows a retry action instead of misleading zero totals when statistics fail to load', async () => {

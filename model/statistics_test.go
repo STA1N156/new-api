@@ -53,8 +53,8 @@ func TestDailyStatistics(t *testing.T) {
 	require.Equal(t, "2026-09-22", statistics.Date)
 	require.Len(t, statistics.Hours, 24)
 	require.Equal(t, StatisticsHour{Timestamp: start, Requests: 2, ConsumedQuota: 123}, statistics.Hours[0])
-	require.Equal(t, StatisticsHour{Timestamp: start + 3600, Requests: 1, RedeemedQuota: 150000}, statistics.Hours[1])
-	require.Equal(t, StatisticsHour{Timestamp: start + 7200, OnlineTopup: 88.5, SubscriptionTopup: 600}, statistics.Hours[2])
+	require.Equal(t, StatisticsHour{Timestamp: start + 3600, Requests: 1, RedeemedQuota: 150000, RedeemedCount: 2}, statistics.Hours[1])
+	require.Equal(t, StatisticsHour{Timestamp: start + 7200, OnlineTopup: 88.5, SubscriptionTopup: 600, TopupCount: 2}, statistics.Hours[2])
 	require.Equal(t, StatisticsHour{Timestamp: start + 3*3600}, statistics.Hours[3])
 	require.Equal(t, StatisticsHour{Timestamp: start + 23*3600, Requests: 1, ConsumedQuota: 456}, statistics.Hours[23])
 }

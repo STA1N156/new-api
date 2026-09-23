@@ -23,6 +23,13 @@ type Vendor struct {
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index;uniqueIndex:uk_vendor_name_delete_at,priority:2"`
 }
 
+func (v *Vendor) AfterFind(_ *gorm.DB) error {
+	if v.Icon == "" {
+		v.Icon = getDefaultVendorIcon(v.Name)
+	}
+	return nil
+}
+
 // Insert 创建新的供应商记录
 func (v *Vendor) Insert() error {
 	now := common.GetTimestamp()

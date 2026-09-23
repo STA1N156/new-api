@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { expect, it, vi } from 'vitest'
 
 import { ModelCard } from '../components/model-card'
+import { PricingSidebar } from '../components/pricing-sidebar'
 import {
   PricingToolbar,
   type PricingToolbarProps,
@@ -34,13 +35,10 @@ const props: PricingToolbarProps = {
   viewMode: 'card',
   showRechargePrice: false,
   quotaTypeFilter: 'all',
-  endpointTypeFilter: 'all',
   vendorFilter: 'all',
   groupFilter: 'all',
-  tagFilter: 'all',
   vendors: [],
   groups: [],
-  tags: [],
   models: [],
   hasActiveFilters: false,
   activeFilterCount: 0,
@@ -49,10 +47,8 @@ const props: PricingToolbarProps = {
   onRechargePriceChange: vi.fn(),
   onViewModeChange: vi.fn(),
   onQuotaTypeChange: vi.fn(),
-  onEndpointTypeChange: vi.fn(),
   onVendorChange: vi.fn(),
   onGroupChange: vi.fn(),
-  onTagChange: vi.fn(),
   onClearFilters: vi.fn(),
 }
 
@@ -100,3 +96,34 @@ it('keeps one price mode control directly right of Filter on mobile and switches
   fireEvent.click(standard)
   expect(screen.getAllByText('$2')).toHaveLength(2)
 })
+
+it.each(['sidebar', 'mobile'])(
+  'omits endpoint and tag filters from the %s while keeping pricing filters usable',
+  async (display) => {
+    const onQuotaTypeChange = vi.fn()
+    if (display === 'sidebar') {
+      render(
+        <PricingSidebar {...props} onQuotaTypeChange={onQuotaTypeChange} />
+      )
+    } else {
+      render(
+        <PricingToolbar {...props} onQuotaTypeChange={onQuotaTypeChange} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Filter' }))
+      await screen.findByRole('dialog')
+    }
+    const filters = within(screen.getByRole('complementary'))
+    expect(
+      filters.queryByRole('button', { name: 'Endpoint Type' })
+    ).not.toBeInTheDocument()
+    expect(
+      filters.queryByRole('button', { name: 'Model Tags' })
+    ).not.toBeInTheDocument()
+    expect(
+      filters.queryByRole('button', { name: /^Chat/ })
+    ).not.toBeInTheDocument()
+    expect(filters.getByRole('button', { name: 'Groups' })).toBeVisible()
+    fireEvent.click(filters.getByRole('button', { name: /^Token-based/ }))
+    expect(onQuotaTypeChange).toHaveBeenCalledWith('token')
+  }
+)

@@ -39,7 +39,11 @@ import {
   getNameRuleConfig,
   getQuotaTypeConfig,
 } from '../constants'
-import { parseModelTags, formatEndpointsDisplay } from '../lib'
+import {
+  parseModelTags,
+  formatEndpointsDisplay,
+  inferModelVendor,
+} from '../lib'
 import type { Model, Vendor } from '../types'
 import { DataTableRowActions } from './data-table-row-actions'
 import { DescriptionCell } from './description-cell'
@@ -110,11 +114,9 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
       cell: ({ row }) => {
         const model = row.original
         const name = row.getValue('model_name') as string
+        const vendor = vendorMap[model.vendor_id || 0] || inferModelVendor(name)
         const iconKey =
-          model.icon ||
-          vendorMap[model.vendor_id || 0]?.icon ||
-          model.model_name?.[0] ||
-          'N'
+          model.icon || vendor?.icon || model.model_name?.[0] || 'N'
         const icon = getCompactModelIcon(iconKey)
 
         return (
@@ -241,7 +243,8 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
       header: t('Vendor'),
       cell: ({ row }) => {
         const vendorId = row.getValue('vendor_id') as number
-        const vendor = vendorMap[vendorId]
+        const vendor =
+          vendorMap[vendorId] || inferModelVendor(row.original.model_name)
 
         if (!vendor) {
           return <span className='text-muted-foreground text-xs'>-</span>

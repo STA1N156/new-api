@@ -16,12 +16,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type TFunction } from 'i18next'
+import type { TFunction } from 'i18next'
 
 import { formatTimestampToDate } from '@/lib/format'
 
 import { getNameRuleConfig, getQuotaTypeConfig } from '../constants'
-import type { NameRule, Model } from '../types'
+import type { NameRule, Model, Vendor } from '../types'
+
+export function inferModelVendor(
+  modelName: string
+): Pick<Vendor, 'name' | 'icon'> | undefined {
+  const name = modelName.toLowerCase()
+  if (name.includes('mimo')) {
+    return { name: '小米', icon: 'XiaomiMiMo' }
+  }
+  if (name.includes('step-') || name.includes('stepfun')) {
+    return { name: '阶跃星辰', icon: 'Stepfun' }
+  }
+  if (/(^|[^a-z0-9])nai(?:[-_]|$)|novelai/.test(name)) {
+    return { name: 'NovelAI', icon: 'NovelAI' }
+  }
+  return undefined
+}
 
 // ============================================================================
 // Time Formatting

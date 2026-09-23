@@ -155,6 +155,10 @@ export function Statistics() {
                 <HourlyChart
                   title={t('Redemption')}
                   values={hours.map((hour) => hour.redeemed_quota)}
+                  totalCount={hours.reduce(
+                    (sum, hour) => sum + hour.redeemed_count,
+                    0
+                  )}
                   color='var(--chart-2)'
                   format={formatQuota}
                   formatAxis={formatQuotaAxis}
@@ -164,6 +168,10 @@ export function Statistics() {
                 />
                 <HourlyChart
                   title={t('Top-up')}
+                  totalCount={hours.reduce(
+                    (sum, hour) => sum + hour.topup_count,
+                    0
+                  )}
                   values={hours.map(
                     (hour) => hour.online_topup + hour.subscription_topup
                   )}
@@ -173,7 +181,7 @@ export function Statistics() {
                     value.toLocaleString(undefined, { notation: 'compact' })
                   }
                   detail={t(
-                    'Online top-ups {{online}} · Subscription payments {{subscriptions}}',
+                    'Direct {{online}} · Subscriptions {{subscriptions}}',
                     {
                       online: formatMoney(online),
                       subscriptions: formatMoney(subscriptions),

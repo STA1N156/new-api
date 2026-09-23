@@ -21,7 +21,6 @@ import {
   FILTER_ALL,
   QUOTA_TYPES,
   QUOTA_TYPE_VALUES,
-  ENDPOINT_TYPES,
 } from '../constants'
 import type { PricingModel } from '../types'
 
@@ -86,19 +85,6 @@ export function filterByQuotaType(
 }
 
 /**
- * Filter models by endpoint type
- */
-export function filterByEndpointType(
-  models: PricingModel[],
-  endpointType: string
-): PricingModel[] {
-  if (endpointType === ENDPOINT_TYPES.ALL) return models
-  return models.filter((m) =>
-    m.supported_endpoint_types?.includes(endpointType)
-  )
-}
-
-/**
  * Get model price for sorting
  */
 function getModelPrice(model: PricingModel): number {
@@ -141,8 +127,6 @@ export function filterAndSortModels(
     vendor: string
     group: string
     quotaType: string
-    endpointType: string
-    tag: string
     sortBy: string
   }
 ): PricingModel[] {
@@ -150,8 +134,6 @@ export function filterAndSortModels(
   result = filterByVendor(result, filters.vendor)
   result = filterByGroup(result, filters.group)
   result = filterByQuotaType(result, filters.quotaType)
-  result = filterByEndpointType(result, filters.endpointType)
-  result = filterByTag(result, filters.tag)
   result = sortModels(result, filters.sortBy)
 
   return result
@@ -166,39 +148,4 @@ export function parseTags(tagsString?: string): string[] {
     .split(/[,;|\s]+/)
     .map((t) => t.trim())
     .filter(Boolean)
-}
-
-/**
- * Extract all unique tags from models
- */
-export function extractAllTags(models: PricingModel[]): string[] {
-  const tagSet = new Set<string>()
-
-  models.forEach((model) => {
-    if (model.tags) {
-      const tags = parseTags(model.tags)
-      tags.forEach((tag) => {
-        tagSet.add(tag.toLowerCase())
-      })
-    }
-  })
-
-  return Array.from(tagSet).sort((a, b) => a.localeCompare(b))
-}
-
-/**
- * Filter models by tag
- */
-export function filterByTag(
-  models: PricingModel[],
-  tag: string
-): PricingModel[] {
-  if (tag === FILTER_ALL) return models
-
-  const tagLower = tag.toLowerCase()
-  return models.filter((m) => {
-    if (!m.tags) return false
-    const modelTags = parseTags(m.tags).map((t) => t.toLowerCase())
-    return modelTags.includes(tagLower)
-  })
 }

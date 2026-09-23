@@ -13,8 +13,10 @@ type StatisticsHour struct {
 	Requests          int64   `json:"requests"`
 	ConsumedQuota     int64   `json:"consumed_quota"`
 	RedeemedQuota     int64   `json:"redeemed_quota"`
+	RedeemedCount     int64   `json:"redeemed_count"`
 	OnlineTopup       float64 `json:"online_topup"`
 	SubscriptionTopup float64 `json:"subscription_topup"`
+	TopupCount        int64   `json:"topup_count"`
 }
 
 type DailyStatistics struct {
@@ -53,18 +55,18 @@ func GetDailyStatistics(date string, now time.Time) (*DailyStatistics, error) {
 			Group("created_at - (created_at % 3600)"),
 		// Keep redeemed codes in historical totals after an administrator deletes them.
 		DB.Unscoped().Model(&Redemption{}).
-			Select("redeemed_time - (redeemed_time % 3600) AS timestamp, SUM(quota) AS redeemed_quota").
+			Select("redeemed_time - (redeemed_time % 3600) AS timestamp, SUM(quota) AS redeemed_quota, COUNT(*) AS redeemed_count").
 			Where("status = ? AND redeemed_time >= ? AND redeemed_time < ?", common.RedemptionCodeStatusUsed, start, end).
 			Group("redeemed_time - (redeemed_time % 3600)"),
 		DB.Model(&TopUp{}).
-			Select("complete_time - (complete_time % 3600) AS timestamp, SUM(money) AS online_topup").
+			Select("complete_time - (complete_time % 3600) AS timestamp, SUM(money) AS online_topup, COUNT(*) AS topup_count").
 			Where("status = ? AND complete_time >= ? AND complete_time < ?", common.TopUpStatusSuccess, start, end).
 			Where("payment_method <> ? AND payment_provider <> ?", PaymentMethodBalance, PaymentProviderBalance).
 			Where("NOT EXISTS (?)", subscriptionTrades).
 			Group("complete_time - (complete_time % 3600)"),
 		// Paid subscriptions also create top-up records, excluded above to avoid double counting.
 		DB.Model(&SubscriptionOrder{}).
-			Select("complete_time - (complete_time % 3600) AS timestamp, SUM(money) AS subscription_topup").
+			Select("complete_time - (complete_time % 3600) AS timestamp, SUM(money) AS subscription_topup, COUNT(*) AS topup_count").
 			Where("status = ? AND complete_time >= ? AND complete_time < ?", common.TopUpStatusSuccess, start, end).
 			Where("payment_method <> ? AND payment_provider <> ?", PaymentMethodBalance, PaymentProviderBalance).
 			Group("complete_time - (complete_time % 3600)"),
@@ -79,8 +81,10 @@ func GetDailyStatistics(date string, now time.Time) (*DailyStatistics, error) {
 			hour.Requests += row.Requests
 			hour.ConsumedQuota += row.ConsumedQuota
 			hour.RedeemedQuota += row.RedeemedQuota
+			hour.RedeemedCount += row.RedeemedCount
 			hour.OnlineTopup += row.OnlineTopup
 			hour.SubscriptionTopup += row.SubscriptionTopup
+			hour.TopupCount += row.TopupCount
 		}
 	}
 	return result, nil

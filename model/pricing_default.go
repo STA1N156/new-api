@@ -1,8 +1,11 @@
 package model
 
 import (
+	"regexp"
 	"strings"
 )
+
+var naiModelPattern = regexp.MustCompile(`(?i)(?:^|[^a-z0-9])nai(?:[-_]|$)`)
 
 // 简化的供应商映射规则
 var defaultVendorRules = map[string]string{
@@ -21,6 +24,10 @@ var defaultVendorRules = map[string]string{
 	"deepseek": "DeepSeek",
 	"abab":     "MiniMax",
 	"minimax":  "MiniMax",
+	"mimo":     "小米",
+	"step-":    "阶跃星辰",
+	"stepfun":  "阶跃星辰",
+	"novelai":  "NovelAI",
 	"ernie":    "百度",
 	"spark":    "讯飞",
 	"hunyuan":  "腾讯",
@@ -48,6 +55,9 @@ var defaultVendorIcons = map[string]string{
 	"阿里巴巴":       "Qwen.Color",
 	"DeepSeek":   "DeepSeek.Color",
 	"MiniMax":    "Minimax.Color",
+	"小米":         "XiaomiMiMo",
+	"阶跃星辰":       "Stepfun",
+	"NovelAI":    "NovelAI",
 	"百度":         "Wenxin.Color",
 	"讯飞":         "Spark.Color",
 	"腾讯":         "Hunyuan.Color",
@@ -72,7 +82,8 @@ var defaultVendorIcons = map[string]string{
 func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vendor, enableAbilities []AbilityWithChannel) {
 	for _, ability := range enableAbilities {
 		modelName := ability.Model
-		if _, exists := metaMap[modelName]; exists {
+		meta := metaMap[modelName]
+		if meta != nil && meta.VendorID != 0 {
 			continue
 		}
 
@@ -85,22 +96,33 @@ func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vend
 				break
 			}
 		}
+		if vendorID == 0 && naiModelPattern.MatchString(modelName) {
+			vendorID = getOrCreateVendor("NovelAI", vendorMap)
+		}
 
-		// 创建模型元数据
-		metaMap[modelName] = &Model{
-			ModelName: modelName,
-			VendorID:  vendorID,
-			Status:    1,
-			NameRule:  NameRuleExact,
+		if meta != nil {
+			// 规则可能供多个模型共用，复制后补充供应商，保留原有展示设置。
+			resolved := *meta
+			resolved.VendorID = vendorID
+			metaMap[modelName] = &resolved
+		} else {
+			metaMap[modelName] = &Model{
+				ModelName: modelName,
+				VendorID:  vendorID,
+				Status:    1,
+				NameRule:  NameRuleExact,
+			}
 		}
 	}
 }
 
 // 查找或创建供应商
 func getOrCreateVendor(vendorName string, vendorMap map[int]*Vendor) int {
+	icon := getDefaultVendorIcon(vendorName)
 	// 查找现有供应商
 	for id, vendor := range vendorMap {
-		if vendor.Name == vendorName {
+		sameBrand := (icon == "XiaomiMiMo" || icon == "Stepfun") && getDefaultVendorIcon(vendor.Name) == icon
+		if strings.EqualFold(vendor.Name, vendorName) || sameBrand {
 			return id
 		}
 	}
@@ -109,7 +131,7 @@ func getOrCreateVendor(vendorName string, vendorMap map[int]*Vendor) int {
 	newVendor := &Vendor{
 		Name:   vendorName,
 		Status: 1,
-		Icon:   getDefaultVendorIcon(vendorName),
+		Icon:   icon,
 	}
 
 	if err := newVendor.Insert(); err != nil {
@@ -122,8 +144,13 @@ func getOrCreateVendor(vendorName string, vendorMap map[int]*Vendor) int {
 
 // 获取供应商默认图标
 func getDefaultVendorIcon(vendorName string) string {
-	if icon, exists := defaultVendorIcons[vendorName]; exists {
-		return icon
+	switch strings.ToLower(strings.TrimSpace(vendorName)) {
+	case "xiaomi", "mimo", "xiaomimimo", "小米":
+		vendorName = "小米"
+	case "stepfun", "阶跃星辰":
+		vendorName = "阶跃星辰"
+	case "novelai":
+		vendorName = "NovelAI"
 	}
-	return ""
+	return defaultVendorIcons[vendorName]
 }

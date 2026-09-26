@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Confirm invitation registration": "Подтверждение регистрации по приглашению",
+    "Please answer both questions before continuing.": "Перед продолжением ответьте на оба вопроса.",
+    "Is the inviter a friend you know?": "Вы уверены, что пригласивший вас человек — ваш знакомый друг?",
+    "If this invitation link is later found to have been shared by a stranger in comments, QQ groups or similar places, your account will be permanently banned. Do you confirm registering with this invitation link?": "Если позднее выяснится, что ссылку распространял незнакомец в комментариях, группах QQ или подобных местах, аккаунт будет заблокирован навсегда. Вы подтверждаете регистрацию по этой ссылке?",
+    "Confirm, the inviter is someone I know.": "Подтверждаю, я знаю пригласившего меня человека.",
+    "Register on my own without an invitation code.": "Зарегистрироваться без кода приглашения.",
+    "Not someone I know": "Я не знаю этого человека",
+    "Confirm ({{seconds}}s)": "Подтвердить ({{seconds}} с)",
     "Use first": "Использовать первым",
     "Using first": "Используется первым",
     "No active subscriptions": "Нет активных подписок",

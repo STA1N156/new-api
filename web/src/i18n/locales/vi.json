@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Confirm invitation registration": "Xác nhận đăng ký qua lời mời",
+    "Please answer both questions before continuing.": "Vui lòng trả lời cả hai câu hỏi trước khi tiếp tục.",
+    "Is the inviter a friend you know?": "Bạn có chắc người mời là bạn bè mà bạn quen biết không?",
+    "If this invitation link is later found to have been shared by a stranger in comments, QQ groups or similar places, your account will be permanently banned. Do you confirm registering with this invitation link?": "Nếu sau này xác minh rằng liên kết mời được người lạ chia sẻ trong bình luận, nhóm QQ hoặc những nơi tương tự, tài khoản sẽ bị khóa vĩnh viễn. Bạn có xác nhận đăng ký bằng liên kết này không?",
+    "Confirm, the inviter is someone I know.": "Xác nhận, tôi quen biết người mời.",
+    "Register on my own without an invitation code.": "Tự đăng ký mà không dùng mã mời.",
+    "Not someone I know": "Tôi không quen người này",
+    "Confirm ({{seconds}}s)": "Xác nhận ({{seconds}} giây)",
     "Use first": "Ưu tiên sử dụng",
     "Using first": "Đang ưu tiên",
     "No active subscriptions": "Không có gói đăng ký đang hoạt động",

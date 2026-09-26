@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Confirm invitation registration": "Confirm invitation registration",
+    "Please answer both questions before continuing.": "Please answer both questions before continuing.",
+    "Is the inviter a friend you know?": "Is the inviter a friend you know?",
+    "If this invitation link is later found to have been shared by a stranger in comments, QQ groups or similar places, your account will be permanently banned. Do you confirm registering with this invitation link?": "If this invitation link is later found to have been shared by a stranger in comments, QQ groups or similar places, your account will be permanently banned. Do you confirm registering with this invitation link?",
+    "Confirm, the inviter is someone I know.": "Confirm, the inviter is someone I know.",
+    "Register on my own without an invitation code.": "Register on my own without an invitation code.",
+    "Not someone I know": "Not someone I know",
+    "Confirm ({{seconds}}s)": "Confirm ({{seconds}}s)",
     "Use first": "Use first",
     "Using first": "Using first",
     "No active subscriptions": "No active subscriptions",

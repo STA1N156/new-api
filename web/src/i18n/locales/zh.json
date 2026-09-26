@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Confirm invitation registration": "邀请注册确认",
+    "Please answer both questions before continuing.": "请完成以下两项选择后继续。",
+    "Is the inviter a friend you know?": "邀请人是你熟悉的朋友吗？",
+    "If this invitation link is later found to have been shared by a stranger in comments, QQ groups or similar places, your account will be permanently banned. Do you confirm registering with this invitation link?": "若后续核实邀请链接为陌生人在评论区/Q群等地方传播，账号将被永久封禁，是否确认使用此邀请链接注册？",
+    "Confirm, the inviter is someone I know.": "确认，邀请人是我熟悉的人。",
+    "Register on my own without an invitation code.": "不使用邀请码，自己注册。",
+    "Not someone I know": "不是",
+    "Confirm ({{seconds}}s)": "确认（{{seconds}}秒）",
     "Use first": "优先使用",
     "Using first": "优先使用中",
     "No active subscriptions": "暂无生效中的订阅",

@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Confirm invitation registration": "招待による登録の確認",
+    "Please answer both questions before continuing.": "続行する前に、両方の質問に回答してください。",
+    "Is the inviter a friend you know?": "招待した人は、あなたがよく知っている友人ですか？",
+    "If this invitation link is later found to have been shared by a stranger in comments, QQ groups or similar places, your account will be permanently banned. Do you confirm registering with this invitation link?": "招待リンクがコメント欄やQQグループなどで見知らぬ人から配布されたと後で確認された場合、アカウントは永久に停止されます。この招待リンクで登録しますか？",
+    "Confirm, the inviter is someone I know.": "はい、招待した人は私の知り合いです。",
+    "Register on my own without an invitation code.": "招待コードを使わずに登録します。",
+    "Not someone I know": "知り合いではありません",
+    "Confirm ({{seconds}}s)": "確認（{{seconds}}秒）",
     "Use first": "優先して使用",
     "Using first": "優先使用中",
     "No active subscriptions": "有効なサブスクリプションはありません",

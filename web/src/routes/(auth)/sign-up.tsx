@@ -23,6 +23,9 @@ import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/(auth)/sign-up')({
   component: SignUp,
+  validateSearch: (search: Record<string, unknown>): { aff?: string } => ({
+    aff: typeof search.aff === 'string' ? search.aff : undefined,
+  }),
   beforeLoad: async () => {
     const { auth } = useAuthStore.getState()
 

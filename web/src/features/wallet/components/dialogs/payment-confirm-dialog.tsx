@@ -101,11 +101,11 @@ export function PaymentConfirmDialog({
             ) : (
               <div className='flex items-baseline gap-2'>
                 <span className='text-2xl font-semibold'>
-                  {formatCurrency(paymentAmount)}
+                  ¥{formatCurrency(paymentAmount)}
                 </span>
                 {hasDiscount && (
                   <span className='text-muted-foreground text-sm line-through'>
-                    {formatCurrency(originalAmount)}
+                    ¥{formatCurrency(originalAmount)}
                   </span>
                 )}
               </div>
@@ -113,13 +113,13 @@ export function PaymentConfirmDialog({
           </div>
 
           {hasDiscount && !calculating && (
-            <div className='bg-muted/50 rounded-lg p-3'>
-              <div className='flex items-center justify-between text-sm'>
-                <span className='text-muted-foreground'>{t('You save')}</span>
-                <span className='font-semibold text-green-600'>
-                  {formatCurrency(discountAmount)}
-                </span>
-              </div>
+            <div className='flex items-center justify-between text-green-700 dark:text-green-400'>
+              <span className='text-muted-foreground text-sm'>
+                {t('You save')}
+              </span>
+              <span className='text-2xl font-semibold'>
+                ¥{formatCurrency(discountAmount)}
+              </span>
             </div>
           )}
 

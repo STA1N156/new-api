@@ -224,11 +224,11 @@ export function RechargeFormCard({
           {hasConfigurableTopup && (
             <>
               {presetAmounts.length > 0 && (
-                <div className='space-y-2.5 sm:space-y-3'>
+                <div className='@container space-y-2.5 sm:space-y-3'>
                   <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                     {t('Amount')}
                   </Label>
-                  <div className='grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4'>
+                  <div className='grid grid-cols-2 gap-2 sm:gap-2.5 @lg:grid-cols-3 @2xl:grid-cols-4'>
                     {presetAmounts.map((preset) => {
                       const discount =
                         preset.discount ||
@@ -250,7 +250,7 @@ export function RechargeFormCard({
                           key={preset.value}
                           variant='outline'
                           className={cn(
-                            'flex h-auto min-h-16 min-w-0 flex-col items-start rounded-lg px-3 py-2.5 text-left whitespace-normal sm:min-h-[72px] sm:p-4',
+                            'flex h-auto min-h-16 min-w-0 flex-col items-start gap-1.5 rounded-lg px-3 py-2.5 text-left whitespace-normal sm:p-3',
                             selectedPreset === preset.value
                               ? 'border-foreground bg-foreground/5 dark:border-foreground dark:bg-foreground/10'
                               : 'border-muted'
@@ -258,18 +258,18 @@ export function RechargeFormCard({
                           onClick={() => onSelectPreset(preset)}
                           aria-pressed={selectedPreset === preset.value}
                         >
-                          <div className='flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1'>
-                            <div className='min-w-0 text-base font-semibold break-all sm:text-lg'>
+                          <div className='flex w-full flex-nowrap items-center justify-between gap-x-1 sm:gap-x-2'>
+                            <div className='min-w-0 text-base font-semibold whitespace-nowrap sm:text-lg'>
                               {formatNumber(displayValue)}
                               {quotaUnit}
                             </div>
                             {hasDiscount && (
-                              <div className='shrink-0 text-xs font-semibold text-green-700 sm:text-sm dark:text-green-400'>
+                              <div className='shrink-0 text-[13px] font-semibold text-green-700 sm:text-[15px] dark:text-green-400'>
                                 {getDiscountLabel(discount)}
                               </div>
                             )}
                           </div>
-                          <div className='text-muted-foreground mt-1.5 flex w-full flex-wrap items-baseline gap-x-0.5 gap-y-1 text-xs sm:mt-2'>
+                          <div className='text-muted-foreground flex w-full flex-wrap items-baseline gap-x-0.5 gap-y-1 text-[13px]'>
                             <span>¥{formatCurrency(actualPrice)}</span>
                             {hasDiscount && savedAmount > 0 && (
                               <>

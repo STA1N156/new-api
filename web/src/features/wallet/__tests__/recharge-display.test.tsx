@@ -77,13 +77,14 @@ it('shows credited currency, compact discount and yuan savings without changing 
   const discounted = screen.getByRole('button', { name: /300🍪/ })
   expect(screen.queryByText(/1¥ =/)).not.toBeInTheDocument()
   expect(within(discounted).getByText('-1%')).toHaveClass(
-    'text-xs',
-    'sm:text-sm'
+    'text-[13px]',
+    'sm:text-[15px]'
   )
   expect(within(discounted).getByText('¥29.7')).toBeVisible()
   expect(within(discounted).getByText('立省 ¥0.3')).toBeVisible()
   expect(within(discounted).getByText('¥29.7').parentElement).toHaveClass(
-    'gap-x-0.5'
+    'gap-x-0.5',
+    'text-[13px]'
   )
   expect(within(discounted).queryByText(/立减/)).not.toBeInTheDocument()
   const regular = screen.getByRole('button', { name: /100🍪/ })
@@ -103,6 +104,44 @@ it('uses the configured currency symbol rather than hardcoding cookies on credit
   render(<RechargeFormCard {...props} usdExchangeRate={1} />)
   expect(screen.getByRole('button', { name: /30\$/ })).toBeVisible()
   expect(screen.queryByText(/🍪/)).not.toBeInTheDocument()
+})
+
+it('shows grouped thousands and keeps each discount beside its credited amount', () => {
+  render(
+    <RechargeFormCard
+      {...props}
+      presetAmounts={[
+        { value: 300, discount: 0.9 },
+        { value: 500, discount: 0.85 },
+      ]}
+    />
+  )
+  const presetGrid = screen.getByRole('button', {
+    name: /3,000🍪/,
+  }).parentElement
+  expect(presetGrid).toHaveClass(
+    'grid-cols-2',
+    '@lg:grid-cols-3',
+    '@2xl:grid-cols-4'
+  )
+  expect(presetGrid).not.toHaveClass('md:grid-cols-4')
+  expect(presetGrid?.parentElement).toHaveClass('@container')
+  for (const [amount, discount] of [
+    ['3,000🍪', '-10%'],
+    ['5,000🍪', '-15%'],
+  ]) {
+    const card = screen.getByRole('button', { name: new RegExp(amount) })
+    expect(card).toHaveClass('gap-1.5', 'sm:p-3')
+    const label = within(card).getByText(amount)
+    expect(label).toHaveClass('whitespace-nowrap')
+    expect(label.parentElement).toHaveClass('flex', 'flex-nowrap', 'gap-x-1')
+    expect(label.parentElement).toContainElement(
+      within(card).getByText(discount)
+    )
+    expect(within(card).getByText(discount)).toHaveClass('shrink-0')
+  }
+  expect(screen.queryByText('3000🍪')).not.toBeInTheDocument()
+  expect(screen.queryByText('5000🍪')).not.toBeInTheDocument()
 })
 
 it('keeps the redemption prompt as plain text with a separate purchase link', () => {

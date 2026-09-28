@@ -228,7 +228,7 @@ export function RechargeFormCard({
                   <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                     {t('Amount')}
                   </Label>
-                  <div className='grid grid-cols-2 gap-2 sm:gap-2.5 @lg:grid-cols-3 @2xl:grid-cols-4'>
+                  <div className='grid grid-cols-2 gap-2.5 sm:gap-3 @lg:grid-cols-3 @2xl:grid-cols-4'>
                     {presetAmounts.map((preset) => {
                       const discount =
                         preset.discount ||
@@ -250,7 +250,7 @@ export function RechargeFormCard({
                           key={preset.value}
                           variant='outline'
                           className={cn(
-                            'flex h-auto min-h-16 min-w-0 flex-col items-start gap-1.5 rounded-lg px-3 py-2.5 text-left whitespace-normal sm:p-3',
+                            'flex h-auto min-h-16 min-w-0 flex-col items-start gap-2 rounded-lg px-3 py-2.5 text-left whitespace-normal sm:p-3',
                             selectedPreset === preset.value
                               ? 'border-foreground bg-foreground/5 dark:border-foreground dark:bg-foreground/10'
                               : 'border-muted'

@@ -131,7 +131,7 @@ it('shows grouped thousands and keeps each discount beside its credited amount',
     ['5,000🍪', '-15%'],
   ]) {
     const card = screen.getByRole('button', { name: new RegExp(amount) })
-    expect(card).toHaveClass('gap-1.5', 'sm:p-3')
+    expect(card).toHaveClass('gap-2', 'sm:p-3')
     const label = within(card).getByText(amount)
     expect(label).toHaveClass('whitespace-nowrap')
     expect(label.parentElement).toHaveClass('flex', 'flex-nowrap', 'gap-x-1')

@@ -34,6 +34,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { getCurrencyDisplay } from '@/lib/currency'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -113,6 +114,8 @@ export function RechargeFormCard({
   enableWaffoPancakeTopup,
 }: RechargeFormCardProps) {
   const { t } = useTranslation()
+  const { meta } = getCurrencyDisplay()
+  const quotaUnit = meta.kind === 'tokens' ? t('Tokens') : meta.symbol
   const [localAmount, setLocalAmount] = useState(topupAmount.toString())
 
   useEffect(() => {
@@ -247,30 +250,36 @@ export function RechargeFormCard({
                           key={preset.value}
                           variant='outline'
                           className={cn(
-                            'flex min-h-16 flex-col items-start rounded-lg px-3 py-2.5 text-left whitespace-normal sm:min-h-[72px] sm:p-4',
+                            'flex h-auto min-h-16 min-w-0 flex-col items-start rounded-lg px-3 py-2.5 text-left whitespace-normal sm:min-h-[72px] sm:p-4',
                             selectedPreset === preset.value
                               ? 'border-foreground bg-foreground/5 dark:border-foreground dark:bg-foreground/10'
                               : 'border-muted'
                           )}
                           onClick={() => onSelectPreset(preset)}
+                          aria-pressed={selectedPreset === preset.value}
                         >
-                          <div className='flex w-full items-center justify-between'>
-                            <div className='text-base font-semibold sm:text-lg'>
+                          <div className='flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1'>
+                            <div className='min-w-0 text-base font-semibold break-all sm:text-lg'>
                               {formatNumber(displayValue)}
+                              {quotaUnit}
                             </div>
                             {hasDiscount && (
-                              <div className='text-xs font-medium text-green-600'>
+                              <div className='shrink-0 text-xs font-semibold text-green-700 sm:text-sm dark:text-green-400'>
                                 {getDiscountLabel(discount)}
                               </div>
                             )}
                           </div>
-                          <div className='text-muted-foreground mt-1.5 w-full text-xs sm:mt-2'>
-                            Pay {formatCurrency(actualPrice)}
+                          <div className='text-muted-foreground mt-1.5 flex w-full flex-wrap items-baseline gap-x-0.5 gap-y-1 text-xs sm:mt-2'>
+                            <span>¥{formatCurrency(actualPrice)}</span>
                             {hasDiscount && savedAmount > 0 && (
-                              <span className='text-green-600'>
-                                {' '}
-                                • Save {formatCurrency(savedAmount)}
-                              </span>
+                              <>
+                                <span aria-hidden='true'>·</span>
+                                <span className='text-green-700 dark:text-green-400'>
+                                  {t('Save {{amount}}', {
+                                    amount: `¥${formatCurrency(savedAmount)}`,
+                                  })}
+                                </span>
+                              </>
                             )}
                           </div>
                         </Button>

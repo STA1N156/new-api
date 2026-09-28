@@ -177,7 +177,7 @@ it('shows purchased subscription usage as separate cycle percentages', async () 
     'aria-valuenow',
     '100'
   )
-  expect(screen.getByText(i18n.t('Waiting for reset'))).toBeVisible()
+  expect(screen.getByText(i18n.t('Exhausted'))).toBeVisible()
   for (const region of screen.getAllByRole('region', {
     name: /^每(7天|5小时)额度$/,
   })) {

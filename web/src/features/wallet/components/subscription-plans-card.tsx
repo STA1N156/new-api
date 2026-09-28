@@ -270,12 +270,6 @@ export function SubscriptionPlansCard({
     return map
   }, [plans])
 
-  const getRemainingDays = (sub: UserSubscriptionRecord) => {
-    const endTime = sub?.subscription?.end_time || 0
-    if (!endTime) return 0
-    return Math.max(0, Math.ceil((endTime - now / 1000) / 86400))
-  }
-
   if (loading) {
     return (
       <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
@@ -420,21 +414,23 @@ export function SubscriptionPlansCard({
           )}
 
           {hasActive && (
-            <div className='max-h-[32rem] space-y-4 overflow-y-auto pr-1'>
+            <div className='max-h-[40rem] space-y-4 overflow-y-auto pr-1'>
               {activeSubscriptions.map((sub) => {
                 const subscription = sub.subscription
                 const planTitle = planTitleMap.get(subscription?.plan_id) || ''
-                const remainDays = getRemainingDays(sub)
 
                 return (
                   <article
                     key={subscription?.id}
                     aria-label={`${t('Subscription')} #${subscription.id}`}
-                    className='bg-background space-y-3 rounded-2xl border p-3.5 text-xs sm:p-4'
+                    className={cn(
+                      'bg-background space-y-4 rounded-2xl border p-3.5 text-xs sm:p-5',
+                      subscription.is_preferred && 'border-primary/25'
+                    )}
                   >
                     <div className='flex flex-wrap items-center justify-between gap-2'>
                       <div className='flex min-w-0 flex-wrap items-center gap-2'>
-                        <span className='text-sm font-semibold'>
+                        <span className='min-w-0 text-base font-semibold [overflow-wrap:anywhere] break-words'>
                           {planTitle || t('Subscription')}
                         </span>
                         <StatusBadge
@@ -444,11 +440,6 @@ export function SubscriptionPlansCard({
                         />
                       </div>
                       <div className='flex items-center gap-3'>
-                        <span className='text-muted-foreground'>
-                          {t('{{count}} days remaining', {
-                            count: remainDays,
-                          })}
-                        </span>
                         <Button
                           variant='outline'
                           size='sm'

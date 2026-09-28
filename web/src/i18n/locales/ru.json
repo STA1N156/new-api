@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Save {{amount}}": "Экономия {{amount}}",
+    "Remaining {{minutes}}m": "Осталось {{minutes}} мин",
+    "Remaining {{hours}}h {{minutes}}m": "Осталось {{hours}} ч {{minutes}} мин",
+    "Remaining {{days}}d {{hours}}h {{minutes}}m": "Осталось {{days}} д {{hours}} ч {{minutes}} мин",
+    "Less than a minute remaining": "Осталось менее минуты",
+    "Less than a minute": "Менее минуты",
+    "Reset pending": "Ожидание сброса",
+    "Subscription validity": "Срок действия подписки",
     "Confirm invitation registration": "Подтверждение регистрации по приглашению",
     "Please answer both questions before continuing.": "Перед продолжением ответьте на оба вопроса.",
     "Is the inviter a friend you know?": "Вы уверены, что пригласивший вас человек — ваш знакомый друг?",

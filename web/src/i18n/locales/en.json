@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Save {{amount}}": "Save {{amount}}",
+    "Remaining {{minutes}}m": "Remaining {{minutes}}m",
+    "Remaining {{hours}}h {{minutes}}m": "Remaining {{hours}}h {{minutes}}m",
+    "Remaining {{days}}d {{hours}}h {{minutes}}m": "Remaining {{days}}d {{hours}}h {{minutes}}m",
+    "Less than a minute remaining": "Less than a minute remaining",
+    "Less than a minute": "Less than a minute",
+    "Reset pending": "Reset pending",
+    "Subscription validity": "Subscription validity",
     "Confirm invitation registration": "Confirm invitation registration",
     "Please answer both questions before continuing.": "Please answer both questions before continuing.",
     "Is the inviter a friend you know?": "Is the inviter a friend you know?",

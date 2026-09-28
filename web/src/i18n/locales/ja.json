@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Save {{amount}}": "{{amount}} お得",
+    "Remaining {{minutes}}m": "残り{{minutes}}分",
+    "Remaining {{hours}}h {{minutes}}m": "残り{{hours}}時間{{minutes}}分",
+    "Remaining {{days}}d {{hours}}h {{minutes}}m": "残り{{days}}日{{hours}}時間{{minutes}}分",
+    "Less than a minute remaining": "残り1分未満",
+    "Less than a minute": "1分未満",
+    "Reset pending": "リセット反映待ち",
+    "Subscription validity": "サブスクリプションの有効期限",
     "Confirm invitation registration": "招待による登録の確認",
     "Please answer both questions before continuing.": "続行する前に、両方の質問に回答してください。",
     "Is the inviter a friend you know?": "招待した人は、あなたがよく知っている友人ですか？",

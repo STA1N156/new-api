@@ -200,40 +200,42 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         </p>
       )}
 
-      {/* Footer: left metadata and right performance summary share row alignment */}
-      <div className='mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-1 sm:mt-4'>
-        <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
-          {(isTokenBased || isDynamicPricing) &&
-            discount != null &&
-            discount > 0 &&
-            discount <= 10 && (
-              <span className='text-sm font-medium text-emerald-600 dark:text-emerald-400'>
-                {discount === 10
-                  ? t('Official list price')
-                  : t('{{percent}}% off official price', {
-                      discount,
-                      percent: Number(((10 - discount) * 10).toFixed(2)),
-                    })}
-              </span>
-            )}
-          <ModelBillingModeBadge model={props.model} />
-        </div>
-        <ModelPerfBadge perf={props.perf} className='row-span-2 self-start' />
-
-        {bottomTags.length > 0 && (
-          <div className='flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 sm:gap-x-3 sm:gap-y-1'>
-            {bottomTags.map((item) => (
-              <span key={item} className='text-muted-foreground/70 text-xs'>
-                {item}
-              </span>
-            ))}
-            {hiddenCount > 0 && (
-              <span className='text-muted-foreground/40 text-xs'>
-                +{hiddenCount}
-              </span>
-            )}
+      {/* Keep metadata centered beside the two-line performance summary. */}
+      <div className='mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 sm:mt-4'>
+        <div className='min-w-0 space-y-1'>
+          <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
+            {(isTokenBased || isDynamicPricing) &&
+              discount != null &&
+              discount > 0 &&
+              discount <= 10 && (
+                <span className='text-sm font-medium text-emerald-600 dark:text-emerald-400'>
+                  {discount === 10
+                    ? t('Official list price')
+                    : t('{{percent}}% off official price', {
+                        discount,
+                        percent: Number(((10 - discount) * 10).toFixed(2)),
+                      })}
+                </span>
+              )}
+            <ModelBillingModeBadge model={props.model} />
           </div>
-        )}
+
+          {bottomTags.length > 0 && (
+            <div className='flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 sm:gap-x-3 sm:gap-y-1'>
+              {bottomTags.map((item) => (
+                <span key={item} className='text-muted-foreground/70 text-xs'>
+                  {item}
+                </span>
+              ))}
+              {hiddenCount > 0 && (
+                <span className='text-muted-foreground/40 text-xs'>
+                  +{hiddenCount}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <ModelPerfBadge perf={props.perf} />
       </div>
     </div>
   )

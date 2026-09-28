@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Save {{amount}}": "立省 {{amount}}",
+    "Remaining {{minutes}}m": "剩余 {{minutes}}分钟",
+    "Remaining {{hours}}h {{minutes}}m": "剩余 {{hours}}小时{{minutes}}分钟",
+    "Remaining {{days}}d {{hours}}h {{minutes}}m": "剩余 {{days}}天{{hours}}小时{{minutes}}分钟",
+    "Less than a minute remaining": "剩余不足 1 分钟",
+    "Less than a minute": "不足 1 分钟",
+    "Reset pending": "重置待同步",
+    "Subscription validity": "订阅有效期",
     "Confirm invitation registration": "邀请注册确认",
     "Please answer both questions before continuing.": "请完成以下两项选择后继续。",
     "Is the inviter a friend you know?": "邀请人是你熟悉的朋友吗？",
@@ -1891,7 +1899,7 @@
     "Exchange rate must be greater than 0": "汇率必须大于 0",
     "Execute code in a sandbox during the response": "在响应过程中沙箱执行代码",
     "Executor": "执行实例",
-    "Exhausted": "已耗尽",
+    "Exhausted": "已用尽",
     "Existing account will be reused": "将使用现有账户",
     "Existing Models ({{count}})": "现有模型 ({{count}})",
     "Exists": "存在",

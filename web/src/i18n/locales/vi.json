@@ -1,5 +1,13 @@
 {
   "translation": {
+    "Save {{amount}}": "Tiết kiệm {{amount}}",
+    "Remaining {{minutes}}m": "Còn {{minutes}} phút",
+    "Remaining {{hours}}h {{minutes}}m": "Còn {{hours}} giờ {{minutes}} phút",
+    "Remaining {{days}}d {{hours}}h {{minutes}}m": "Còn {{days}} ngày {{hours}} giờ {{minutes}} phút",
+    "Less than a minute remaining": "Còn chưa đến một phút",
+    "Less than a minute": "Chưa đến một phút",
+    "Reset pending": "Đang chờ đặt lại",
+    "Subscription validity": "Thời hạn gói đăng ký",
     "Confirm invitation registration": "Xác nhận đăng ký qua lời mời",
     "Please answer both questions before continuing.": "Vui lòng trả lời cả hai câu hỏi trước khi tiếp tục.",
     "Is the inviter a friend you know?": "Bạn có chắc người mời là bạn bè mà bạn quen biết không?",

@@ -318,3 +318,28 @@ it('hides endpoint protocol names while retaining model tags', () => {
   expect(screen.getByText('reasoning')).toBeVisible()
   expect(screen.getByText('vision')).toBeVisible()
 })
+
+it.each(['', 'reasoning,vision'])(
+  'centers billing metadata beside performance without reserving an empty tag row: %s',
+  (tags) => {
+    render(
+      <ModelCard
+        model={{ ...model, quota_type: 1, model_price: 0.5, tags }}
+        onClick={vi.fn()}
+        perf={{ avg_latency_ms: 500, success_rate: 100, avg_tps: 104 }}
+      />
+    )
+    const billing = screen.getByText('Per Request')
+    const performance = screen.getByText('104t').parentElement?.parentElement
+    const footer = performance?.parentElement
+    expect(footer).toHaveClass('items-center')
+    expect(performance).not.toHaveClass('row-span-2', 'self-start')
+    expect(footer?.children).toHaveLength(2)
+    expect(footer?.firstElementChild).toContainElement(billing)
+    if (tags) {
+      expect(footer?.firstElementChild).toContainElement(
+        screen.getByText('reasoning')
+      )
+    }
+  }
+)

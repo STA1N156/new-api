@@ -21,26 +21,38 @@ import { api } from '@/lib/api'
 export interface StatisticsHour {
   timestamp: number
   requests: number
+  subscription_requests: number
   consumed_quota: number
+  subscription_consumed_quota: number
   redeemed_quota: number
   redeemed_count: number
   online_topup: number
+  online_topup_count: number
   subscription_topup: number
+  subscription_topup_count: number
+  redemption_topup: number
   topup_count: number
 }
 
 export interface DailyStatistics {
   date: string
   today: string
+  days: number
+  as_of: number
   hours: StatisticsHour[]
+  previous: StatisticsHour
 }
 
-export async function getDailyStatistics(date: string, signal?: AbortSignal) {
+export async function getDailyStatistics(
+  date: string,
+  signal?: AbortSignal,
+  days = 1
+) {
   const response = await api.get<{
     success: boolean
     message?: string
     data: DailyStatistics
-  }>('/api/data/statistics', { params: { date }, signal })
+  }>('/api/data/statistics', { params: { date, days }, signal })
   if (!response.data.success) throw new Error(response.data.message)
   return response.data.data
 }

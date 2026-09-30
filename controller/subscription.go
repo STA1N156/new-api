@@ -131,17 +131,28 @@ func SubscriptionRequestBalancePay(c *gin.Context) {
 
 // ---- Admin APIs ----
 
+type AdminSubscriptionPlanDTO struct {
+	SubscriptionPlanDTO
+	ActiveCount int64 `json:"active_count"`
+}
+
 func AdminListSubscriptionPlans(c *gin.Context) {
 	var plans []model.SubscriptionPlan
 	if err := model.DB.Order("sort_order desc, id desc").Find(&plans).Error; err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	result := make([]SubscriptionPlanDTO, 0, len(plans))
+	counts, err := model.GetActiveSubscriptionCountsByPlan()
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	result := make([]AdminSubscriptionPlanDTO, 0, len(plans))
 	for _, p := range plans {
 		p.NormalizeDefaults()
-		result = append(result, SubscriptionPlanDTO{
-			Plan: p,
+		result = append(result, AdminSubscriptionPlanDTO{
+			SubscriptionPlanDTO: SubscriptionPlanDTO{Plan: p},
+			ActiveCount:         counts[p.Id],
 		})
 	}
 	common.ApiSuccess(c, result)

@@ -66,6 +66,7 @@ it('shows a wrapping title, expiry countdown without a warning label and indepen
   }))
   render(<SubscriptionPlansCard topupInfo={null} />)
   const card = await screen.findByRole('article', { name: 'Subscription #42' })
+  expect(card).not.toHaveClass('border-primary/25')
   expect(within(card).getByText(title.trim())).toHaveClass(
     'break-words',
     'min-w-0'

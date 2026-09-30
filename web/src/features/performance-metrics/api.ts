@@ -21,7 +21,7 @@ import { api } from '@/lib/api'
 import type { PerformanceMetricsData, PerfSummaryAllData } from './types'
 
 export async function getPerfMetricsSummary(
-  hours = 24
+  hours = 6
 ): Promise<PerfSummaryAllData> {
   const res = await api.get<PerfSummaryAllData>('/api/perf-metrics/summary', {
     params: { hours },
@@ -31,7 +31,7 @@ export async function getPerfMetricsSummary(
 
 export async function getPerfMetrics(
   modelName: string,
-  hours = 24
+  hours = 6
 ): Promise<PerformanceMetricsData> {
   const res = await api.get<PerformanceMetricsData>('/api/perf-metrics', {
     params: {

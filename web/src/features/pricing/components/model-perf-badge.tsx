@@ -16,11 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { memo } from 'react'
+import { memo, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { getSuccessRateDotClass } from '@/features/performance-metrics/lib/format'
+import {
+  formatThroughput,
+  formatUptimePct,
+} from '@/features/performance-metrics/lib/format'
 import { cn } from '@/lib/utils'
+
+/* oxlint-disable react/no-array-index-key -- Bars represent fixed chronological slots, not reorderable items. */
 
 export type ModelPerfBadgeData = {
   avg_latency_ms: number
@@ -33,77 +38,76 @@ export interface ModelPerfBadgeProps extends React.HTMLAttributes<HTMLDivElement
   perf: ModelPerfBadgeData | undefined
 }
 
-function formatCompactNumber(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return '—'
-  return value > 1 ? String(Math.round(value)) : value.toFixed(1)
-}
-
-function formatCompactThroughput(tps: number): string {
-  if (!Number.isFinite(tps) || tps <= 0) return '—'
-  if (tps >= 1_000) return `${formatCompactNumber(tps / 1_000)}Kt`
-  return `${formatCompactNumber(tps)}t`
-}
-
 export const ModelPerfBadge = memo(function ModelPerfBadge(
   props: ModelPerfBadgeProps
 ) {
   const { t } = useTranslation()
+  const barsRef = useRef<HTMLDivElement>(null)
+  const [barCount, setBarCount] = useState(24)
 
-  if (!props.perf) {
-    return null
-  }
+  useLayoutEffect(() => {
+    const element = barsRef.current
+    if (!element) return
+    const observer = new ResizeObserver(([entry]) => {
+      // Each line is 3px wide with a fixed 2px gap.
+      setBarCount(Math.max(1, Math.floor((entry.contentRect.width + 2) / 5)))
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
 
-  const { avg_tps, success_rate } = props.perf
-
-  const recentRates =
-    props.perf.recent_success_rates?.filter((rate) => Number.isFinite(rate)) ??
-    []
+  const successRate = props.perf?.success_rate ?? Number.NaN
+  const recentRates = props.perf?.recent_success_rates ?? []
   const statusRates =
-    recentRates.length > 0 ? recentRates.slice(-3) : [success_rate]
-  const statusBars = [
-    ...Array(Math.max(0, 3 - statusRates.length)).fill(null),
-    ...statusRates,
-  ].slice(-3)
+    recentRates.length > 0 ? recentRates.slice(-barCount) : [successRate]
+  const statusBars: (number | null)[] = [
+    ...Array<null>(Math.max(0, barCount - statusRates.length)).fill(null),
+    ...statusRates.map((rate) => (Number.isFinite(rate) ? rate : null)),
+  ]
+  const statusLabel = Number.isFinite(successRate)
+    ? `${t('Success rate')}: ${formatUptimePct(successRate)}`
+    : t('No data')
 
   return (
     <div
       className={cn(
-        'hidden w-[82px] grid-cols-[48px_30px] gap-x-2 text-right tabular-nums min-[460px]:grid',
+        'grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-end gap-4 tabular-nums',
         props.className
       )}
     >
-      <div title={t('Throughput')} className='min-w-0'>
-        <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
-          {t('Throughput short')}
+      <div title={`${t('Last 6 hours')} · ${statusLabel}`} className='min-w-0'>
+        <div className='text-muted-foreground mb-1 flex items-baseline justify-between gap-2 text-xs leading-4'>
+          <span>{t('Status short')}</span>
+          <span className='font-mono'>{formatUptimePct(successRate)}</span>
         </div>
-        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
-          {formatCompactThroughput(avg_tps)}
+        <div
+          ref={barsRef}
+          role='img'
+          aria-label={statusLabel}
+          className='flex h-5 items-center gap-[2px] overflow-hidden'
+        >
+          {statusBars.map((rate, index) => {
+            let colorClass = 'bg-muted-foreground/15'
+            if (rate != null) {
+              if (rate < 60) colorClass = 'bg-red-500'
+              else if (rate < 80) colorClass = 'bg-amber-500'
+              else colorClass = 'bg-emerald-500'
+            }
+            return (
+              <span
+                key={index}
+                className={cn('h-4 w-[3px] shrink-0 rounded-[1px]', colorClass)}
+              />
+            )
+          })}
         </div>
       </div>
-      <div
-        title={`${t('Success rate')}: ${success_rate.toFixed(1)}%`}
-        className='min-w-0'
-      >
-        <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
-          {t('Status short')}
+      <div title={t('Sustained tokens per second')} className='text-right'>
+        <div className='text-muted-foreground mb-1 text-xs leading-4'>
+          {t('Speed')}
         </div>
-        <div className='flex h-4 items-center justify-end gap-0.5'>
-          {statusBars.map((rate, index) => (
-            <span
-              key={`${index}-${rate ?? 'empty'}`}
-              className={cn(
-                'w-1 rounded-full',
-                index === 0 && 'h-2',
-                index === 1 && 'h-2.5',
-                index === 2 && 'h-3',
-                rate == null
-                  ? index === 0
-                    ? 'bg-muted-foreground/10'
-                    : 'bg-muted-foreground/15'
-                  : getSuccessRateDotClass(rate)
-              )}
-            />
-          ))}
+        <div className='text-foreground font-mono text-xs leading-5 font-medium whitespace-nowrap'>
+          {formatThroughput(props.perf?.avg_tps ?? 0)}
         </div>
       </div>
     </div>

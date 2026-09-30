@@ -5,17 +5,21 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
 func TestDailyStatistics(t *testing.T) {
+	oldPrice, oldQuotaPerUnit := operation_setting.Price, common.QuotaPerUnit
+	operation_setting.Price, common.QuotaPerUnit = 1, 500000
+	t.Cleanup(func() { operation_setting.Price, common.QuotaPerUnit = oldPrice, oldQuotaPerUnit })
 	truncateTables(t)
 	require.NoError(t, DB.AutoMigrate(&Redemption{}))
 	t.Cleanup(func() { DB.Unscoped().Where("user_id = ?", 9137).Delete(&Redemption{}) })
 	day := time.Date(2026, 9, 22, 0, 0, 0, 0, time.FixedZone("UTC+8", 8*3600))
 	start := day.Unix()
-	now := day.Add(23 * time.Hour)
+	now := day.Add(24*time.Hour - time.Second)
 	logs := []Log{
 		{UserId: 9137, RequestId: "retry", Type: LogTypeError, CreatedAt: start + 1},
 		{UserId: 9137, RequestId: "retry", Type: LogTypeConsume, CreatedAt: start + 2, Quota: 123},
@@ -48,13 +52,16 @@ func TestDailyStatistics(t *testing.T) {
 	}
 	require.NoError(t, DB.Create(&topups).Error)
 
-	statistics, err := GetDailyStatistics("2026-09-22", now.UTC())
+	statistics, err := GetDailyStatistics("2026-09-22", now.UTC(), 1)
 	require.NoError(t, err)
 	require.Equal(t, "2026-09-22", statistics.Date)
 	require.Len(t, statistics.Hours, 24)
 	require.Equal(t, StatisticsHour{Timestamp: start, Requests: 2, ConsumedQuota: 123}, statistics.Hours[0])
-	require.Equal(t, StatisticsHour{Timestamp: start + 3600, Requests: 1, RedeemedQuota: 150000, RedeemedCount: 2}, statistics.Hours[1])
-	require.Equal(t, StatisticsHour{Timestamp: start + 7200, OnlineTopup: 88.5, SubscriptionTopup: 600, TopupCount: 2}, statistics.Hours[2])
+	require.InDelta(t, 0.3, statistics.Hours[1].RedemptionTopup, 0.000001)
+	redemptionHour := statistics.Hours[1]
+	redemptionHour.RedemptionTopup = 0
+	require.Equal(t, StatisticsHour{Timestamp: start + 3600, Requests: 1, RedeemedQuota: 150000, RedeemedCount: 2, TopupCount: 2}, redemptionHour)
+	require.Equal(t, StatisticsHour{Timestamp: start + 7200, OnlineTopup: 88.5, OnlineTopupCount: 1, SubscriptionTopup: 600, SubscriptionTopupCount: 1, TopupCount: 2}, statistics.Hours[2])
 	require.Equal(t, StatisticsHour{Timestamp: start + 3*3600}, statistics.Hours[3])
 	require.Equal(t, StatisticsHour{Timestamp: start + 23*3600, Requests: 1, ConsumedQuota: 456}, statistics.Hours[23])
 }
@@ -62,16 +69,18 @@ func TestDailyStatistics(t *testing.T) {
 func TestDailyStatisticsDateRange(t *testing.T) {
 	now := time.Date(2026, 9, 21, 16, 30, 0, 0, time.UTC) // September 22 in UTC+8.
 	for _, date := range []string{"2026-08-23", "2026-09-23", "bad-date", "2026-09-31"} {
-		_, err := GetDailyStatistics(date, now)
+		_, err := GetDailyStatistics(date, now, 1)
 		require.ErrorIs(t, err, ErrStatisticsDate)
 	}
 	for _, date := range []string{"", "2026-08-24"} {
-		statistics, err := GetDailyStatistics(date, now)
+		statistics, err := GetDailyStatistics(date, now, 1)
 		require.NoError(t, err)
 		require.Equal(t, "2026-09-22", statistics.Today)
-		require.Len(t, statistics.Hours, 24)
 		if date == "" {
+			require.Len(t, statistics.Hours, 1)
 			require.Equal(t, "2026-09-22", statistics.Date)
+		} else {
+			require.Len(t, statistics.Hours, 24)
 		}
 	}
 }

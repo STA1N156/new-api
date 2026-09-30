@@ -265,7 +265,11 @@ function buildTypeDetailSegments(
         ? t('User Exclusive Ratio')
         : t('Group Ratio')
 
-      if (effectiveRatio != null && Number.isFinite(effectiveRatio)) {
+      if (
+        effectiveRatio != null &&
+        Number.isFinite(effectiveRatio) &&
+        effectiveRatio !== 1
+      ) {
         segments.push({
           text: `${ratioLabel} ${formatRatioCompact(effectiveRatio)}x`,
         })

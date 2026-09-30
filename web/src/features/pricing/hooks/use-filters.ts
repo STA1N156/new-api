@@ -30,7 +30,7 @@ import {
   type ViewMode,
 } from '../constants'
 import { filterAndSortModels } from '../lib/filters'
-import type { PricingModel, TokenUnit } from '../types'
+import type { PricingModel } from '../types'
 
 type FilterState = {
   search?: string
@@ -38,7 +38,6 @@ type FilterState = {
   vendor?: string
   group?: string
   quotaType?: string
-  tokenUnit?: TokenUnit
   view?: ViewMode
   rechargePrice?: boolean
 }
@@ -58,7 +57,6 @@ export function useFilters(models: PricingModel[]) {
     vendor: search.vendor,
     group: search.group,
     quotaType: search.quotaType,
-    tokenUnit: search.tokenUnit,
     view: search.view,
     rechargePrice: search.rechargePrice,
   }))
@@ -69,8 +67,6 @@ export function useFilters(models: PricingModel[]) {
   const vendorFilter = filterState.vendor || FILTER_ALL
   const groupFilter = filterState.group || FILTER_ALL
   const quotaTypeFilter = filterState.quotaType || QUOTA_TYPES.ALL
-  const tokenUnit: TokenUnit =
-    filterState.tokenUnit === 'K' ? 'K' : DEFAULT_TOKEN_UNIT
   const viewMode = normalizeViewMode(filterState.view)
   const showRechargePrice = filterState.rechargePrice === true
 
@@ -106,11 +102,6 @@ export function useFilters(models: PricingModel[]) {
   const setQuotaTypeFilter = useCallback(
     (v: string) =>
       updateFilters({ quotaType: v === QUOTA_TYPES.ALL ? undefined : v }),
-    [updateFilters]
-  )
-  const setTokenUnit = useCallback(
-    (v: TokenUnit) =>
-      updateFilters({ tokenUnit: v === DEFAULT_TOKEN_UNIT ? undefined : v }),
     [updateFilters]
   )
   const setViewMode = useCallback(
@@ -176,7 +167,7 @@ export function useFilters(models: PricingModel[]) {
     vendorFilter,
     groupFilter,
     quotaTypeFilter,
-    tokenUnit,
+    tokenUnit: DEFAULT_TOKEN_UNIT,
     viewMode,
     showRechargePrice,
     setSearchInput,
@@ -184,7 +175,6 @@ export function useFilters(models: PricingModel[]) {
     setVendorFilter,
     setGroupFilter,
     setQuotaTypeFilter,
-    setTokenUnit,
     setViewMode,
     setShowRechargePrice,
     filteredModels,

@@ -889,6 +889,24 @@ func SetPreferredUserSubscription(userId, subscriptionId int) error {
 	})
 }
 
+func GetActiveSubscriptionCountsByPlan() (map[int]int64, error) {
+	var rows []struct {
+		PlanId int
+		Count  int64
+	}
+	if err := DB.Model(&UserSubscription{}).
+		Select("plan_id, COUNT(*) AS count").
+		Where("status = ? AND end_time > ?", "active", common.GetTimestamp()).
+		Group("plan_id").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	counts := make(map[int]int64, len(rows))
+	for _, row := range rows {
+		counts[row.PlanId] = row.Count
+	}
+	return counts, nil
+}
+
 // GetAllActiveUserSubscriptions returns all active subscriptions for a user.
 func GetAllActiveUserSubscriptions(userId int) ([]SubscriptionSummary, error) {
 	if userId <= 0 {

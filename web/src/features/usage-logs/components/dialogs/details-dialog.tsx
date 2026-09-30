@@ -284,7 +284,11 @@ function BillingBreakdown(props: {
   const userGR = other.user_group_ratio
   const isUserGR = userGR != null && Number.isFinite(userGR) && userGR !== -1
   const effectiveGR = isUserGR ? userGR : other.group_ratio
-  if (effectiveGR != null && Number.isFinite(effectiveGR)) {
+  if (
+    effectiveGR != null &&
+    Number.isFinite(effectiveGR) &&
+    effectiveGR !== 1
+  ) {
     rows.push({
       label: isUserGR ? t('User Exclusive Ratio') : t('Group Ratio'),
       value: `${formatRatio(effectiveGR)}x`,
@@ -729,7 +733,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
                         )}
                       >
                         {' '}
-                        (FRT: {formatUseTime(other.frt / 1000)})
+                        ({t('First token')}: {formatUseTime(other.frt / 1000)})
                       </span>
                     )}
                 </span>
@@ -1163,21 +1167,6 @@ export function DetailsDialog(props: DetailsDialogProps) {
                 mono
               />
             )}
-            {other.subscription_pre_consumed != null && (
-              <DetailRow
-                label={t('Pre-consumed')}
-                value={formatLogQuota(other.subscription_pre_consumed)}
-                mono
-              />
-            )}
-            {other.subscription_post_delta != null &&
-              other.subscription_post_delta !== 0 && (
-                <DetailRow
-                  label={t('Post Delta')}
-                  value={formatLogQuota(other.subscription_post_delta)}
-                  mono
-                />
-              )}
             {other.subscription_consumed != null && (
               <DetailRow
                 label={t('Final Consumed')}

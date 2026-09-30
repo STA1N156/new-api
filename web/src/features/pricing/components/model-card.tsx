@@ -47,12 +47,14 @@ export interface ModelCardProps {
 
 function ModelPriceRow(props: { label?: string; price: string; unit: string }) {
   return (
-    <span className='text-muted-foreground inline-flex items-baseline gap-1 whitespace-nowrap'>
-      {props.label}
-      <span className='text-foreground font-mono font-semibold'>
-        {props.price}
+    <span className='text-muted-foreground flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5'>
+      {props.label && <span>{props.label}</span>}
+      <span className='inline-flex flex-wrap items-baseline gap-x-1'>
+        <span className='text-foreground font-mono font-semibold break-all'>
+          {props.price}
+        </span>
+        <span className='whitespace-nowrap'>/ {props.unit}</span>
       </span>
-      <span>/ {props.unit}</span>
     </span>
   )
 }
@@ -162,79 +164,89 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   return (
     <div
       className={cn(
-        'group relative flex flex-col rounded-xl border p-3 transition-colors sm:p-5',
-        'hover:bg-muted/20'
+        'bg-card group relative flex min-w-0 flex-col rounded-2xl border px-4 py-3.5 transition-colors sm:px-5 sm:py-4',
+        'hover:border-primary/30'
       )}
     >
-      <div className='flex items-center gap-2.5 sm:gap-3'>
-        <div className='bg-muted/40 flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-10 sm:rounded-xl'>
+      <div className='flex items-start gap-3'>
+        <div className='bg-muted/40 flex size-10 shrink-0 items-center justify-center rounded-xl'>
           {modelIcon || (
             <span className='text-muted-foreground text-sm font-bold'>
               {initial}
             </span>
           )}
         </div>
-        <h3
-          className='text-foreground min-w-0 flex-1 truncate font-mono text-[15px] leading-tight font-bold'
-          title={props.model.model_name}
-        >
-          {props.model.model_name}
-        </h3>
+        <div className='min-w-0 flex-1'>
+          <h3
+            className='text-foreground line-clamp-2 font-mono text-[15px] leading-6 font-bold [overflow-wrap:anywhere]'
+            title={props.model.model_name}
+          >
+            {props.model.model_name}
+          </h3>
+          {props.model.vendor_name && (
+            <p className='text-muted-foreground mt-0.5 truncate text-xs'>
+              {props.model.vendor_name}
+            </p>
+          )}
+        </div>
         <button
           type='button'
           onClick={props.onClick}
-          className='text-muted-foreground hover:text-foreground hover:bg-muted inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors sm:px-2.5 sm:py-1.5'
+          className='text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:ring-ring -mt-0.5 inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none'
         >
           {t('Details')}
-          <ChevronRight className='size-3.5' />
+          <ChevronRight className='size-3.5' aria-hidden='true' />
         </button>
-      </div>
-      <div className='mt-3 flex flex-col items-start gap-1 text-left text-sm'>
-        {priceSummary}
       </div>
 
       {/* Description */}
       {props.model.description?.trim() && (
-        <p className='text-muted-foreground mt-2 line-clamp-1 flex-1 text-[13px] leading-relaxed sm:mt-4 sm:line-clamp-2 sm:min-h-[2.5rem]'>
+        <p className='text-muted-foreground mt-2.5 line-clamp-2 text-xs leading-relaxed'>
           {props.model.description}
         </p>
       )}
 
-      {/* Keep metadata centered beside the two-line performance summary. */}
-      <div className='mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 sm:mt-4'>
-        <div className='min-w-0 space-y-1'>
-          <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
-            {(isTokenBased || isDynamicPricing) &&
-              discount != null &&
-              discount > 0 &&
-              discount <= 10 && (
-                <span className='text-sm font-medium text-emerald-600 dark:text-emerald-400'>
-                  {discount === 10
-                    ? t('Official list price')
-                    : t('{{percent}}% off official price', {
-                        discount,
-                        percent: Number(((10 - discount) * 10).toFixed(2)),
-                      })}
-                </span>
-              )}
-            <ModelBillingModeBadge model={props.model} />
-          </div>
-
-          {bottomTags.length > 0 && (
-            <div className='flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 sm:gap-x-3 sm:gap-y-1'>
-              {bottomTags.map((item) => (
-                <span key={item} className='text-muted-foreground/70 text-xs'>
-                  {item}
-                </span>
-              ))}
-              {hiddenCount > 0 && (
-                <span className='text-muted-foreground/40 text-xs'>
-                  +{hiddenCount}
-                </span>
-              )}
-            </div>
+      <div className='mt-2.5 flex flex-wrap items-center gap-2'>
+        <ModelBillingModeBadge
+          model={props.model}
+          className='h-5 px-0 text-sm leading-5'
+        />
+        {(isTokenBased || isDynamicPricing) &&
+          discount != null &&
+          discount > 0 &&
+          discount <= 10 && (
+            <span className='inline-flex h-5 items-center text-sm leading-5 font-medium text-emerald-600 dark:text-emerald-400'>
+              {discount === 10
+                ? t('Official list price')
+                : t('{{percent}}% off official price', {
+                    discount,
+                    percent: Number(((10 - discount) * 10).toFixed(2)),
+                  })}
+            </span>
+          )}
+      </div>
+      <div className='mt-2.5 flex flex-col gap-1.5 px-3 py-2 text-[13px] leading-5'>
+        {priceSummary}
+      </div>
+      {bottomTags.length > 0 && (
+        <div className='mt-2.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1'>
+          {bottomTags.map((item) => (
+            <span
+              key={item}
+              className='text-muted-foreground text-xs break-all'
+            >
+              {item}
+            </span>
+          ))}
+          {hiddenCount > 0 && (
+            <span className='text-muted-foreground/40 text-xs'>
+              +{hiddenCount}
+            </span>
           )}
         </div>
+      )}
+      <div className='flex-1' />
+      <div className='mt-3 border-t pt-2.5'>
         <ModelPerfBadge perf={props.perf} />
       </div>
     </div>

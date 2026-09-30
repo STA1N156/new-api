@@ -423,10 +423,7 @@ export function SubscriptionPlansCard({
                   <article
                     key={subscription?.id}
                     aria-label={`${t('Subscription')} #${subscription.id}`}
-                    className={cn(
-                      'bg-background space-y-4 rounded-2xl border p-3.5 text-xs sm:p-5',
-                      subscription.is_preferred && 'border-primary/25'
-                    )}
+                    className='bg-background space-y-4 rounded-2xl border p-3.5 text-xs sm:p-5'
                   >
                     <div className='flex flex-wrap items-center justify-between gap-2'>
                       <div className='flex min-w-0 flex-wrap items-center gap-2'>

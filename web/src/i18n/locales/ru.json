@@ -1,5 +1,6 @@
 {
   "translation": {
+    "Recent status includes earlier history; missing records are filled in green": "Статусы включают более ранние данные; отсутствующие записи показаны зелёным",
     "Wallet {{amount}}": "Кошелёк {{amount}}",
     "Wallet only": "Только кошелёк",
     "Subscriptions only": "Только подписки",

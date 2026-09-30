@@ -1,5 +1,6 @@
 {
   "translation": {
+    "Recent status includes earlier history; missing records are filled in green": "Trạng thái bao gồm lịch sử trước đó; vị trí thiếu dữ liệu được tô màu xanh",
     "Wallet {{amount}}": "Ví {{amount}}",
     "Wallet only": "Chỉ ví",
     "Subscriptions only": "Chỉ gói đăng ký",

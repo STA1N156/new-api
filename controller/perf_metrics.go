@@ -20,7 +20,12 @@ func GetPerfMetricsSummary(c *gin.Context) {
 	}
 
 	activeGroups := append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto")
-	result, err := perfmetrics.QuerySummaryAll(hours, activeGroups)
+	historyModels := lo.Uniq(c.QueryArray("history_model"))
+	if len(historyModels) > 20 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "at most 20 history models per request"})
+		return
+	}
+	result, err := perfmetrics.QuerySummaryAll(hours, activeGroups, historyModels...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

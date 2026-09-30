@@ -49,6 +49,7 @@ export type PerfModelSummary = {
   success_rate: number
   avg_tps: number
   recent_success_rates?: number[]
+  history_only?: boolean
   request_count?: number
 }
 

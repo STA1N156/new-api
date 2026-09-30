@@ -122,7 +122,7 @@ func Query(params QueryParams) (QueryResult, error) {
 	return buildQueryResult(params.Model, merged), nil
 }
 
-func QuerySummaryAll(hours int, groups []string) (SummaryAllResult, error) {
+func QuerySummaryAll(hours int, groups []string, historyModels ...string) (SummaryAllResult, error) {
 	if hours <= 0 {
 		hours = 24
 	}
@@ -132,6 +132,8 @@ func QuerySummaryAll(hours int, groups []string) (SummaryAllResult, error) {
 	endTs := time.Now().Unix()
 	startTs := endTs - int64(hours)*3600
 	allowedGroups := allowedGroupSet(groups)
+	historyModelsSet := allowedGroupSet(historyModels)
+	const historyLimit = 256
 
 	rows, err := model.GetPerfMetricsSummaryBucketsAll(startTs, endTs, groups)
 	if err != nil {
@@ -154,7 +156,7 @@ func QuerySummaryAll(hours int, groups []string) (SummaryAllResult, error) {
 
 	hotBuckets.Range(func(key, value any) bool {
 		k := key.(bucketKey)
-		if k.bucketTs < startTs || k.bucketTs > endTs {
+		if k.bucketTs > endTs {
 			return true
 		}
 		if allowedGroups != nil {
@@ -166,18 +168,40 @@ func QuerySummaryAll(hours int, groups []string) (SummaryAllResult, error) {
 		if snap.requestCount == 0 {
 			return true
 		}
+		if k.bucketTs < startTs {
+			if _, ok := historyModelsSet[k.model]; ok {
+				mergeModelBucket(modelBuckets, k.model, k.bucketTs, snap)
+			}
+			return true
+		}
 		mergeModelTotals(totals, k.model, snap)
 		mergeModelBucket(modelBuckets, k.model, k.bucketTs, snap)
 		return true
 	})
 
+	// Only the visible cards request history. Keep window totals separate from older status samples.
+	for name := range historyModelsSet {
+		if len(modelBuckets[name]) < historyLimit {
+			older, err := model.GetRecentPerfMetricBuckets(name, startTs, groups, historyLimit)
+			if err != nil {
+				return SummaryAllResult{}, err
+			}
+			for _, row := range older {
+				mergeModelBucket(modelBuckets, name, row.BucketTs, counters{
+					requestCount: row.RequestCount,
+					successCount: row.SuccessCount,
+				})
+			}
+		}
+		if _, ok := totals[name]; !ok && len(modelBuckets[name]) > 0 {
+			totals[name] = counters{}
+		}
+	}
+
 	models := make([]ModelSummary, 0, len(totals))
 	for name, total := range totals {
-		if total.requestCount == 0 {
-			continue
-		}
-		avgLatency := total.totalLatencyMs / total.requestCount
-		successRate := float64(total.successCount) / float64(total.requestCount) * 100
+		avgLatency := avg(total.totalLatencyMs, total.requestCount)
+		successRate := successRate(total)
 		avgTps := 0.0
 		if total.generationMs > 0 {
 			avgTps = float64(total.outputTokens) / (float64(total.generationMs) / 1000.0)
@@ -187,7 +211,8 @@ func QuerySummaryAll(hours int, groups []string) (SummaryAllResult, error) {
 			AvgLatencyMs:       avgLatency,
 			SuccessRate:        math.Round(successRate*100) / 100,
 			AvgTps:             math.Round(avgTps*100) / 100,
-			RecentSuccessRates: recentSuccessRates(modelBuckets[name], 120),
+			RecentSuccessRates: recentSuccessRates(modelBuckets[name], historyLimit),
+			HistoryOnly:        total.requestCount == 0,
 			RequestCount:       total.requestCount,
 		})
 	}

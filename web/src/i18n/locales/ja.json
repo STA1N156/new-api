@@ -1,5 +1,6 @@
 {
   "translation": {
+    "Recent status includes earlier history; missing records are filled in green": "過去の履歴を含み、記録のない部分は緑色で補完されます",
     "Wallet {{amount}}": "ウォレット {{amount}}",
     "Wallet only": "ウォレットのみ",
     "Subscriptions only": "サブスクリプションのみ",

@@ -46,17 +46,19 @@ export function ModelCardGrid(props: ModelCardGridProps) {
   const totalPages = Math.max(1, Math.ceil(props.models.length / pageSize))
   const currentPage = Math.min(page, totalPages)
 
-  const perfQuery = useQuery({
-    queryKey: ['perf-metrics-summary', 6],
-    queryFn: () => getPerfMetricsSummary(6),
-    staleTime: 60 * 1000,
-    retry: false,
-  })
-
   const pagedModels = useMemo(() => {
     const start = (currentPage - 1) * pageSize
     return props.models.slice(start, start + pageSize)
   }, [currentPage, pageSize, props.models])
+
+  const historyModels = pagedModels.map((model) => model.model_name)
+  const perfQuery = useQuery({
+    queryKey: ['perf-metrics-summary', 6, historyModels],
+    queryFn: () => getPerfMetricsSummary(6, historyModels),
+    enabled: historyModels.length > 0,
+    staleTime: 60 * 1000,
+    retry: false,
+  })
 
   const perfMap = useMemo(() => {
     const map = new Map<string, ModelPerfBadgeData>()

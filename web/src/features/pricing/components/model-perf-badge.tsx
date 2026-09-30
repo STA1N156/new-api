@@ -32,6 +32,7 @@ export type ModelPerfBadgeData = {
   success_rate: number
   avg_tps: number
   recent_success_rates?: number[]
+  history_only?: boolean
 }
 
 export interface ModelPerfBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -56,13 +57,18 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
     return () => observer.disconnect()
   }, [])
 
-  const successRate = props.perf?.success_rate ?? Number.NaN
-  const recentRates = props.perf?.recent_success_rates ?? []
+  const successRate = props.perf?.history_only
+    ? Number.NaN
+    : (props.perf?.success_rate ?? Number.NaN)
+  const recentRates =
+    props.perf?.recent_success_rates?.filter(Number.isFinite) ?? []
   const statusRates =
-    recentRates.length > 0 ? recentRates.slice(-barCount) : [successRate]
-  const statusBars: (number | null)[] = [
-    ...Array<null>(Math.max(0, barCount - statusRates.length)).fill(null),
-    ...statusRates.map((rate) => (Number.isFinite(rate) ? rate : null)),
+    recentRates.length > 0
+      ? recentRates.slice(-barCount)
+      : [successRate].filter(Number.isFinite)
+  const statusBars = [
+    ...Array<number>(Math.max(0, barCount - statusRates.length)).fill(100),
+    ...statusRates,
   ]
   const statusLabel = Number.isFinite(successRate)
     ? `${t('Success rate')}: ${formatUptimePct(successRate)}`
@@ -75,24 +81,29 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         props.className
       )}
     >
-      <div title={`${t('Last 6 hours')} · ${statusLabel}`} className='min-w-0'>
-        <div className='text-muted-foreground mb-1 flex items-baseline justify-between gap-2 text-xs leading-4'>
+      <div className='min-w-0'>
+        <div
+          title={`${t('Last 6 hours')} · ${statusLabel}`}
+          className='text-muted-foreground mb-1 flex items-baseline justify-between gap-2 text-xs leading-4'
+        >
           <span>{t('Status short')}</span>
           <span className='font-mono'>{formatUptimePct(successRate)}</span>
         </div>
         <div
           ref={barsRef}
           role='img'
-          aria-label={statusLabel}
+          title={t(
+            'Recent status includes earlier history; missing records are filled in green'
+          )}
+          aria-label={t(
+            'Recent status includes earlier history; missing records are filled in green'
+          )}
           className='flex h-5 items-center gap-[2px] overflow-hidden'
         >
           {statusBars.map((rate, index) => {
-            let colorClass = 'bg-muted-foreground/15'
-            if (rate != null) {
-              if (rate < 60) colorClass = 'bg-red-500'
-              else if (rate < 80) colorClass = 'bg-amber-500'
-              else colorClass = 'bg-emerald-500'
-            }
+            let colorClass = 'bg-emerald-500'
+            if (rate < 60) colorClass = 'bg-red-500'
+            else if (rate < 80) colorClass = 'bg-amber-500'
             return (
               <span
                 key={index}

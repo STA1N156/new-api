@@ -21,10 +21,12 @@ import { api } from '@/lib/api'
 import type { PerformanceMetricsData, PerfSummaryAllData } from './types'
 
 export async function getPerfMetricsSummary(
-  hours = 6
+  hours = 6,
+  historyModels: string[] = []
 ): Promise<PerfSummaryAllData> {
   const res = await api.get<PerfSummaryAllData>('/api/perf-metrics/summary', {
-    params: { hours },
+    params: { hours, history_model: historyModels },
+    paramsSerializer: { indexes: null },
   })
   return res.data
 }

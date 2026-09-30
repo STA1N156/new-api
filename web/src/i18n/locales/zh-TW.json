@@ -1,6 +1,6 @@
 {
   "translation": {
-    "Recent status includes earlier history; missing records are filled in green": "狀態包含更早的歷史記錄，無記錄位置以綠色補齊",
+    "Latest recorded status, including earlier history": "最近有記錄的狀態，包含更早的歷史資料",
     "Wallet {{amount}}": "錢包 {{amount}}",
     "Wallet only": "僅看錢包",
     "Subscriptions only": "僅看訂閱",

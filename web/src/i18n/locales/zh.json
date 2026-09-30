@@ -1,6 +1,6 @@
 {
   "translation": {
-    "Recent status includes earlier history; missing records are filled in green": "状态包含更早的历史记录，无记录位置以绿色补齐",
+    "Latest recorded status, including earlier history": "最近有记录的状态，包含更早的历史数据",
     "Wallet {{amount}}": "钱包 {{amount}}",
     "Wallet only": "仅看钱包",
     "Subscriptions only": "仅看订阅",

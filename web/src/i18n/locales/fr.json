@@ -1,6 +1,6 @@
 {
   "translation": {
-    "Recent status includes earlier history; missing records are filled in green": "Les états incluent les données antérieures ; les emplacements sans données sont remplis en vert",
+    "Latest recorded status, including earlier history": "Derniers états enregistrés, y compris les données antérieures",
     "Wallet {{amount}}": "Portefeuille {{amount}}",
     "Wallet only": "Portefeuille uniquement",
     "Subscriptions only": "Abonnements uniquement",

@@ -1,6 +1,6 @@
 {
   "translation": {
-    "Recent status includes earlier history; missing records are filled in green": "Recent status includes earlier history; missing records are filled in green",
+    "Latest recorded status, including earlier history": "Latest recorded status, including earlier history",
     "Wallet {{amount}}": "Wallet {{amount}}",
     "Wallet only": "Wallet only",
     "Subscriptions only": "Subscriptions only",

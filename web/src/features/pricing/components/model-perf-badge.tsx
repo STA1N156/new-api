@@ -66,8 +66,8 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
     recentRates.length > 0
       ? recentRates.slice(-barCount)
       : [successRate].filter(Number.isFinite)
-  const statusBars = [
-    ...Array<number>(Math.max(0, barCount - statusRates.length)).fill(100),
+  const statusBars: (number | null)[] = [
+    ...Array<null>(Math.max(0, barCount - statusRates.length)).fill(null),
     ...statusRates,
   ]
   const statusLabel = Number.isFinite(successRate)
@@ -92,18 +92,17 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         <div
           ref={barsRef}
           role='img'
-          title={t(
-            'Recent status includes earlier history; missing records are filled in green'
-          )}
-          aria-label={t(
-            'Recent status includes earlier history; missing records are filled in green'
-          )}
+          title={t('Latest recorded status, including earlier history')}
+          aria-label={t('Latest recorded status, including earlier history')}
           className='flex h-5 items-center gap-[2px] overflow-hidden'
         >
           {statusBars.map((rate, index) => {
-            let colorClass = 'bg-emerald-500'
-            if (rate < 60) colorClass = 'bg-red-500'
-            else if (rate < 80) colorClass = 'bg-amber-500'
+            let colorClass = 'bg-muted-foreground/15'
+            if (rate != null) {
+              if (rate < 60) colorClass = 'bg-red-500'
+              else if (rate < 80) colorClass = 'bg-amber-500'
+              else colorClass = 'bg-emerald-500'
+            }
             return (
               <span
                 key={index}

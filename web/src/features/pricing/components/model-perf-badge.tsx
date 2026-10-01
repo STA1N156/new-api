@@ -81,7 +81,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         props.className
       )}
     >
-      <div className='min-w-0'>
+      <div className='min-w-0 max-w-[90%]'>
         <div
           title={`${t('Last 6 hours')} · ${statusLabel}`}
           className='text-muted-foreground mb-1 flex items-baseline justify-between gap-2 text-xs leading-4'

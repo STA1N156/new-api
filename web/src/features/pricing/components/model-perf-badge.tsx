@@ -50,8 +50,8 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
     const element = barsRef.current
     if (!element) return
     const observer = new ResizeObserver(([entry]) => {
-      // Whole 4px widths and gaps stay even at common display scaling levels.
-      setBarCount(Math.max(1, Math.floor((entry.contentRect.width + 4) / 8)))
+      // Each line is 3px wide with a fixed 2px gap.
+      setBarCount(Math.max(1, Math.floor((entry.contentRect.width + 2) / 5)))
     })
     observer.observe(element)
     return () => observer.disconnect()
@@ -94,7 +94,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
           role='img'
           title={t('Latest recorded status, including earlier history')}
           aria-label={t('Latest recorded status, including earlier history')}
-          className='flex h-5 items-center gap-1 overflow-hidden'
+          className='flex h-5 items-center gap-[2px] overflow-hidden'
         >
           {statusBars.map((rate, index) => {
             let colorClass = 'bg-muted-foreground/15'
@@ -106,7 +106,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
             return (
               <span
                 key={index}
-                className={cn('h-4 w-1 shrink-0 rounded-[1px]', colorClass)}
+                className={cn('h-4 w-[3px] shrink-0 rounded-[1px]', colorClass)}
               />
             )
           })}

@@ -82,7 +82,6 @@ export function LogTokensCell({
         </div>
         {hasCache && (
           <div className='text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-1'>
-            <span>{t('Cache')}</span>
             {cacheUsage}
           </div>
         )}

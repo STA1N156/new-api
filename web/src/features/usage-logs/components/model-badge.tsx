@@ -51,7 +51,7 @@ export function ModelBadge(props: ModelBadgeProps) {
             {getLobeIcon(provider.icon, 18)}
           </span>
         )}
-        <span className='min-w-0 truncate font-semibold max-sm:line-clamp-2 max-sm:leading-normal max-sm:break-all max-sm:whitespace-normal'>
+        <span className='min-w-0 truncate font-semibold max-sm:leading-normal'>
           {props.modelName}
         </span>
       </span>

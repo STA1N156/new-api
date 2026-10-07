@@ -262,12 +262,12 @@ function CommonLogsCard<TData>({
         type={rowData?.type}
       />
       {hasUsage && (
-        <div className='flex items-start justify-between gap-3'>
+        <div className='flex items-center justify-between gap-3'>
           <CompactCell cell={modelCell} className='flex-1' />
           {quotaCell && (
             <CompactCell
               cell={quotaCell}
-              className='max-w-[45%] shrink-0 text-right [&_.whitespace-nowrap]:whitespace-normal [&_span]:wrap-anywhere'
+              className='shrink-0 text-right'
             />
           )}
         </div>

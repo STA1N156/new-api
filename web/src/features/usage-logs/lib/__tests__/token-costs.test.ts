@@ -21,7 +21,7 @@ import { describe, expect, test } from 'vitest'
 import { usageLogSchema } from '../../data/schema'
 import type { LogOtherData } from '../../types'
 import {
-  formatTokenCostPercentages,
+  formatTokenCharge,
   getCacheWriteTokens,
   getLogTokenCosts,
 } from '../token-costs'
@@ -45,48 +45,13 @@ function costs(
   return getLogTokenCosts(log, other)
 }
 
-describe('token cost percentages', () => {
-  test.each([
-    {
-      name: 'equal charges with a rounding remainder',
-      charges: { input: 1, output: 1, cacheRead: 0.4, cacheWrite: 0.6 },
-      expected: { input: '33.34%', output: '33.33%', cache: '33.33%' },
-    },
-    {
-      name: 'decimal charges',
-      charges: { input: 0.1, output: 0.2, cacheRead: 0.3, cacheWrite: 0 },
-      expected: { input: '16.67%', output: '33.33%', cache: '50.00%' },
-    },
-    {
-      name: 'no cache usage',
-      charges: { input: 1, output: 7, cacheRead: 0, cacheWrite: 0 },
-      expected: { input: '12.50%', output: '87.50%', cache: '0.00%' },
-    },
-    {
-      name: 'combined cache-only charges',
-      charges: { input: 0, output: 0, cacheRead: 4, cacheWrite: 6 },
-      expected: { input: '0.00%', output: '0.00%', cache: '100.00%' },
-    },
-  ])(
-    'keeps $name at exactly 100.00% with two decimal places',
-    ({ charges, expected }) => {
-      expect(formatTokenCostPercentages(charges)).toEqual(expected)
-    }
-  )
-
-  test('does not invent a percentage for a free request', () => {
-    expect(
-      formatTokenCostPercentages({
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      })
-    ).toBeNull()
-  })
-})
-
 describe('token charge breakdown', () => {
+  test('truncates displayed charges to four decimal places without rounding up', () => {
+    expect(formatTokenCharge(61729.9)).toBe('$0.1234')
+    expect(formatTokenCharge(4.999)).toBe('$0')
+    expect(formatTokenCharge(50000)).toBe('$0.1')
+    expect(formatTokenCharge(500000)).toBe('$1')
+  })
   test('separates cached input and applies the recorded model and group ratios', () => {
     expect(
       costs(760, {

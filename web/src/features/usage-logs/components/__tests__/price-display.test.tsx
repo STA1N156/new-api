@@ -75,7 +75,7 @@ function PricePreview() {
   )
 }
 
-it('switches totals and detail prices to yuan while keeping token cost percentages unchanged', () => {
+it('switches totals, input/output/cache charges and detail prices to yuan using the recharge rate', () => {
   useSystemConfigStore.getState().setConfig({
     currency: {
       ...initialConfig.currency,
@@ -113,13 +113,11 @@ it('switches totals and detail prices to yuan while keeping token cost percentag
       .textContent?.replaceAll(/\s/g, '')
   ).toBe('¥11.4')
   const tokens = within(screen.getByRole('region', { name: 'Tokens' }))
-  expect(tokens.getByText('(31.58%)')).toBeVisible()
-  expect(tokens.getByText('(63.16%)')).toBeVisible()
-  expect(tokens.getByText('(5.26%)')).toBeVisible()
+  expect(tokens.getByText('(¥3.6)')).toBeVisible()
+  expect(tokens.getByText('(¥7.2)')).toBeVisible()
+  expect(tokens.getByText('(¥0.6)')).toBeVisible()
   fireEvent.click(screen.getByRole('tab', { name: 'Standard' }))
-  expect(tokens.getByText('(31.58%)')).toBeVisible()
-  expect(tokens.getByText('(63.16%)')).toBeVisible()
-  expect(tokens.getByText('(5.26%)')).toBeVisible()
+  expect(tokens.getByText('(🍪12)')).toBeVisible()
   fireEvent.click(screen.getByRole('tab', { name: 'Recharge' }))
   fireEvent.click(screen.getByRole('button', { name: 'Open details' }))
   const details = within(screen.getByRole('dialog'))

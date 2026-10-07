@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { getCurrencyDisplay } from '@/lib/currency'
+import { formatLogQuota, quotaUnitsToDollars } from '@/lib/format'
 
 import { LOG_TYPE_ENUM } from '../constants'
 import type { UsageLog } from '../data/schema'
@@ -27,6 +28,25 @@ import {
   isViolationFeeLog,
 } from './format'
 import { isPerCallBilling } from './utils'
+
+const chargeFormatOptions = {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 4,
+  roundingMode: 'trunc',
+}
+const chargeFormatter = new Intl.NumberFormat(undefined, chargeFormatOptions)
+
+export function formatTokenCharge(
+  quota: number,
+  rechargePriceRate?: number
+): string {
+  const { config, meta } = getCurrencyDisplay()
+  if (rechargePriceRate !== undefined) {
+    return `¥${chargeFormatter.format((quota * rechargePriceRate) / config.quotaPerUnit)}`
+  }
+  if (meta.kind === 'tokens') return formatLogQuota(quota)
+  return meta.symbol + chargeFormatter.format(quotaUnitsToDollars(quota))
+}
 
 export function getCacheWriteTokens(other: LogOtherData | null): number {
   return Math.max(
@@ -147,32 +167,4 @@ export function getLogTokenCosts(log: UsageLog, other: LogOtherData | null) {
   // Missing historical metadata or unsupported expressions must not invent costs.
   if (Math.abs(expectedQuota - log.quota) > 1) return null
   return costs
-}
-
-/** Allocate hundredths of a percent across token charges, excluding tool fees. */
-export function formatTokenCostPercentages(
-  costs: NonNullable<ReturnType<typeof getLogTokenCosts>>
-) {
-  const amounts = [
-    costs.input,
-    costs.output,
-    costs.cacheRead + costs.cacheWrite,
-  ]
-  const total = amounts.reduce((sum, amount) => sum + amount, 0)
-  if (total <= 0 || !Number.isFinite(total)) return null
-
-  const portions = amounts.map((amount) => {
-    const exact = (amount / total) * 10000
-    return { units: Math.floor(exact), remainder: exact - Math.floor(exact) }
-  })
-  const remaining = 10000 - portions.reduce((sum, part) => sum + part.units, 0)
-  for (const part of [...portions]
-    .sort((a, b) => b.remainder - a.remainder)
-    .slice(0, remaining)) {
-    part.units += 1
-  }
-  const [input, output, cache] = portions.map(
-    (part) => `${(part.units / 100).toFixed(2)}%`
-  )
-  return { input, output, cache }
 }

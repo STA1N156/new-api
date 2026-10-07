@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
-import { cn } from '@/lib/utils'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { useUsageLogsContext } from './usage-logs-provider'
 
@@ -26,27 +26,14 @@ export function LogPriceToggle() {
   const { t } = useTranslation()
   const { showRechargePrice, setShowRechargePrice } = useUsageLogsContext()
   return (
-    <div
-      role='group'
-      aria-label={t('Price display mode')}
-      className='bg-muted/60 inline-flex h-8 shrink-0 items-center rounded-lg border p-0.5'
+    <Tabs
+      value={showRechargePrice ? 'recharge' : 'standard'}
+      onValueChange={(value) => setShowRechargePrice(value === 'recharge')}
     >
-      {[false, true].map((recharge) => (
-        <button
-          key={String(recharge)}
-          type='button'
-          aria-pressed={showRechargePrice === recharge}
-          onClick={() => setShowRechargePrice(recharge)}
-          className={cn(
-            'inline-flex h-full items-center justify-center rounded-md px-3 text-xs font-medium transition-colors',
-            showRechargePrice === recharge
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          {recharge ? t('Recharge') : t('Standard')}
-        </button>
-      ))}
-    </div>
+      <TabsList aria-label={t('Price display mode')}>
+        <TabsTrigger value='standard'>{t('Standard')}</TabsTrigger>
+        <TabsTrigger value='recharge'>{t('Recharge')}</TabsTrigger>
+      </TabsList>
+    </Tabs>
   )
 }

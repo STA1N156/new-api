@@ -102,9 +102,9 @@ it('switches totals, input/output/cache charges and detail prices to yuan using 
       .getByRole('region', { name: 'Total' })
       .textContent?.replaceAll(/\s/g, '')
   ).toBe('🍪38')
-  fireEvent.click(screen.getByRole('button', { name: 'Recharge' }))
-  expect(screen.getByRole('button', { name: 'Recharge' })).toHaveAttribute(
-    'aria-pressed',
+  fireEvent.click(screen.getByRole('tab', { name: 'Recharge' }))
+  expect(screen.getByRole('tab', { name: 'Recharge' })).toHaveAttribute(
+    'aria-selected',
     'true'
   )
   expect(
@@ -116,9 +116,9 @@ it('switches totals, input/output/cache charges and detail prices to yuan using 
   expect(tokens.getByText('(¥3.6)')).toBeVisible()
   expect(tokens.getByText('(¥7.2)')).toBeVisible()
   expect(tokens.getByText('(¥0.6)')).toBeVisible()
-  fireEvent.click(screen.getByRole('button', { name: 'Standard' }))
+  fireEvent.click(screen.getByRole('tab', { name: 'Standard' }))
   expect(tokens.getByText('(🍪12)')).toBeVisible()
-  fireEvent.click(screen.getByRole('button', { name: 'Recharge' }))
+  fireEvent.click(screen.getByRole('tab', { name: 'Recharge' }))
   fireEvent.click(screen.getByRole('button', { name: 'Open details' }))
   const details = within(screen.getByRole('dialog'))
   expect(details.getByText('¥6,000/M')).toBeVisible()

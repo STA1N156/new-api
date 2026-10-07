@@ -25,7 +25,6 @@ import {
   memo,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -65,7 +64,6 @@ export type ReasoningProps = ComponentProps<typeof Collapsible> & {
   duration?: number
 }
 
-const AUTO_CLOSE_DELAY = 700
 const MS_IN_S = 1000
 
 export const Reasoning = memo(
@@ -73,7 +71,7 @@ export const Reasoning = memo(
     className,
     isStreaming = false,
     open,
-    defaultOpen = true,
+    defaultOpen = false,
     onOpenChange,
     duration: durationProp,
     children,
@@ -89,8 +87,6 @@ export const Reasoning = memo(
       defaultProp: 0,
     })
 
-    const hasStreamed = useRef(isStreaming)
-    const manuallyToggled = useRef(false)
     const [startTime, setStartTime] = useState<number | null>(null)
 
     // Track duration when streaming starts and ends
@@ -106,36 +102,13 @@ export const Reasoning = memo(
       }
     }, [isStreaming, startTime, setDuration])
 
-    // Collapse after live thinking, but never override the reader's own choice.
-    useEffect(() => {
-      if (isStreaming) hasStreamed.current = true
-      if (
-        !isStreaming &&
-        isOpen &&
-        hasStreamed.current &&
-        !manuallyToggled.current
-      ) {
-        const timer = setTimeout(() => {
-          setIsOpen(false)
-          hasStreamed.current = false
-        }, AUTO_CLOSE_DELAY)
-
-        return () => clearTimeout(timer)
-      }
-    }, [isStreaming, isOpen, setIsOpen])
-
-    const handleOpenChange = (newOpen: boolean) => {
-      manuallyToggled.current = true
-      setIsOpen(newOpen)
-    }
-
     return (
       <ReasoningContext.Provider
         value={{ isStreaming, isOpen, setIsOpen, duration }}
       >
         <Collapsible
           className={cn('not-prose mb-3 w-full max-w-[78ch]', className)}
-          onOpenChange={handleOpenChange}
+          onOpenChange={setIsOpen}
           open={isOpen}
           {...props}
         >
@@ -159,7 +132,7 @@ export const ReasoningTrigger = memo(
     return (
       <CollapsibleTrigger
         className={cn(
-          'group text-muted-foreground hover:text-foreground flex min-h-8 w-fit max-w-full items-center gap-2 rounded-lg px-1 py-1.5 text-xs leading-5 text-left transition-colors hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-primary/40 [&_p]:m-0',
+          'group text-muted-foreground hover:text-foreground flex min-h-8 w-fit max-w-full items-center gap-2 rounded-lg px-1 py-1.5 text-sm leading-5 text-left transition-colors hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-primary/40 [&_p]:m-0',
           className
         )}
         {...props}
@@ -174,15 +147,15 @@ export const ReasoningTrigger = memo(
                   : 'text-muted-foreground'
               )}
             >
-              <BrainIcon className='size-3.5' />
+              <BrainIcon className='size-4' />
             </span>
             <span className='min-w-0 flex-1 truncate font-medium'>
               {isStreaming ? t('Thinking...') : thinkingText}
             </span>
-            <span className='grid size-3.5 shrink-0 place-items-center'>
+            <span className='grid size-4 shrink-0 place-items-center'>
               <ChevronDownIcon
                 className={cn(
-                  'size-3.5 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+                  'size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
                   isOpen ? 'rotate-180' : 'rotate-0'
                 )}
               />

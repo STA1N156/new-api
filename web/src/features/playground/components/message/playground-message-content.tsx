@@ -105,7 +105,6 @@ export function PlaygroundMessageContent({
 
       {hasReasoning && (
         <Reasoning
-          defaultOpen={Boolean(message.isReasoningStreaming)}
           duration={message.reasoning?.duration}
           isStreaming={message.isReasoningStreaming}
         >

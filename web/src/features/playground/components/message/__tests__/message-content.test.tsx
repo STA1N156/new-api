@@ -16,9 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 
+import type { Message } from '../../../types'
 import { PlaygroundMessageContent } from '../playground-message-content'
 
 it.each(['user', 'assistant'] as const)(
@@ -43,3 +44,35 @@ it.each(['user', 'assistant'] as const)(
     expect(container.querySelector('time')).toBeNull()
   }
 )
+
+it('keeps live thinking collapsed until clicked and preserves the manual choice', () => {
+  const message: Message = {
+    key: 'thinking-message',
+    from: 'assistant',
+    versions: [{ id: 'v1', content: '' }],
+    status: 'streaming',
+    reasoning: { content: 'Thinking details', duration: 1 },
+    isReasoningStreaming: true,
+  }
+  const { rerender } = render(
+    <PlaygroundMessageContent
+      actions={null}
+      alignment='left'
+      versionContent=''
+      message={message}
+    />
+  )
+  const trigger = screen.getByRole('button', { name: 'Thinking...' })
+  expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  fireEvent.click(trigger)
+  expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  rerender(
+    <PlaygroundMessageContent
+      actions={null}
+      alignment='left'
+      versionContent='Answer'
+      message={{ ...message, status: 'complete', isReasoningStreaming: false }}
+    />
+  )
+  expect(trigger).toHaveAttribute('aria-expanded', 'true')
+})

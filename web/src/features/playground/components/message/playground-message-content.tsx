@@ -126,7 +126,7 @@ export function PlaygroundMessageContent({
             <span />
             <span />
           </span>
-          <span>{t('Responding...')}</span>
+          <span lang='en'>{t('Loading', { lng: 'en' })}</span>
         </div>
       )}
 

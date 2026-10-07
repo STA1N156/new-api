@@ -23,7 +23,6 @@ import {
   CreditCard,
   FileText,
   FlaskConical,
-  Gift,
   Key,
   LayoutDashboard,
   ListTodo,
@@ -86,11 +85,6 @@ export function useSidebarData(): SidebarData {
             title: t('Model Square'),
             url: '/pricing',
             icon: Box,
-          },
-          {
-            title: t('Autumn Festival'),
-            url: '/festival',
-            icon: Gift,
           },
           {
             title: t('API Keys'),

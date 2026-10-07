@@ -25,6 +25,7 @@ import {
   memo,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -38,7 +39,6 @@ import { useControllableState } from '@/lib/use-controllable-state'
 import { cn } from '@/lib/utils'
 
 import { Response } from './response'
-import { Shimmer } from './shimmer'
 
 type ReasoningContextValue = {
   isStreaming: boolean
@@ -65,7 +65,7 @@ export type ReasoningProps = ComponentProps<typeof Collapsible> & {
   duration?: number
 }
 
-const AUTO_CLOSE_DELAY = 1000
+const AUTO_CLOSE_DELAY = 700
 const MS_IN_S = 1000
 
 export const Reasoning = memo(
@@ -89,7 +89,8 @@ export const Reasoning = memo(
       defaultProp: 0,
     })
 
-    const [hasAutoClosed, setHasAutoClosed] = useState(false)
+    const hasStreamed = useRef(isStreaming)
+    const manuallyToggled = useRef(false)
     const [startTime, setStartTime] = useState<number | null>(null)
 
     // Track duration when streaming starts and ends
@@ -105,20 +106,26 @@ export const Reasoning = memo(
       }
     }, [isStreaming, startTime, setDuration])
 
-    // Auto-open when streaming starts, auto-close when streaming ends (once only)
+    // Collapse after live thinking, but never override the reader's own choice.
     useEffect(() => {
-      if (defaultOpen && !isStreaming && isOpen && !hasAutoClosed) {
-        // Add a small delay before closing to allow user to see the content
+      if (isStreaming) hasStreamed.current = true
+      if (
+        !isStreaming &&
+        isOpen &&
+        hasStreamed.current &&
+        !manuallyToggled.current
+      ) {
         const timer = setTimeout(() => {
           setIsOpen(false)
-          setHasAutoClosed(true)
+          hasStreamed.current = false
         }, AUTO_CLOSE_DELAY)
 
         return () => clearTimeout(timer)
       }
-    }, [isStreaming, isOpen, defaultOpen, setIsOpen, hasAutoClosed])
+    }, [isStreaming, isOpen, setIsOpen])
 
     const handleOpenChange = (newOpen: boolean) => {
+      manuallyToggled.current = true
       setIsOpen(newOpen)
     }
 
@@ -127,7 +134,7 @@ export const Reasoning = memo(
         value={{ isStreaming, isOpen, setIsOpen, duration }}
       >
         <Collapsible
-          className={cn('not-prose mb-4', className)}
+          className={cn('not-prose mb-3 w-full max-w-[78ch]', className)}
           onOpenChange={handleOpenChange}
           open={isOpen}
           {...props}
@@ -152,27 +159,30 @@ export const ReasoningTrigger = memo(
     return (
       <CollapsibleTrigger
         className={cn(
-          'text-muted-foreground hover:text-foreground inline-grid w-fit max-w-full grid-cols-[0.875rem_minmax(0,auto)_0.875rem] items-center gap-1.5 text-sm leading-none transition-colors [&_p]:m-0',
+          'group text-muted-foreground hover:text-foreground flex min-h-8 w-fit max-w-full items-center gap-2 rounded-lg px-1 py-1.5 text-xs leading-5 text-left transition-colors hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-primary/40 [&_p]:m-0',
           className
         )}
         {...props}
       >
         {children ?? (
           <>
-            <span className='grid size-3.5 place-items-center'>
+            <span
+              className={cn(
+                'grid size-4 shrink-0 place-items-center',
+                isStreaming
+                  ? 'playground-thinking-mark text-primary'
+                  : 'text-muted-foreground'
+              )}
+            >
               <BrainIcon className='size-3.5' />
             </span>
-            <span className='min-w-0 truncate leading-none'>
-              {isStreaming ? (
-                <Shimmer duration={1}>{t('Thinking...')}</Shimmer>
-              ) : (
-                thinkingText
-              )}
+            <span className='min-w-0 flex-1 truncate font-medium'>
+              {isStreaming ? t('Thinking...') : thinkingText}
             </span>
-            <span className='grid size-3.5 place-items-center'>
+            <span className='grid size-3.5 shrink-0 place-items-center'>
               <ChevronDownIcon
                 className={cn(
-                  'size-3.5 transition-transform duration-200 ease-out',
+                  'size-3.5 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
                   isOpen ? 'rotate-180' : 'rotate-0'
                 )}
               />
@@ -197,16 +207,16 @@ export const ReasoningContent = memo(
     return (
       <CollapsibleContent
         className={cn(
-          'CollapsibleContent group/reasoning-content border-border/70 mt-2 ml-1.5 border-l pl-3 text-sm leading-5',
-          'text-muted-foreground outline-none',
+          'playground-reasoning-panel text-muted-foreground text-sm outline-none',
           className
         )}
         {...props}
       >
-        <div className='transition-[opacity,transform] duration-200 ease-out group-data-[closed]/reasoning-content:-translate-y-1 group-data-[closed]/reasoning-content:opacity-0 group-data-[open]/reasoning-content:translate-y-0 group-data-[open]/reasoning-content:opacity-100 motion-reduce:transition-none'>
+        <div className='pt-1 pb-2 pl-2.5'>
           <Response
-            className='grid gap-1.5 [&_li]:my-0.5 [&_ol]:my-1.5 [&_p]:my-1.5 [&_p]:leading-5 [&_ul]:my-1.5'
+            className='border-border/70 grid gap-1 border-l pl-4 [font-family:var(--font-body)] [&_li]:my-0.5 [&_ol]:my-1.5 [&_p]:my-1.5 [&_p]:leading-7 [&_ul]:my-1.5'
             final={!isStreaming}
+            animate
             parserId='new-api-reasoning'
           >
             {children}

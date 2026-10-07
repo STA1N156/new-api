@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { SendIcon, SquareIcon } from 'lucide-react'
+import { ArrowUpIcon, SquareIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -81,50 +81,42 @@ export function PlaygroundInputControls({
       groups={groups}
       onGroupChange={onGroupChange}
       disabled={isSelectorDisabled}
+      loading={isModelLoading}
+      className='w-full md:w-auto'
     />
   )
 
   const renderSubmitButton = () =>
     shouldShowStop ? (
       <PromptInputButton
-        className='border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/15 font-medium'
+        aria-label={t('Stop')}
+        title={t('Stop')}
+        className='playground-submit bg-foreground text-background hover:bg-foreground/85 size-9 rounded-full sm:size-10'
         onClick={onStop}
-        variant='secondary'
+        size='icon-sm'
+        variant='default'
       >
-        <SquareIcon className='fill-current' size={16} />
-        <span className='hidden sm:inline'>{t('Stop')}</span>
-        <span className='sr-only sm:hidden'>{t('Stop')}</span>
+        <SquareIcon className='size-3.5 fill-current' />
       </PromptInputButton>
     ) : (
       <PromptInputButton
-        className='bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground h-8 px-3 font-medium shadow-sm'
+        aria-label={t('Send')}
+        title={t('Send')}
+        className='playground-submit bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground size-9 rounded-full disabled:opacity-70 sm:size-10'
         disabled={!canSubmit}
+        size='icon-sm'
         type='submit'
         variant='default'
       >
-        <SendIcon size={16} />
-        <span className='hidden sm:inline'>{t('Send')}</span>
-        <span className='sr-only sm:hidden'>{t('Send')}</span>
+        <ArrowUpIcon className='size-5' strokeWidth={2.2} />
       </PromptInputButton>
     )
 
   return (
-    <div className='flex w-full flex-col gap-2.5 md:flex-row md:items-center md:justify-between'>
-      <div className='flex min-w-0 items-center justify-end md:hidden'>
-        {renderSelector()}
-      </div>
-
-      <div className='flex items-center justify-between gap-2 md:justify-start'>
-        {tools}
-        <div className='flex items-center gap-1.5 md:hidden'>
-          {renderSubmitButton()}
-        </div>
-      </div>
-
-      <div className='hidden min-w-0 items-center gap-2 md:flex'>
-        {renderSelector()}
-        {renderSubmitButton()}
-      </div>
+    <div className='flex w-full items-center gap-1.5 sm:gap-2'>
+      <div className='flex min-w-0 flex-1 items-center'>{renderSelector()}</div>
+      <div className='shrink-0'>{tools}</div>
+      <div className='shrink-0'>{renderSubmitButton()}</div>
     </div>
   )
 }

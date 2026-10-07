@@ -633,9 +633,6 @@ func CompleteSubscriptionOrder(tradeNo string, providerPayload string, expectedP
 		}
 		order.Status = common.TopUpStatusSuccess
 		order.CompleteTime = common.GetTimestamp()
-		if err := creditFestivalSubscription(tx, &order); err != nil {
-			return err
-		}
 		if providerPayload != "" {
 			order.ProviderPayload = providerPayload
 		}

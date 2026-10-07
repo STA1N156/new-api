@@ -82,7 +82,7 @@ export function PlaygroundInputTools({
 
   return (
     <>
-      <PromptInputTools className='bg-background/70 border-border/60 rounded-lg border p-1 shadow-xs'>
+      <PromptInputTools className='gap-0.5 sm:gap-1 [&_button]:size-8 [&_button]:rounded-full sm:[&_button]:size-9'>
         <Tooltip>
           <DropdownMenu>
             <TooltipTrigger
@@ -125,24 +125,26 @@ export function PlaygroundInputTools({
           parameterEnabled={parameterEnabled}
         />
 
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <PromptInputButton
-                aria-label={t('Clear chat history')}
-                className='text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium'
-                disabled={disabled || !hasMessages || !onClearMessages}
-                onClick={() => setClearConfirmOpen(true)}
-                variant='ghost'
-              >
-                <Trash2Icon size={16} />
-              </PromptInputButton>
-            }
-          />
-          <TooltipContent>
-            <p>{t('Clear chat history')}</p>
-          </TooltipContent>
-        </Tooltip>
+        {hasMessages && onClearMessages && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <PromptInputButton
+                  aria-label={t('Clear chat history')}
+                  className='text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium'
+                  disabled={disabled}
+                  onClick={() => setClearConfirmOpen(true)}
+                  variant='ghost'
+                >
+                  <Trash2Icon size={16} />
+                </PromptInputButton>
+              }
+            />
+            <TooltipContent>
+              <p>{t('Clear chat history')}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </PromptInputTools>
 
       {cameraOpen && (

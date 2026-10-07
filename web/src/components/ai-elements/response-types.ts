@@ -23,6 +23,8 @@ export type ResponseProps = {
   children?: ReactNode
   className?: string
   final?: boolean
+  /** Fade newly arriving text without delaying the underlying stream. */
+  animate?: boolean
   /** Distinct stream-markdown-parser cache id when multiple Responses stream concurrently */
   parserId?: string
 }
@@ -44,4 +46,5 @@ export type RenderChildren = (nodes: ParsedNode[]) => ReactNode
 
 export type BlockRendererOptions = {
   renderChildren: RenderChildren
+  animateText?: boolean
 }

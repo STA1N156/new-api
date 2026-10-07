@@ -190,9 +190,12 @@ export function PlaygroundParameterPanel(props: PlaygroundParameterPanelProps) {
       variant='ghost'
     >
       <SlidersHorizontalIcon size={16} />
-      <span className='bg-primary text-primary-foreground absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] leading-none font-semibold'>
-        {activeCount}
-      </span>
+      {(activeCount > 0 || props.config.system_prompt.trim() !== '') && (
+        <span
+          className='bg-primary ring-card absolute top-1 right-1 size-1.5 rounded-full ring-2'
+          aria-hidden
+        />
+      )}
     </PromptInputButton>
   )
 

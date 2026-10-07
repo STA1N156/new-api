@@ -65,7 +65,10 @@ export function CompactDateTimeRangePicker({
     // end-of-day). Hide them in the trigger label to keep the button
     // width compact while still showing the meaningful timestamp.
     const startText = start ? dayjs(start).format('YYYY-MM-DD HH:mm') : '-'
-    const endText = end ? dayjs(end).format('YYYY-MM-DD HH:mm') : '-'
+    const sameDay = start && end && dayjs(start).isSame(end, 'day')
+    const endText = end
+      ? dayjs(end).format(sameDay ? 'HH:mm' : 'YYYY-MM-DD HH:mm')
+      : '-'
     return `${startText} ~ ${endText}`
   }, [end, start, t])
 

@@ -53,6 +53,7 @@ interface PlaygroundChatProps {
   onEditMessage?: (message: MessageType) => void
   onDeleteMessage?: (message: MessageType) => void
   onSelectPrompt?: (prompt: string) => void
+  canSend?: boolean
   isGenerating?: boolean
   isLoadingMessages?: boolean
   editingKey?: string | null
@@ -69,6 +70,7 @@ export function PlaygroundChat({
   onEditMessage,
   onDeleteMessage,
   onSelectPrompt,
+  canSend = true,
   isGenerating = false,
   isLoadingMessages = false,
   editingKey,
@@ -129,7 +131,7 @@ export function PlaygroundChat({
 
     return (
       <Message
-        className='group flex-row-reverse py-2.5'
+        className='playground-message group flex-row-reverse py-4 sm:py-5'
         from={message.from}
         key={message.key}
       >
@@ -195,7 +197,11 @@ export function PlaygroundChat({
 
   if (visibleMessages.length === 0 && onSelectPrompt) {
     chatContent = [
-      <PlaygroundEmptyState key='empty' onSelectPrompt={onSelectPrompt} />,
+      <PlaygroundEmptyState
+        key='empty'
+        onSelectPrompt={onSelectPrompt}
+        disabled={!canSend}
+      />,
     ]
   }
 
@@ -215,9 +221,11 @@ export function PlaygroundChat({
     <Conversation>
       {/* Remove outer padding; apply padding to inner centered container to align with input */}
       <ConversationContent className='p-0'>
-        <div className='mx-auto w-full max-w-4xl px-4 py-4'>{chatContent}</div>
+        <div className='mx-auto w-full max-w-4xl px-5 pt-5 pb-9 sm:px-6 sm:pt-8'>
+          {chatContent}
+        </div>
       </ConversationContent>
-      <ConversationScrollButton />
+      <ConversationScrollButton className='border-border/70 bg-card/90 bottom-3 size-9 rounded-full shadow-sm backdrop-blur-sm' />
     </Conversation>
   )
 }

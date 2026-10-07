@@ -16,7 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ChevronsUpDown, Check, CpuIcon, LayersIcon } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronsUpDown,
+  Check,
+  CpuIcon,
+  LayersIcon,
+  LoaderCircle,
+} from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -60,6 +67,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { getLobeIcon } from '@/lib/lobe-icon'
+import { resolveModelProvider } from '@/lib/model-provider'
 import { cn } from '@/lib/utils'
 
 import {
@@ -555,26 +564,19 @@ export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
 
 GroupSelector.displayName = 'GroupSelector'
 
-// Export combined selector component
 export interface ModelGroupSelectorProps {
-  // Model props
   selectedModel: string
   models: ModelOption[]
   onModelChange: (value: string) => void
-  // Group props
   selectedGroup: string
   groups: GroupOption[]
   onGroupChange: (value: string) => void
-  // Common props
   className?: string
   disabled?: boolean
+  loading?: boolean
 }
 
-/**
- * Combined Model and Group Selector Component
- * Provides both model and group selection in a unified interface
- */
-export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
+export function ModelGroupSelector({
   selectedModel,
   models,
   onModelChange,
@@ -583,7 +585,8 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
   onGroupChange,
   className,
   disabled = false,
-}) => {
+  loading = false,
+}: ModelGroupSelectorProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -591,56 +594,37 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
   const groupScrollContainerRef = useRef<HTMLDivElement | null>(null)
   const selectedGroupOptionRef = useRef<HTMLButtonElement | null>(null)
   const selectedModelOptionRef = useRef<HTMLDivElement | null>(null)
-
-  const currentModel = useMemo(
-    () => models.find((model) => model.value === selectedModel),
-    [models, selectedModel]
-  )
-  const currentGroup = useMemo(
-    () => groups.find((group) => group.value === selectedGroup),
-    [groups, selectedGroup]
-  )
+  const currentModel = models.find((model) => model.value === selectedModel)
+  const currentGroup = groups.find((group) => group.value === selectedGroup)
   const filteredModels = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) {
-      return models
-    }
-
-    return models.filter((model) => {
-      const searchableText = [
-        model.label,
-        model.value,
-        model.description || '',
-        model.category || '',
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return searchableText.includes(query)
-    })
+    return models
+      .filter((model) =>
+        [model.label, model.value, model.description, model.category]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(query)
+      )
+      .sort((a, b) =>
+        a.label.localeCompare(b.label, undefined, {
+          numeric: true,
+          sensitivity: 'base',
+        })
+      )
   }, [models, searchQuery])
 
-  const handleModelChange = useCallback(
-    (value: string) => {
-      onModelChange(value)
-      setOpen(false)
-      setSearchQuery('')
-    },
-    [onModelChange]
-  )
-
-  const handleGroupChange = useCallback(
-    (value: string) => {
-      onGroupChange(value)
-    },
-    [onGroupChange]
-  )
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (!nextOpen) setSearchQuery('')
+  }
+  const handleModelChange = (value: string) => {
+    onModelChange(value)
+    handleOpenChange(false)
+  }
 
   useEffect(() => {
-    if (!open) {
-      return
-    }
-
+    if (!open) return
     let secondFrameId = 0
     const firstFrameId = window.requestAnimationFrame(() => {
       secondFrameId = window.requestAnimationFrame(() => {
@@ -651,197 +635,209 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
         scrollSelectedOptionIntoView(selectedModelOptionRef.current)
       })
     })
-
     return () => {
       window.cancelAnimationFrame(firstFrameId)
       window.cancelAnimationFrame(secondFrameId)
     }
   }, [open, selectedGroup, selectedModel])
 
-  const renderTrigger = () => (
+  const trigger = (
     <Button
+      aria-label={t('Select Model')}
       aria-expanded={open}
       className={cn(
-        'h-8 max-w-[15rem] justify-start gap-2 border px-2.5 font-medium shadow-none',
-        'bg-background/80 hover:bg-accent/70 text-foreground',
-        'focus:!ring-0 focus:!outline-none',
+        'group h-9 min-w-0 max-w-full justify-start gap-2 rounded-full border-transparent bg-transparent px-3 text-foreground shadow-none transition-colors hover:bg-transparent focus-visible:ring-2 focus-visible:ring-primary/30 md:max-w-[26rem]',
         className
       )}
       disabled={disabled}
       role='combobox'
       size='sm'
-      variant='outline'
+      variant='ghost'
     >
-      <CpuIcon className='text-muted-foreground size-4 shrink-0' />
-      <span className='min-w-0 truncate text-xs'>
-        {currentModel?.label || t('Model')}
+      <span className='min-w-0 truncate text-xs font-medium'>
+        {currentModel?.label || selectedModel || t('Select Model')}
       </span>
-      <span className='bg-muted text-muted-foreground hidden max-w-20 shrink-0 rounded px-1.5 py-0.5 text-[10px] sm:inline-flex'>
+      <span className='text-muted-foreground border-border/80 ml-1 hidden max-w-24 truncate border-l pl-2 text-[11px] sm:block'>
         {currentGroup?.label || t('Group')}
       </span>
-      <ChevronsUpDown className='text-muted-foreground ml-auto size-3.5 shrink-0 opacity-60' />
+      <ChevronDown
+        className={cn(
+          'text-muted-foreground size-3.5 shrink-0 transition-transform duration-200 motion-reduce:transition-none',
+          open && 'rotate-180'
+        )}
+      />
     </Button>
   )
 
-  const renderGroupList = () => (
-    <div
-      className={cn(
-        'min-w-0 space-y-2',
-        modelGroupSelectorLayoutClasses.groupColumn
-      )}
-    >
-      <div className='text-muted-foreground px-1 text-[11px] leading-4 font-medium'>
-        {t('Model Group')}
-      </div>
-      <div
-        className={cn(
-          'grid gap-1',
-          modelGroupSelectorLayoutClasses.groupScroll
-        )}
-        ref={groupScrollContainerRef}
-      >
-        {groups.map((group) => {
-          const isSelected = selectedGroup === group.value
-
-          return (
-            <button
-              className={cn(
-                'flex min-w-0 items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-[12px] leading-4 transition-colors',
-                isSelected
-                  ? 'bg-primary/10 text-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              )}
-              disabled={disabled}
-              key={group.value}
-              onClick={() => handleGroupChange(group.value)}
-              ref={isSelected ? selectedGroupOptionRef : undefined}
-              type='button'
-            >
-              <span className='min-w-0 truncate font-medium'>
-                {group.label}
-              </span>
-              <Check
-                className={cn(
-                  'size-3.5 shrink-0',
-                  isSelected ? 'opacity-100' : 'opacity-0'
-                )}
-              />
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-
-  const renderModelList = () => (
-    <Command
-      className={cn(
-        'min-w-0 rounded-lg border-0 bg-transparent p-1',
-        modelGroupSelectorLayoutClasses.modelCommand
-      )}
-      filter={() => 1}
-      shouldFilter={false}
-    >
-      <CommandInput
-        className='h-8 text-[13px]'
-        onValueChange={setSearchQuery}
-        placeholder={t('Search models...')}
-        value={searchQuery}
-      />
-      <CommandList className={modelGroupSelectorLayoutClasses.modelList}>
-        {filteredModels.length === 0 ? (
-          <div className='text-muted-foreground px-3 py-8 text-center text-[12px] leading-5'>
-            {t('No model found.')}
-          </div>
-        ) : (
-          <CommandGroup className='p-1'>
-            {filteredModels.map((model) => (
-              <CommandItem
-                className={cn(
-                  modelGroupSelectorLayoutClasses.modelItem,
-                  selectedModel === model.value
-                    ? modelGroupSelectorLayoutClasses.selectedModelItem
-                    : modelGroupSelectorLayoutClasses.unselectedModelItem
-                )}
-                key={model.value}
-                onSelect={handleModelChange}
-                ref={
-                  selectedModel === model.value
-                    ? selectedModelOptionRef
-                    : undefined
-                }
-                value={model.value}
-              >
-                <span
-                  className={cn(
-                    'min-w-0 truncate',
-                    selectedModel === model.value
-                      ? modelGroupSelectorLayoutClasses.selectedModelText
-                      : modelGroupSelectorLayoutClasses.unselectedModelText
-                  )}
-                >
-                  {model.label}
-                </span>
-                <Check
-                  className={cn(
-                    'size-3.5 shrink-0',
-                    selectedModel === model.value ? 'opacity-100' : 'opacity-0'
-                  )}
-                />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        )}
-      </CommandList>
-    </Command>
-  )
-
-  const renderContent = () => (
+  const content = (
     <div
       className={
         isMobile
-          ? 'grid h-[55vh] min-h-0 grid-cols-[7rem_minmax(0,1fr)] gap-2 p-2'
+          ? 'grid max-h-[min(60dvh,32rem)] min-h-0 grid-cols-[6.5rem_minmax(0,1fr)]'
           : modelGroupSelectorLayoutClasses.desktopContent
       }
     >
-      {renderGroupList()}
       <div
         className={cn(
-          'min-w-0 overflow-hidden rounded-lg border',
-          modelGroupSelectorLayoutClasses.modelColumn
+          modelGroupSelectorLayoutClasses.groupColumn,
+          isMobile && 'h-auto max-h-[min(60dvh,32rem)]'
         )}
       >
-        {renderModelList()}
+        <div
+          className={modelGroupSelectorLayoutClasses.groupScroll}
+          ref={groupScrollContainerRef}
+        >
+          {groups.map((group) => {
+            const selected = selectedGroup === group.value
+            return (
+              <button
+                key={group.value}
+                type='button'
+                aria-pressed={selected}
+                title={group.desc || group.description || group.label}
+                disabled={disabled}
+                onClick={() => onGroupChange(group.value)}
+                ref={selected ? selectedGroupOptionRef : undefined}
+                className={cn(
+                  'flex min-w-0 items-center justify-between gap-1 rounded-lg px-2.5 text-left text-xs transition-colors focus-visible:outline-2 focus-visible:outline-primary/50 disabled:opacity-50',
+                  selected
+                    ? 'bg-card text-foreground shadow-xs ring-1 ring-border/70'
+                    : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+                )}
+              >
+                <span className='truncate'>{group.label}</span>
+                {selected && (
+                  <span
+                    className='bg-primary size-1.5 shrink-0 rounded-full'
+                    aria-hidden
+                  />
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
+      <Command
+        className={cn(
+          modelGroupSelectorLayoutClasses.modelCommand,
+          isMobile && 'h-auto max-h-[min(60dvh,32rem)]'
+        )}
+        shouldFilter={false}
+      >
+        <CommandInput
+          aria-label={t('Search models...')}
+          className='h-9 text-sm'
+          onValueChange={setSearchQuery}
+          placeholder={t('Search models...')}
+          value={searchQuery}
+        />
+        <CommandList className={modelGroupSelectorLayoutClasses.modelList}>
+          {loading && (
+            <div
+              className='text-muted-foreground flex items-center justify-center gap-2 px-3 py-12 text-xs'
+              role='status'
+            >
+              <LoaderCircle className='size-4 motion-safe:animate-spin' />
+              {t('Loading...')}
+            </div>
+          )}
+          {!loading && filteredModels.length === 0 && (
+            <div className='text-muted-foreground px-4 py-12 text-center text-xs'>
+              {t('No model found.')}
+            </div>
+          )}
+          {!loading && filteredModels.length > 0 && (
+            <CommandGroup className='p-2'>
+              {filteredModels.map((model) => {
+                const provider = resolveModelProvider(model.value)
+                return (
+                  <CommandItem
+                    key={model.value}
+                    value={model.value}
+                    onSelect={handleModelChange}
+                    disabled={disabled}
+                    data-checked={selectedModel === model.value}
+                    ref={
+                      selectedModel === model.value
+                        ? selectedModelOptionRef
+                        : undefined
+                    }
+                    className={cn(
+                      modelGroupSelectorLayoutClasses.modelItem,
+                      selectedModel === model.value
+                        ? modelGroupSelectorLayoutClasses.selectedModelItem
+                        : modelGroupSelectorLayoutClasses.unselectedModelItem
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'flex size-8 shrink-0 items-center justify-center rounded-lg [&_svg]:size-5!',
+                        selectedModel === model.value
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted/50 text-muted-foreground'
+                      )}
+                    >
+                      {provider ? (
+                        getLobeIcon(provider.icon, 20)
+                      ) : (
+                        <CpuIcon className='size-3.5' />
+                      )}
+                    </span>
+                    <span className='min-w-0 flex-1'>
+                      <span
+                        className={cn(
+                          'block break-all text-[13px] leading-5',
+                          selectedModel === model.value
+                            ? modelGroupSelectorLayoutClasses.selectedModelText
+                            : modelGroupSelectorLayoutClasses.unselectedModelText
+                        )}
+                      >
+                        {model.label}
+                      </span>
+                      {model.description && (
+                        <span className='text-muted-foreground mt-0.5 line-clamp-1 block text-[11px] leading-4'>
+                          {model.description}
+                        </span>
+                      )}
+                    </span>
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          )}
+        </CommandList>
+      </Command>
     </div>
   )
 
   return isMobile ? (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{renderTrigger()}</DrawerTrigger>
-      <DrawerContent className='flex max-h-[80vh] min-h-[60vh] flex-col'>
-        <DrawerHeader className='pb-3 text-left'>
-          <DrawerTitle>{t('Select Model')}</DrawerTitle>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
+      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      <DrawerContent className='flex max-h-[85dvh] flex-col overflow-hidden rounded-t-3xl'>
+        <DrawerHeader className='px-5 pt-3 pb-4 text-left'>
+          <DrawerTitle className='text-base font-medium'>
+            {t('Select Model')}
+          </DrawerTitle>
         </DrawerHeader>
-        <div className='min-h-0 flex-1 overflow-y-auto px-4 pb-5'>
-          {renderContent()}
+        <div className='border-border/60 min-h-0 overflow-hidden border-t pb-[env(safe-area-inset-bottom)]'>
+          {content}
         </div>
       </DrawerContent>
     </Drawer>
   ) : (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={renderTrigger()} />
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger render={trigger} />
       <PopoverContent
-        align='end'
+        align='start'
+        side='top'
+        sideOffset={12}
+        collisionPadding={12}
         className={cn(
-          'bg-popover z-50 w-[34rem] max-w-[calc(100vw-2rem)] rounded-xl border p-0 shadow-lg',
+          'w-[36rem] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-2xl border border-border/70 p-0 shadow-xl shadow-black/10 ring-0 duration-200 motion-reduce:animate-none',
           modelGroupSelectorLayoutClasses.desktopPanel
         )}
-        collisionPadding={8}
-        side='top'
-        sideOffset={8}
       >
-        {renderContent()}
+        {content}
       </PopoverContent>
     </Popover>
   )

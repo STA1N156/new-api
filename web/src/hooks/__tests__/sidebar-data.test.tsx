@@ -47,7 +47,4 @@ it('provides a Model Square link in General without requiring an administrator r
     (entry) => 'url' in entry && entry.url === '/pricing'
   )
   expect(item?.requiredRole).toBeUndefined()
-  expect(general?.items).toContainEqual(
-    expect.objectContaining({ title: 'Autumn Festival', url: '/festival' })
-  )
 })

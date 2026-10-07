@@ -66,6 +66,7 @@ export function getInputControlState({
   return {
     canSubmit:
       !disabled &&
+      !isModelLoading &&
       hasModels &&
       (text.trim().length > 0 || Boolean(hasAttachments)),
     isSelectorDisabled: disabled || isModelLoading || groups.length === 0,

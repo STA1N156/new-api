@@ -35,7 +35,7 @@ export const THEME_PRESETS = [
     // Swatches preview the canvas → accent gradient that defines the system.
     value: 'anthropic',
     name: 'Anthropic',
-    swatches: ['oklch(0.984 0.005 95)', 'oklch(0.685 0.142 38)'],
+    swatches: ['#faf9f5', '#d97757'],
   },
   {
     value: 'simple-large',
@@ -116,7 +116,7 @@ export type ThemeCustomization = {
 }
 
 export const DEFAULT_THEME_CUSTOMIZATION: ThemeCustomization = {
-  preset: 'default',
+  preset: 'anthropic',
   font: 'default',
   radius: 'default',
   scale: 'default',
@@ -155,7 +155,8 @@ export const CONTENT_LAYOUT_VALUES: ReadonlySet<ContentLayout> = new Set([
 ])
 
 export const THEME_COOKIE_KEYS = {
-  preset: 'theme_preset',
+  // Start everyone on Anthropic once; later manual choices remain persistent.
+  preset: 'theme_preset_v2',
   font: 'theme_font',
   radius: 'theme_radius',
   scale: 'theme_scale',
@@ -176,7 +177,7 @@ export const THEME_COOKIE_KEYS = {
 export const PRESET_DEFAULT_FONT: Partial<
   Record<ThemePreset, ResolvedThemeFont>
 > = {
-  default: 'sans',
+  default: 'serif',
   anthropic: 'serif',
 }
 

@@ -20,7 +20,6 @@ import {
   BarChartIcon,
   CodeSquareIcon,
   GraduationCapIcon,
-  MessageSquarePlusIcon,
   NotepadTextIcon,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -29,6 +28,7 @@ import { Button } from '@/components/ui/button'
 
 type PlaygroundEmptyStateProps = {
   onSelectPrompt: (prompt: string) => void
+  disabled?: boolean
 }
 
 const starterPrompts = [
@@ -40,35 +40,31 @@ const starterPrompts = [
 
 export function PlaygroundEmptyState({
   onSelectPrompt,
+  disabled,
 }: PlaygroundEmptyStateProps) {
   const { t } = useTranslation()
 
   return (
-    <div className='flex min-h-[min(520px,calc(100svh-18rem))] items-center justify-center px-1 py-8 md:py-12'>
+    <div className='playground-empty flex min-h-[min(480px,calc(100svh-20rem))] items-center justify-center px-1 py-8 sm:py-14'>
       <div className='grid w-full max-w-2xl gap-5 text-center'>
-        <div className='bg-muted/50 text-muted-foreground mx-auto flex size-11 items-center justify-center rounded-xl border'>
-          <MessageSquarePlusIcon className='size-5' aria-hidden='true' />
-        </div>
-
         <div className='grid gap-2'>
-          <h2 className='text-xl font-semibold tracking-tight text-balance md:text-2xl'>
-            {t('Start a playground chat')}
+          <h2 className='text-2xl font-normal tracking-tight text-balance sm:text-4xl'>
+            {t('What would you like to explore?')}
           </h2>
           <p className='text-muted-foreground mx-auto max-w-lg text-sm leading-6 text-balance'>
-            {t(
-              'Test a model with a starter prompt, or write your own request below.'
-            )}
+            {t('Choose a model. Start with an idea.')}
           </p>
         </div>
 
-        <div className='grid gap-2 sm:grid-cols-2'>
+        <div className='flex flex-wrap justify-center gap-2'>
           {starterPrompts.map(({ icon: Icon, text }) => {
             const prompt = t(text)
 
             return (
               <Button
-                className='h-auto min-h-11 justify-start gap-2 px-3 py-2.5 text-left whitespace-normal'
+                className='playground-prompt border-border/70 bg-card/50 hover:bg-card h-10 gap-2 rounded-xl px-3.5 text-xs font-normal shadow-none hover:shadow-sm'
                 key={text}
+                disabled={disabled}
                 onClick={() => onSelectPrompt(prompt)}
                 variant='outline'
               >

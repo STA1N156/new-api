@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 'use client'
 
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { getMarkdown, parseMarkdownToStructure } from 'stream-markdown-parser'
 
 import { cn } from '@/lib/utils'
@@ -46,6 +46,12 @@ function getCachedMarkdown(parserId: string): MarkdownInstance {
 export const Response = memo((props: ResponseProps) => {
   const content = getMarkdownContent(props.children)
   const isFinal = props.final ?? true
+  const [hasAnimatedStream, setHasAnimatedStream] = useState(
+    Boolean(props.animate && !isFinal)
+  )
+  if (props.animate && !isFinal && !hasAnimatedStream) {
+    setHasAnimatedStream(true)
+  }
   const parserId = props.parserId ?? DEFAULT_PARSER_ID
   const markdown = getCachedMarkdown(parserId)
   const shouldParseMarkdown = content.length <= MAX_PARSED_MARKDOWN_CHARS
@@ -64,7 +70,10 @@ export const Response = memo((props: ResponseProps) => {
 
   const renderedContent =
     parsedContent.bodyNodes.length > 0
-      ? renderChildren(parsedContent.bodyNodes)
+      ? renderChildren(
+          parsedContent.bodyNodes,
+          Boolean(props.animate && hasAnimatedStream)
+        )
       : content
   const footnotes = renderFootnotes(parsedContent.footnotes)
 

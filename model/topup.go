@@ -87,10 +87,7 @@ func creditTopUpQuota(tx *gorm.DB, topUp *TopUp, creditedQuota int, updates map[
 	if err := creditUserQuota(tx, topUp.UserId, creditedQuota, updates); err != nil {
 		return err
 	}
-	if err := creditInvitationReward(tx, topUp, topUp.UserId, creditedQuota); err != nil {
-		return err
-	}
-	return creditFestivalQuota(tx, "topup", topUp.Id, topUp.UserId, creditedQuota, topUp.CompleteTime)
+	return creditInvitationReward(tx, topUp, topUp.UserId, creditedQuota)
 }
 
 // creditUserQuota atomically enforces the wallet ceiling while adding

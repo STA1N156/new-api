@@ -47,7 +47,8 @@ import {
   isTimingLogType,
 } from '../lib/utils'
 import type { LogCategory } from '../types'
-import { StreamTpsCell, TimingMetricsCell } from './timing-metrics-cell'
+import { LogTokensCell } from './log-tokens-cell'
+import { TimingMetricsCell } from './timing-metrics-cell'
 import { useUsageLogsContext } from './usage-logs-provider'
 
 const logTypeRowTint: Record<number, string> = {
@@ -167,10 +168,7 @@ function MobileLogTimeStatus({
   const variant = config.color as StatusVariant
 
   return (
-    <div className='space-y-1'>
-      <div className='font-mono text-xs leading-tight tabular-nums'>
-        {formatTimestampToDate(timestamp)}
-      </div>
+    <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1'>
       <div
         className={cn(
           'inline-flex items-center gap-1 text-xs leading-none font-medium',
@@ -183,59 +181,9 @@ function MobileLogTimeStatus({
         />
         <span>{t(config.label)}</span>
       </div>
-    </div>
-  )
-}
-
-/** Mobile-only Tokens block: always show cache ↓/↑ when present (no label). */
-function MobileTokensField({ log }: { log: UsageLog }) {
-  const { t } = useTranslation()
-
-  if (!isDisplayableLogType(log.type)) return null
-
-  const promptTokens = log.prompt_tokens || 0
-  const completionTokens = log.completion_tokens || 0
-  if (promptTokens === 0 && completionTokens === 0) {
-    return (
-      <div className='bg-muted/20 min-w-0 rounded-md px-2 py-1.5'>
-        <span className='text-muted-foreground text-xs'>-</span>
-      </div>
-    )
-  }
-
-  const other = parseLogOther(log.other)
-  const cacheReadTokens = other?.cache_tokens || 0
-  const cacheWrite5m = other?.cache_creation_tokens_5m || 0
-  const cacheWrite1h = other?.cache_creation_tokens_1h || 0
-  const hasSplitCache = cacheWrite5m > 0 || cacheWrite1h > 0
-  const cacheWriteTokens = hasSplitCache
-    ? cacheWrite5m + cacheWrite1h
-    : other?.cache_creation_tokens || 0
-  const showCache = cacheReadTokens > 0 || cacheWriteTokens > 0
-
-  return (
-    <div className='bg-muted/20 min-w-0 rounded-md px-2 py-1.5'>
-      <div className='flex flex-col gap-0.5'>
-        <span className='font-mono text-xs font-medium tabular-nums'>
-          {promptTokens.toLocaleString()} / {completionTokens.toLocaleString()}
-        </span>
-        {showCache ? (
-          <div className='text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-none'>
-            {cacheReadTokens > 0 && (
-              <span>
-                {t('Cache')}↓ {cacheReadTokens.toLocaleString()}
-              </span>
-            )}
-            {cacheWriteTokens > 0 && (
-              <span>↑ {cacheWriteTokens.toLocaleString()}</span>
-            )}
-          </div>
-        ) : (
-          <span className='text-muted-foreground/50 text-[11px] leading-none'>
-            —
-          </span>
-        )}
-      </div>
+      <time className='text-muted-foreground text-xs leading-tight tabular-nums'>
+        {formatTimestampToDate(timestamp)}
+      </time>
     </div>
   )
 }
@@ -250,7 +198,7 @@ function MobileUserField({ log }: { log: UsageLog }) {
   return (
     <button
       type='button'
-      className='bg-muted/20 flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-left'
+      className='flex max-w-full min-w-0 items-center gap-1.5 rounded-md text-left'
       onClick={(e) => {
         e.stopPropagation()
         setSelectedUserId(log.user_id)
@@ -277,34 +225,21 @@ function MobileUserField({ log }: { log: UsageLog }) {
   )
 }
 
-/** Merge stream badge + TPS with first-token / duration on one row. */
-function MobileStreamTimingField({ log }: { log: UsageLog }) {
+function MobileTimingField({ log }: { log: UsageLog }) {
   if (!isTimingLogType(log.type)) return null
 
   const other = parseLogOther(log.other)
   const useTime = log.use_time || 0
-  const tokensPerSecond =
-    useTime > 0 && log.completion_tokens > 0
-      ? log.completion_tokens / useTime
-      : null
-
   return (
-    <div className='bg-muted/20 flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1.5'>
-      <TimingMetricsCell
-        useTimeSec={useTime}
-        completionTokens={log.completion_tokens}
-        frtMs={other?.frt}
-        isStream={log.is_stream}
-        indicator='dot'
-        className='min-w-0 flex-1'
-      />
-      <StreamTpsCell
-        isStream={log.is_stream}
-        tokensPerSecond={tokensPerSecond}
-        streamStatus={other?.stream_status}
-        className='shrink-0'
-      />
-    </div>
+    <TimingMetricsCell
+      useTimeSec={useTime}
+      completionTokens={log.completion_tokens}
+      frtMs={other?.frt}
+      isStream={log.is_stream}
+      indicator='dot'
+      inline
+      className='col-span-2 min-w-0'
+    />
   )
 }
 
@@ -318,53 +253,83 @@ function CommonLogsCard<TData>({
   const modelCell = cells.get('model_name')
   const quotaCell = cells.get('quota')
   const rowData = cells.get('created_at')?.row.original as UsageLog | undefined
+  const hasUsage = rowData && isDisplayableLogType(rowData.type)
 
   return (
     <div className='space-y-2.5'>
-      <div className='flex min-w-0 items-center justify-between gap-3'>
-        <CompactCell cell={modelCell} className='flex-1' />
-        <CompactCell
-          cell={quotaCell}
-          className='shrink-0 text-right [&_.flex-col]:items-end'
-        />
-      </div>
-
-      <div className='grid grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] gap-1.5'>
-        <div className='bg-muted/20 min-w-0 rounded-md px-2 py-1.5'>
-          <MobileLogTimeStatus
-            createdAt={rowData?.created_at}
-            type={rowData?.type}
-          />
+      <MobileLogTimeStatus
+        createdAt={rowData?.created_at}
+        type={rowData?.type}
+      />
+      {hasUsage && (
+        <div className='flex items-start justify-between gap-3'>
+          <CompactCell cell={modelCell} className='flex-1' />
+          {quotaCell && <CompactCell cell={quotaCell} className='shrink-0' />}
         </div>
-        <SummaryField
-          cell={cells.get('channel')}
-          valueClassName='[&_.flex-col]:max-w-none'
-        />
-        {rowData && cells.has('user') ? (
-          <MobileUserField log={rowData} />
-        ) : (
-          <SummaryField cell={cells.get('user')} />
+      )}
+      {hasUsage &&
+        (cells.has('prompt_tokens') ||
+          cells.has('use_time') ||
+          cells.has('is_stream')) && (
+          <div className='border-border/60 space-y-3 border-y py-2.5'>
+            {cells.has('prompt_tokens') && (
+              <LogTokensCell log={rowData} showCosts />
+            )}
+            {(cells.has('use_time') || cells.has('is_stream')) && (
+              <div className='grid auto-cols-fr grid-flow-col items-center gap-2'>
+                {cells.has('use_time') && <MobileTimingField log={rowData} />}
+                {cells.has('is_stream') && (
+                  <CompactCell
+                    cell={cells.get('is_stream')}
+                    className='[&>div]:flex-row [&>div]:items-center [&>div]:justify-end [&>div]:gap-1.5'
+                  />
+                )}
+              </div>
+            )}
+          </div>
         )}
-        <SummaryField
-          cell={cells.get('token_name')}
-          valueClassName='[&_.flex-col]:max-w-none [&_.flex-col>*:not(:first-child)]:text-[11px] [&_.flex-col>*:not(:first-child)]:leading-none'
-        />
-        {rowData ? (
-          <MobileStreamTimingField log={rowData} />
-        ) : (
-          <SummaryField cell={cells.get('use_time')} />
-        )}
-        {rowData ? (
-          <MobileTokensField log={rowData} />
-        ) : (
-          <SummaryField cell={cells.get('prompt_tokens')} />
-        )}
-        <SummaryField
-          label={t('Details')}
-          cell={cells.get('content')}
-          className='col-span-2 bg-transparent px-0 py-0'
-        />
-      </div>
+      {(cells.has('user') || (hasUsage && cells.has('channel'))) && (
+        <div className='grid grid-cols-2 items-start gap-x-4 gap-y-2.5'>
+          {rowData?.username && cells.has('user') && (
+            <div className='flex min-w-0 items-center gap-2'>
+              <span className='text-muted-foreground shrink-0 text-xs'>
+                {t('User')}
+              </span>
+              <MobileUserField log={rowData} />
+            </div>
+          )}
+          {hasUsage && (
+            <SummaryField
+              label={t('Channel')}
+              cell={cells.get('channel')}
+              className='flex items-center gap-2 bg-transparent p-0 [&>div:first-child]:mb-0 [&>div:first-child]:shrink-0'
+              valueClassName='[&_.flex-col]:max-w-none'
+            />
+          )}
+        </div>
+      )}
+      {((hasUsage && rowData.token_name && cells.has('token_name')) ||
+        cells.has('content')) && (
+        <div className='flex min-w-0 items-start justify-between gap-3'>
+          {hasUsage && rowData.token_name && cells.has('token_name') && (
+            <div className='flex min-w-0 flex-1 items-start gap-2 pt-1'>
+              <span className='text-muted-foreground shrink-0 pt-1 text-xs'>
+                {t('Token')}
+              </span>
+              <CompactCell cell={cells.get('token_name')} className='flex-1' />
+            </div>
+          )}
+          {cells.has('content') && (
+            <CompactCell
+              cell={cells.get('content')}
+              className={cn(
+                'ml-auto overflow-visible',
+                hasUsage ? 'shrink-0' : 'w-full'
+              )}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -484,7 +449,13 @@ export function UsageLogsMobileList<TData>({
   }
 
   return (
-    <div className='border-border/50 bg-card overflow-hidden rounded-lg border'>
+    <div
+      className={
+        logCategory === 'common'
+          ? 'space-y-2.5'
+          : 'border-border/50 bg-card overflow-hidden rounded-lg border'
+      }
+    >
       {rows.map((row) => {
         const cells = new Map(
           row.getVisibleCells().map((cell) => [cell.column.id, cell])
@@ -499,7 +470,9 @@ export function UsageLogsMobileList<TData>({
           <div
             key={row.id}
             className={cn(
-              'border-border/40 border-b border-l-2 border-l-transparent p-3 transition-colors last:border-b-0',
+              logCategory === 'common'
+                ? 'border-border/70 bg-card rounded-xl border p-3.5 transition-colors'
+                : 'border-border/40 border-b border-l-2 border-l-transparent p-3 transition-colors last:border-b-0',
               tintClass
             )}
           >

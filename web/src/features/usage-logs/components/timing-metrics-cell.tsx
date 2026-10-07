@@ -56,6 +56,7 @@ interface TimingMetricsCellProps {
   frtMs?: number
   isStream: boolean
   className?: string
+  inline?: boolean
   /**
    * `bar` (default) draws a full-height color segment beside the labels,
    * matching the dense desktop table. `dot` swaps that segment for small
@@ -68,9 +69,10 @@ interface TimingMetricsCellProps {
 export function TimingMetricsCell(props: TimingMetricsCellProps) {
   const { t } = useTranslation()
   const indicator = props.indicator ?? 'bar'
-  const showFirstToken = props.isStream
   const firstTokenSeconds =
-    props.frtMs != null && props.frtMs > 0 ? props.frtMs / 1000 : null
+    props.isStream && props.frtMs != null && props.frtMs > 0
+      ? props.frtMs / 1000
+      : null
   const firstTokenVariant: StatusVariant =
     firstTokenSeconds == null
       ? 'neutral'
@@ -80,31 +82,56 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
     props.completionTokens
   )
   const firstTokenLabel =
-    firstTokenSeconds == null ? t('N/A') : formatUseTime(firstTokenSeconds)
+    firstTokenSeconds == null ? '—' : formatUseTime(firstTokenSeconds)
   const totalTimeLabel = formatUseTime(props.useTimeSec)
 
   const labels = (
-    <div className='flex min-h-8 min-w-0 flex-col justify-center gap-0.5 text-xs leading-tight'>
-      {showFirstToken && (
-        <div className='flex items-baseline gap-1.5'>
-          {indicator === 'dot' && (
-            <span
-              aria-hidden
-              className={cn(
-                'size-1.5 shrink-0 rounded-full',
-                dotColorMap[firstTokenVariant]
-              )}
-            />
-          )}
-          <span className='text-muted-foreground shrink-0'>
-            {t('First token')}
-          </span>
-          <span className={cn('tabular-nums', textColorMap[firstTokenVariant])}>
-            {firstTokenLabel}
-          </span>
-        </div>
+    <div
+      className={cn(
+        'min-w-0 flex-1 text-xs leading-4',
+        props.inline
+          ? 'grid auto-cols-fr grid-flow-col items-center gap-2'
+          : 'flex min-h-8 flex-col justify-start gap-1'
       )}
-      <div className='flex items-baseline gap-1.5'>
+    >
+      <div
+        className={cn(
+          'flex items-center gap-1.5',
+          props.inline && 'justify-start'
+        )}
+      >
+        {indicator === 'dot' && (
+          <span
+            aria-hidden
+            className={cn(
+              'size-1.5 shrink-0 rounded-full',
+              dotColorMap[firstTokenVariant]
+            )}
+          />
+        )}
+        <span
+          className={cn(
+            'text-muted-foreground min-w-0',
+            props.inline ? 'whitespace-nowrap' : 'flex-1'
+          )}
+        >
+          {t('First token')}
+        </span>
+        <span
+          className={cn(
+            'whitespace-nowrap tabular-nums',
+            textColorMap[firstTokenVariant]
+          )}
+        >
+          {firstTokenLabel}
+        </span>
+      </div>
+      <div
+        className={cn(
+          'flex items-center gap-1.5',
+          props.inline && 'justify-center'
+        )}
+      >
         {indicator === 'dot' && (
           <span
             aria-hidden
@@ -114,8 +141,20 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
             )}
           />
         )}
-        <span className='text-muted-foreground shrink-0'>{t('Duration')}</span>
-        <span className={cn('tabular-nums', textColorMap[totalTimeVariant])}>
+        <span
+          className={cn(
+            'text-muted-foreground min-w-0',
+            props.inline ? 'whitespace-nowrap' : 'flex-1'
+          )}
+        >
+          {t('Duration')}
+        </span>
+        <span
+          className={cn(
+            'whitespace-nowrap tabular-nums',
+            textColorMap[totalTimeVariant]
+          )}
+        >
           {totalTimeLabel}
         </span>
       </div>
@@ -132,17 +171,10 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
     <div className={cn('flex items-stretch gap-2', props.className)}>
       <span
         aria-hidden
-        className={cn(
-          'flex w-1 shrink-0 flex-col overflow-hidden rounded-full',
-          !showFirstToken && barColorMap[totalTimeVariant]
-        )}
+        className='flex w-1 shrink-0 flex-col overflow-hidden rounded-full'
       >
-        {showFirstToken && (
-          <>
-            <span className={cn('flex-1', barColorMap[firstTokenVariant])} />
-            <span className={cn('flex-1', barColorMap[totalTimeVariant])} />
-          </>
-        )}
+        <span className={cn('flex-1', barColorMap[firstTokenVariant])} />
+        <span className={cn('flex-1', barColorMap[totalTimeVariant])} />
       </span>
       {labels}
     </div>
@@ -203,7 +235,7 @@ export function StreamTpsCell(props: StreamTpsCellProps) {
           </TooltipProvider>
         )}
       </span>
-      <span className='text-muted-foreground/60 px-0.5 tabular-nums'>
+      <span className='text-muted-foreground whitespace-nowrap tabular-nums'>
         {tpsLabel}
       </span>
     </div>

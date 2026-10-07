@@ -28,10 +28,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { formatLogQuota } from '@/lib/format'
 
 import { hasToolSurcharge } from '../lib/format'
 import type { LogOtherData } from '../types'
+import { useLogPriceDisplay } from './usage-logs-provider'
 
 interface LogCostDisplayProps {
   quota: number
@@ -80,10 +80,11 @@ function ToolSurchargeMarker() {
 }
 
 function QuotaBadge(props: { quota: number }) {
-  const quotaDisplay = splitQuotaDisplay(formatLogQuota(props.quota))
+  const { formatQuota } = useLogPriceDisplay()
+  const quotaDisplay = splitQuotaDisplay(formatQuota(props.quota))
 
   return (
-    <span className='border-border/80 bg-muted/60 inline-flex h-6 w-fit items-center rounded-md border px-2 [font-family:var(--font-body)] text-sm leading-none font-semibold tabular-nums'>
+    <span className='text-foreground inline-flex min-h-6 w-fit items-center [font-family:var(--font-body)] text-sm leading-none font-semibold whitespace-nowrap tabular-nums'>
       {quotaDisplay.prefix ? (
         <span className='mr-1'>{quotaDisplay.prefix}</span>
       ) : null}
@@ -94,6 +95,7 @@ function QuotaBadge(props: { quota: number }) {
 
 function SubscriptionBadge(props: { quota: number }) {
   const { t } = useTranslation()
+  const { formatQuota } = useLogPriceDisplay()
 
   return (
     <Tooltip>
@@ -110,7 +112,7 @@ function SubscriptionBadge(props: { quota: number }) {
       />
       <TooltipContent>
         <span>
-          {t('Deducted by subscription')}: {formatLogQuota(props.quota)}
+          {t('Deducted by subscription')}: {formatQuota(props.quota)}
         </span>
       </TooltipContent>
     </Tooltip>

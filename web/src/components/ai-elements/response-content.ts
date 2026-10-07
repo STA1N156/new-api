@@ -165,8 +165,7 @@ export function getMarkdownContent(children: ReactNode): string {
 }
 
 export function getNodeKey(node: ParsedNode, index: number): string {
-  const raw = typeof node.raw === 'string' ? node.raw : ''
-  return `${node.type}-${index}-${raw.slice(0, 24)}`
+  return `${node.type}-${index}`
 }
 
 export function parseResponseContent(

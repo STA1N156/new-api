@@ -89,7 +89,12 @@ export function PlaygroundInput({
   const [text, setText] = useState('')
 
   const handleSubmit = (message: PromptInputMessage) => {
-    const submittableText = getSubmittableInputText(message, disabled)
+    const submittableText = getSubmittableInputText(
+      message,
+      disabled ||
+        isModelLoading ||
+        !models.some((model) => model.value === modelValue)
+    )
 
     if (submittableText === null) return
     onSubmit(
@@ -100,7 +105,7 @@ export function PlaygroundInput({
   }
 
   return (
-    <div className='grid shrink-0 gap-4 px-1 md:pb-4'>
+    <div className='w-full'>
       <PromptInput
         accept='image/*'
         multiple
@@ -108,10 +113,10 @@ export function PlaygroundInput({
         maxFileSize={10 * 1024 * 1024}
         onError={(error) => toast.error(error.message)}
         className='relative'
-        groupClassName='bg-background/95 dark:bg-background/80 border-border/70 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.65)] ring-1 ring-foreground/5 rounded-xl overflow-hidden transition-all duration-200 focus-within:border-primary/45 focus-within:ring-primary/15 focus-within:shadow-[0_22px_70px_-34px_rgba(0,0,0,0.75)]'
+        groupClassName='playground-composer overflow-hidden rounded-[1.5rem] border-border/80 bg-card/95 backdrop-blur-xl dark:bg-card/95 has-disabled:opacity-100 has-disabled:bg-card/95 dark:has-disabled:bg-card/95 has-[[data-slot=input-group-control]:focus-visible]:border-primary/40 has-[[data-slot=input-group-control]:focus-visible]:ring-0'
         onSubmit={handleSubmit}
       >
-        <PromptInputHeader className='flex-wrap gap-2 px-4 pt-3 empty:hidden'>
+        <PromptInputHeader className='flex-wrap gap-2 px-4 pt-3 pb-0 empty:hidden'>
           <PromptInputAttachments>
             {(file) => <PromptInputAttachment data={file} />}
           </PromptInputAttachments>
@@ -121,14 +126,14 @@ export function PlaygroundInput({
           autoCorrect='off'
           autoCapitalize='off'
           spellCheck={false}
-          className='min-h-20 px-5 pt-4 pb-3 leading-7 md:min-h-24 md:text-base'
+          className='placeholder:text-muted-foreground/65 max-h-[min(35dvh,16rem)] min-h-20 resize-none px-4 pt-3 pb-2 text-base leading-7 disabled:opacity-75 sm:px-5'
           disabled={disabled}
           onChange={(event) => setText(event.target.value)}
           placeholder={t('Ask anything')}
           value={text}
         />
 
-        <PromptInputFooter className='border-border/60 bg-muted/20 dark:bg-muted/10 border-t px-3 py-2.5 backdrop-blur'>
+        <PromptInputFooter className='px-2.5 pt-0 pb-2.5 sm:px-3'>
           <PlaygroundInputControls
             disabled={disabled}
             groups={groups}

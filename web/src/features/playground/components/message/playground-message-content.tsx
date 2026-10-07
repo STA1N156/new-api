@@ -23,7 +23,6 @@ import {
   CodeBlock,
   CodeBlockCopyButton,
 } from '@/components/ai-elements/code-block'
-import { Loader } from '@/components/ai-elements/loader'
 import { MessageContent } from '@/components/ai-elements/message'
 import {
   Reasoning,
@@ -31,7 +30,6 @@ import {
   ReasoningTrigger,
 } from '@/components/ai-elements/reasoning'
 import { Response } from '@/components/ai-elements/response'
-import { Shimmer } from '@/components/ai-elements/shimmer'
 import {
   Source,
   Sources,
@@ -50,7 +48,6 @@ import {
 import { getMessageContentStyles } from '../../lib/message/message-styles'
 import type { Message } from '../../types'
 import { MessageError } from './message-error'
-import { MessageMetadata } from './message-metadata'
 
 type PlaygroundMessageContentProps = {
   actions: ReactNode
@@ -108,7 +105,7 @@ export function PlaygroundMessageContent({
 
       {hasReasoning && (
         <Reasoning
-          defaultOpen
+          defaultOpen={Boolean(message.isReasoningStreaming)}
           duration={message.reasoning?.duration}
           isStreaming={message.isReasoningStreaming}
         >
@@ -118,18 +115,25 @@ export function PlaygroundMessageContent({
       )}
 
       {showLoader && (
-        <div className='flex items-center gap-2 py-2'>
-          <Loader />
-          <Shimmer className='text-sm' duration={1}>
-            {t('Responding...')}
-          </Shimmer>
+        <div
+          className='text-muted-foreground flex items-center gap-3 py-3 text-sm'
+          role='status'
+        >
+          <span
+            className='playground-responding flex items-center gap-1'
+            aria-hidden
+          >
+            <span />
+            <span />
+            <span />
+          </span>
+          <span>{t('Responding...')}</span>
         </div>
       )}
 
       {isError && (
         <>
           <MessageError message={message} className='mb-2' />
-          <MessageMetadata alignment={alignment} message={message} />
           {errorActions}
         </>
       )}
@@ -167,10 +171,17 @@ export function PlaygroundMessageContent({
               variant='flat'
               className={cn(getMessageContentStyles())}
             >
-              <Response final={isMessageFinal}>{displayContent}</Response>
+              <Response
+                final={isMessageFinal}
+                animate={message.from === 'assistant'}
+              >
+                {displayContent}
+              </Response>
+              {message.from === 'assistant' && !isMessageFinal && (
+                <span className='playground-stream-cursor' aria-hidden />
+              )}
             </MessageContent>
           )}
-          <MessageMetadata alignment={alignment} message={message} />
           {actions}
         </>
       )}

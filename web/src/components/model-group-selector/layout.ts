@@ -17,22 +17,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 export const modelGroupSelectorLayoutClasses = {
-  desktopPanel: 'max-h-[min(50vh,28rem)] overflow-hidden',
+  desktopPanel: 'max-h-[min(60vh,30rem)] overflow-hidden',
   desktopContent:
-    'grid h-[min(50vh,28rem)] max-h-[min(50vh,28rem)] min-h-0 gap-3 p-2 md:grid-cols-[9.5rem_minmax(0,1fr)]',
-  groupColumn: 'flex h-full min-h-0 min-w-0 flex-col overflow-hidden',
+    'grid h-[min(60vh,30rem)] min-h-0 grid-cols-[9rem_minmax(0,1fr)]',
+  groupColumn:
+    'flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-border/60 bg-muted/25 p-2',
   groupScroll:
-    'mt-2 grid min-h-0 flex-1 auto-rows-[2rem] content-start gap-1 overflow-y-auto pr-1',
-  modelColumn: 'flex h-full min-h-0 min-w-0 overflow-hidden rounded-lg border',
-  modelCommand: 'min-h-0 flex-1 rounded-lg border-0 bg-transparent p-1',
+    'relative grid min-h-0 flex-1 auto-rows-[2rem] content-start gap-1.5 overflow-y-auto px-px py-1 [scrollbar-width:thin]',
+  modelCommand:
+    'min-h-0 min-w-0 flex-1 rounded-none! border-0 bg-transparent p-0',
   modelList:
     'min-h-0 flex-1 max-h-none [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:block [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent',
   modelItem:
-    'relative mb-0.5 flex items-center justify-between rounded-md border border-transparent px-2 py-1.5 pl-3 text-[12px] leading-4 transition-colors before:absolute before:inset-y-2 before:left-1 before:w-1 before:rounded-full before:bg-transparent',
-  selectedModelItem:
-    'border-primary/40 bg-primary/12 text-foreground shadow-sm before:bg-primary',
-  unselectedModelItem:
-    'text-muted-foreground hover:bg-accent hover:text-foreground',
+    'relative mb-1 flex min-h-12 cursor-pointer items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-2 transition-colors',
+  selectedModelItem: 'border-primary/15 bg-primary/5 text-foreground',
+  unselectedModelItem: 'text-foreground/85 hover:bg-muted/60',
   selectedModelText: 'font-semibold text-foreground',
   unselectedModelText: 'font-medium',
 } as const

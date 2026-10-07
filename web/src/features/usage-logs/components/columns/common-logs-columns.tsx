@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ColumnDef } from '@tanstack/react-table'
-import { GitBranch, Sparkles, KeyRound } from 'lucide-react'
+import { ChevronRight, GitBranch, Sparkles, KeyRound } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -36,20 +36,19 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
-import { formatBillingCurrencyFromUSD } from '@/lib/currency'
-import { formatLogQuota, formatTimestampToDate } from '@/lib/format'
+import { formatTimestampToDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 import { LOG_TYPE_ALL_VALUE } from '../../constants'
 import type { UsageLog } from '../../data/schema'
 import {
-  formatModelName,
   getTieredBillingSummary,
   hasAnyCacheTokens,
   parseLogOther,
   isViolationFeeLog,
   renderAuditContent,
 } from '../../lib/format'
+import type { LogPriceDisplay } from '../../lib/price-display'
 import {
   isDisplayableLogType,
   isTimingLogType,
@@ -59,9 +58,10 @@ import {
 import type { LogOtherData } from '../../types'
 import { DetailsDialog } from '../dialogs/details-dialog'
 import { LogCostDisplay } from '../log-cost-display'
+import { LogTokensCell } from '../log-tokens-cell'
 import { ModelBadge } from '../model-badge'
 import { TimingMetricsCell, StreamTpsCell } from '../timing-metrics-cell'
-import { useUsageLogsContext } from '../usage-logs-provider'
+import { useLogPriceDisplay, useUsageLogsContext } from '../usage-logs-provider'
 
 interface DetailSegment {
   text: string
@@ -98,9 +98,10 @@ function buildDetailSegments(
   log: UsageLog,
   other: LogOtherData | null,
   t: (key: string, opts?: Record<string, unknown>) => string,
-  isAdmin: boolean
+  isAdmin: boolean,
+  prices: LogPriceDisplay
 ): DetailSegment[] {
-  const segments = buildTypeDetailSegments(log, other, t)
+  const segments = buildTypeDetailSegments(log, other, t, prices)
   // Quota saturation is a rare, admin-only anomaly marker; surface it first
   // and in danger styling so it stands out on the related billing log. The
   // backend already strips admin_info for non-admins; gate on isAdmin too as
@@ -114,7 +115,8 @@ function buildDetailSegments(
 function buildTypeDetailSegments(
   log: UsageLog,
   other: LogOtherData | null,
-  t: (key: string, opts?: Record<string, unknown>) => string
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  prices: LogPriceDisplay
 ): DetailSegment[] {
   // Audit (type=3) and login (type=7) logs: render localized content from the
   // structured op descriptor instead of the raw (English-fallback) content.
@@ -140,7 +142,7 @@ function buildTypeDetailSegments(
       })
     }
     segments.push({
-      text: `${t('Fee')}: ${formatLogQuota(other?.fee_quota ?? log.quota)}`,
+      text: `${t('Fee')}: ${prices.formatQuota(other?.fee_quota ?? log.quota)}`,
       muted: true,
     })
     return segments
@@ -150,11 +152,8 @@ function buildTypeDetailSegments(
 
   const segments: DetailSegment[] = []
 
-  const priceOpts = { digitsLarge: 4, digitsSmall: 6, abbreviate: false }
-  const formatPrice = (price: number) =>
-    `${formatBillingCurrencyFromUSD(price, priceOpts)}/M`
-  const formatPriceCompact = (price: number) =>
-    formatBillingCurrencyFromUSD(price, priceOpts)
+  const formatPrice = (price: number) => `${prices.formatPrice(price)}/M`
+  const formatPriceCompact = prices.formatPrice
   const formatPriceList = (prices: string[], showUnit: boolean) => {
     const text = prices.join(' / ')
     return showUnit ? `${text}/M` : text
@@ -218,7 +217,7 @@ function buildTypeDetailSegments(
     const isPerCall = isPerCallBilling(modelPrice)
     if (isPerCall && modelPrice != null) {
       segments.push({
-        text: `${t('Per-call')} · ${formatBillingCurrencyFromUSD(modelPrice, priceOpts)}`,
+        text: `${t('Per-call')} · ${formatPriceCompact(modelPrice)}`,
       })
     } else if (other.model_ratio != null) {
       const inputPriceUSD = other.model_ratio * 2.0
@@ -299,8 +298,8 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
         const config = getLogTypeConfig(log.type)
 
         return (
-          <div className='flex min-w-0 flex-col gap-0.5'>
-            <span className='truncate font-mono text-xs tabular-nums'>
+          <div className='flex min-w-0 flex-col gap-1'>
+            <span className='truncate text-xs tabular-nums'>
               {formatTimestampToDate(timestamp)}
             </span>
             <StatusBadge
@@ -361,9 +360,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
-                  render={
-                    <div className='flex max-w-[160px] flex-col gap-0.5' />
-                  }
+                  render={<div className='flex max-w-[160px] flex-col gap-1' />}
                 >
                   <div className='relative inline-flex w-fit items-center gap-1'>
                     <StatusBadge
@@ -439,7 +436,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
                     )}
                   </div>
                   {log.channel_name && (
-                    <span className='text-muted-foreground/70 truncate [font-family:var(--font-body)] !text-xs'>
+                    <span className='text-muted-foreground truncate [font-family:var(--font-body)] !text-xs'>
                       {channelName}
                     </span>
                   )}
@@ -557,7 +554,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       const groupRatio = getGroupRatio(other)
 
       return (
-        <div className='flex max-w-[200px] flex-col gap-0.5'>
+        <div className='flex max-w-[200px] flex-col gap-1 max-sm:max-w-none max-sm:flex-row max-sm:flex-wrap max-sm:items-center max-sm:gap-x-2'>
           <TooltipProvider delay={300}>
             <Tooltip>
               <TooltipTrigger render={<div className='max-w-full' />}>
@@ -567,7 +564,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
                   copyText={sensitiveVisible ? tokenName : undefined}
                   size='sm'
                   showDot={false}
-                  className='border-border/60 bg-muted/30 text-foreground h-6 max-w-full gap-1.5 overflow-hidden rounded-md border px-2 py-0.5 [font-family:var(--font-body)]'
+                  className='border-border/60 bg-muted/30 text-foreground h-6 max-w-full gap-1.5 overflow-hidden rounded-md border px-2 py-0.5 [font-family:var(--font-body)] text-xs'
                 />
               </TooltipTrigger>
               {sensitiveVisible && tokenName.length > 16 && (
@@ -609,14 +606,9 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
         const log = row.original
         if (!isDisplayableLogType(log.type)) return null
 
-        const modelInfo = formatModelName(log)
-
         return (
-          <div className='flex w-fit flex-col gap-0.5'>
-            <ModelBadge
-              modelName={modelInfo.name}
-              actualModel={modelInfo.actualModel}
-            />
+          <div className='flex max-w-[260px] min-w-0 flex-col max-sm:max-w-none'>
+            <ModelBadge modelName={log.model_name} />
           </div>
         )
       },
@@ -653,44 +645,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
         const log = row.original
         if (!isDisplayableLogType(log.type)) return null
 
-        const other = parseLogOther(log.other)
-
-        const promptTokens = log.prompt_tokens || 0
-        const completionTokens = log.completion_tokens || 0
-        if (promptTokens === 0 && completionTokens === 0) {
-          return <span className='text-muted-foreground text-xs'>-</span>
-        }
-
-        const cacheReadTokens = other?.cache_tokens || 0
-        const cacheWrite5m = other?.cache_creation_tokens_5m || 0
-        const cacheWrite1h = other?.cache_creation_tokens_1h || 0
-        const hasSplitCache = cacheWrite5m > 0 || cacheWrite1h > 0
-        const cacheWriteTokens = hasSplitCache
-          ? cacheWrite5m + cacheWrite1h
-          : other?.cache_creation_tokens || 0
-
-        return (
-          <div className='flex flex-col gap-0.5'>
-            <span className='font-mono text-xs font-medium tabular-nums'>
-              {promptTokens.toLocaleString()} /{' '}
-              {completionTokens.toLocaleString()}
-            </span>
-            {(cacheReadTokens > 0 || cacheWriteTokens > 0) && (
-              <div className='flex items-center gap-1 text-[11px]'>
-                {cacheReadTokens > 0 && (
-                  <span className='text-muted-foreground/60'>
-                    {t('Cache')}↓ {cacheReadTokens.toLocaleString()}
-                  </span>
-                )}
-                {cacheWriteTokens > 0 && (
-                  <span className='text-muted-foreground/60'>
-                    ↑ {cacheWriteTokens.toLocaleString()}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )
+        return <LogTokensCell log={log} />
       },
     },
     {
@@ -731,25 +686,29 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       accessorKey: 'content',
       header: t('Details'),
       cell: function DetailsCell({ row }) {
+        const prices = useLogPriceDisplay()
         const [dialogOpen, setDialogOpen] = useState(false)
         const log = row.original
+        const isUsage = isDisplayableLogType(log.type)
         const other = parseLogOther(log.other)
 
-        const segments = buildDetailSegments(log, other, t, isAdmin)
+        const segments = buildDetailSegments(log, other, t, isAdmin, prices)
         const primary = segments[0]
         const hasMore = segments.length > 1
         let primaryTextClass = 'text-foreground'
         if (primary?.muted) {
-          primaryTextClass = 'text-muted-foreground/60'
+          primaryTextClass = 'text-muted-foreground'
         } else if (primary?.danger) {
           primaryTextClass = 'text-red-600 dark:text-red-400'
         }
-        let detailPreview = <span className='text-muted-foreground/40'>—</span>
+        let detailPreview = (
+          <span className='text-muted-foreground'>{t('Details')}</span>
+        )
         if (primary) {
           detailPreview = (
             <span
               className={cn(
-                'truncate leading-snug group-hover:underline',
+                'min-w-0 flex-1 truncate leading-snug',
                 primaryTextClass
               )}
             >
@@ -763,7 +722,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
           )
         } else if (log.content) {
           detailPreview = (
-            <span className='text-muted-foreground truncate group-hover:underline'>
+            <span className='text-muted-foreground min-w-0 flex-1 truncate'>
               {log.content}
             </span>
           )
@@ -773,11 +732,23 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
           <>
             <button
               type='button'
-              className='group flex max-w-[200px] items-center gap-1 text-left text-xs'
+              className='group hover:bg-muted/60 focus-visible:ring-ring flex min-h-8 w-full max-w-[200px] items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none max-sm:w-auto max-sm:max-w-none'
               onClick={() => setDialogOpen(true)}
               title={t('Click to view full details')}
+              aria-label={t('Click to view full details')}
             >
-              {detailPreview}
+              <span
+                className={cn(
+                  'min-w-0 flex-1 truncate',
+                  isUsage && 'max-sm:hidden'
+                )}
+              >
+                {detailPreview}
+              </span>
+              <ChevronRight
+                className='text-muted-foreground size-3.5 shrink-0 max-sm:size-5'
+                aria-hidden='true'
+              />
             </button>
             <DetailsDialog
               log={log}

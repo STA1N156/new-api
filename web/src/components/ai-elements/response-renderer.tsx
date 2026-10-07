@@ -49,10 +49,15 @@ import { renderFootnotes as renderFootnotesBlock } from './response-renderer-foo
 import { renderImage, renderLink } from './response-renderer-inline'
 import { renderTable } from './response-renderer-table'
 import type { BlockRendererOptions } from './response-types'
+import { StreamingText } from './streaming-text'
 
-export function renderChildren(nodes: ParsedNode[]): ReactNode {
+export function renderChildren(
+  nodes: ParsedNode[],
+  animateText = false
+): ReactNode {
   const options: BlockRendererOptions = {
-    renderChildren,
+    renderChildren: (children) => renderChildren(children, animateText),
+    animateText,
   }
   return nodes.map((node, index) =>
     renderNode(node, getNodeKey(node, index), options)
@@ -71,6 +76,9 @@ function renderNode(
   options: BlockRendererOptions
 ): ReactNode {
   if (isTextNode(node)) {
+    if (options.animateText) {
+      return <StreamingText key={key}>{node.content}</StreamingText>
+    }
     return node.content
   }
 
@@ -104,7 +112,11 @@ function renderNode(
         className='bg-muted/70 text-foreground rounded px-1 py-0.5 font-mono text-[0.9em]'
         key={key}
       >
-        {String(node.code)}
+        {options.animateText ? (
+          <StreamingText>{String(node.code)}</StreamingText>
+        ) : (
+          String(node.code)
+        )}
       </code>
     )
   }

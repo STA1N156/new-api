@@ -20,7 +20,10 @@ For commercial licensing, please contact support@quantumnous.com
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
 import { useIsAdmin } from '@/hooks/use-admin'
+import { useStatus } from '@/hooks/use-status'
+import { useSystemConfigStore } from '@/stores/system-config-store'
 
+import { createLogPriceDisplay } from '../lib/price-display'
 import type { ChannelAffinityInfo } from '../types'
 
 export type LogsViewScope = 'all' | 'self'
@@ -38,6 +41,9 @@ interface UsageLogsContextValue {
   setSensitiveVisible: (visible: boolean) => void
   viewScope: LogsViewScope
   setViewScope: (scope: LogsViewScope) => void
+  showRechargePrice: boolean
+  setShowRechargePrice: (show: boolean) => void
+  rechargePriceRate: number | undefined
 }
 
 const UsageLogsContext = createContext<UsageLogsContextValue | undefined>(
@@ -45,6 +51,11 @@ const UsageLogsContext = createContext<UsageLogsContextValue | undefined>(
 )
 
 export function UsageLogsProvider({ children }: { children: ReactNode }) {
+  const { status } = useStatus()
+  const [showRechargePrice, setShowRechargePrice] = useState(false)
+  const rechargePriceRate = showRechargePrice
+    ? Math.max(Number(status?.price) || 1, 0.001)
+    : undefined
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
   const [userInfoDialogOpen, setUserInfoDialogOpen] = useState(false)
   const [affinityTarget, setAffinityTarget] =
@@ -68,6 +79,9 @@ export function UsageLogsProvider({ children }: { children: ReactNode }) {
         setSensitiveVisible,
         viewScope,
         setViewScope,
+        showRechargePrice,
+        setShowRechargePrice,
+        rechargePriceRate,
       }}
     >
       {children}
@@ -81,6 +95,12 @@ export function useUsageLogsContext() {
     throw new Error('useUsageLogsContext must be used within UsageLogsProvider')
   }
   return context
+}
+
+export function useLogPriceDisplay() {
+  const rechargePriceRate = useContext(UsageLogsContext)?.rechargePriceRate
+  useSystemConfigStore((state) => state.config.currency)
+  return createLogPriceDisplay(rechargePriceRate)
 }
 
 /**

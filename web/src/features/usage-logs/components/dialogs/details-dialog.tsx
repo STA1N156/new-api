@@ -16,7 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { TFunction } from 'i18next'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -42,8 +41,6 @@ import {
   Settings2,
   AlertTriangle,
   Headphones,
-  Monitor,
-  Cloud,
   Globe,
   ShieldCheck,
   UserCog,
@@ -81,7 +78,7 @@ import {
   isPerCallBilling,
   isTimingLogType,
 } from '../../lib/utils'
-import { USAGE_BILLING_PATH, type LogOtherData } from '../../types'
+import type { LogOtherData } from '../../types'
 import { useLogPriceDisplay } from '../usage-logs-provider'
 
 // Maps a channel-update changed-field token (as recorded by the backend audit)
@@ -170,43 +167,6 @@ function formatRatio(ratio: number | undefined): string {
   return ratio.toFixed(4)
 }
 
-function getUsageBillingPathLabel(
-  t: TFunction,
-  adminInfo: LogOtherData['admin_info']
-): string {
-  switch (adminInfo?.usage_billing_path) {
-    case USAGE_BILLING_PATH.LOCAL:
-      return t('Local Billing')
-    case USAGE_BILLING_PATH.OPENAI:
-      return t('Upstream Response (billing-usage-openai)')
-    case USAGE_BILLING_PATH.OPENAI_ESTIMATED:
-      return t('Upstream Response (billing-usage-openai-estimated)')
-    case USAGE_BILLING_PATH.ANTHROPIC:
-      return t('Upstream Response (billing-usage-anthropic)')
-    case USAGE_BILLING_PATH.ANTHROPIC_ESTIMATED:
-      return t('Upstream Response (billing-usage-anthropic-estimated)')
-    case USAGE_BILLING_PATH.GEMINI:
-      return t('Upstream Response (billing-usage-gemini)')
-    case USAGE_BILLING_PATH.GEMINI_ESTIMATED:
-      return t('Upstream Response (billing-usage-gemini-estimated)')
-    case USAGE_BILLING_PATH.UPSTREAM:
-      return t('Upstream Response')
-    default:
-      return adminInfo?.local_count_tokens
-        ? t('Local Billing')
-        : t('Upstream Response')
-  }
-}
-
-function isUsageBillingPathLocal(
-  adminInfo: LogOtherData['admin_info']
-): boolean {
-  if (adminInfo?.usage_billing_path) {
-    return adminInfo.usage_billing_path === USAGE_BILLING_PATH.LOCAL
-  }
-  return adminInfo?.local_count_tokens === true
-}
-
 function quotaSaturationKindLabel(
   kind: 'overflow' | 'underflow' | 'nan',
   t: (key: string) => string
@@ -216,14 +176,10 @@ function quotaSaturationKindLabel(
   return t('Invalid (NaN)')
 }
 
-function BillingBreakdown(props: {
-  log: UsageLog
-  other: LogOtherData
-  isAdmin: boolean
-}) {
+function BillingBreakdown(props: { log: UsageLog; other: LogOtherData }) {
   const { t } = useTranslation()
   const { formatPrice: fmtPrice, formatQuota } = useLogPriceDisplay()
-  const { log, other, isAdmin } = props
+  const { log, other } = props
   const isPerCall = isPerCallBilling(other.model_price)
   const isClaude = other.claude === true
   const isTieredExpr = other.billing_mode === 'tiered_expr'
@@ -381,13 +337,6 @@ function BillingBreakdown(props: {
     rows.push({
       label: t('Audio Input Price'),
       value: fmtPrice(other.audio_input_price),
-    })
-  }
-
-  if (isAdmin && other.admin_info) {
-    rows.push({
-      label: t('Billing Path'),
-      value: getUsageBillingPathLabel(t, other.admin_info),
     })
   }
 
@@ -1068,11 +1017,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
 
         {/* Billing breakdown (consume type) */}
         {isConsume && other && !isViolation && (
-          <BillingBreakdown
-            log={props.log}
-            other={other}
-            isAdmin={props.isAdmin}
-          />
+          <BillingBreakdown log={props.log} other={other} />
         )}
 
         {/* Tiered pricing breakdown (when billing_mode is tiered_expr) */}
@@ -1088,28 +1033,6 @@ export function DetailsDialog(props: DetailsDialogProps) {
             />
           </DetailSection>
         )}
-
-        {/* Admin billing mode indicator for non-consume */}
-        {props.isAdmin &&
-          !isConsume &&
-          props.log.type !== 6 &&
-          other?.admin_info && (
-            <DetailRow
-              label={t('Billing Path')}
-              value={
-                <span className='flex items-center gap-1'>
-                  {isUsageBillingPathLocal(other.admin_info) ? (
-                    <Monitor className='size-3 text-blue-500' />
-                  ) : (
-                    <Cloud className='size-3 text-emerald-500' />
-                  )}
-                  <span className='text-xs'>
-                    {getUsageBillingPathLabel(t, other.admin_info)}
-                  </span>
-                </span>
-              }
-            />
-          )}
 
         {/* Stream status details */}
         {other?.stream_status && other.stream_status.status !== 'ok' && (

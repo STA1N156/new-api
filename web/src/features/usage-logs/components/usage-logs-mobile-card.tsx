@@ -264,7 +264,12 @@ function CommonLogsCard<TData>({
       {hasUsage && (
         <div className='flex items-start justify-between gap-3'>
           <CompactCell cell={modelCell} className='flex-1' />
-          {quotaCell && <CompactCell cell={quotaCell} className='shrink-0' />}
+          {quotaCell && (
+            <CompactCell
+              cell={quotaCell}
+              className='max-w-[45%] shrink-0 text-right [&_.whitespace-nowrap]:whitespace-normal [&_span]:wrap-anywhere'
+            />
+          )}
         </div>
       )}
       {hasUsage &&
@@ -281,7 +286,7 @@ function CommonLogsCard<TData>({
                 {cells.has('is_stream') && (
                   <CompactCell
                     cell={cells.get('is_stream')}
-                    className='[&>div]:flex-row [&>div]:items-center [&>div]:justify-end [&>div]:gap-1.5'
+                    className='text-right [&_.whitespace-nowrap]:whitespace-normal [&_span]:wrap-anywhere [&>div]:flex-row [&>div]:flex-wrap [&>div]:items-center [&>div]:justify-end [&>div]:gap-1.5'
                   />
                 )}
               </div>

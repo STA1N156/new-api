@@ -97,7 +97,7 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
       <div
         className={cn(
           'flex items-center gap-1.5',
-          props.inline && 'justify-start'
+          props.inline && 'min-w-0 flex-wrap justify-start gap-y-1'
         )}
       >
         {indicator === 'dot' && (
@@ -119,7 +119,10 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
         </span>
         <span
           className={cn(
-            'whitespace-nowrap tabular-nums',
+            'tabular-nums',
+            props.inline
+              ? 'min-w-0 max-w-full wrap-anywhere'
+              : 'whitespace-nowrap',
             textColorMap[firstTokenVariant]
           )}
         >
@@ -129,7 +132,7 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
       <div
         className={cn(
           'flex items-center gap-1.5',
-          props.inline && 'justify-center'
+          props.inline && 'min-w-0 flex-wrap justify-center gap-y-1'
         )}
       >
         {indicator === 'dot' && (
@@ -151,7 +154,10 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
         </span>
         <span
           className={cn(
-            'whitespace-nowrap tabular-nums',
+            'tabular-nums',
+            props.inline
+              ? 'min-w-0 max-w-full text-center wrap-anywhere'
+              : 'whitespace-nowrap',
             textColorMap[totalTimeVariant]
           )}
         >

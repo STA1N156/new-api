@@ -28,7 +28,7 @@ function TokenCharge({ quota }: { quota: number | undefined }) {
   const { formatTokenCharge } = useLogPriceDisplay()
   if (quota == null) return null
   return (
-    <span className='text-muted-foreground font-normal whitespace-nowrap'>
+    <span className='text-muted-foreground max-w-full min-w-0 font-normal wrap-anywhere'>
       ({formatTokenCharge(quota)})
     </span>
   )
@@ -51,20 +51,32 @@ export function LogTokensCell({
     <>
       {cacheRead > 0 && (
         <span
-          className='inline-flex items-center gap-1 whitespace-nowrap'
+          className='inline-flex max-w-full min-w-0 items-center gap-1'
           title={t('Cache Read')}
         >
           <ArrowDown className='size-3 shrink-0' aria-hidden />
-          {cacheRead.toLocaleString()}
+          <span
+            className={
+              showCosts ? 'min-w-0 wrap-anywhere' : 'whitespace-nowrap'
+            }
+          >
+            {cacheRead.toLocaleString()}
+          </span>
         </span>
       )}
       {cacheWrite > 0 && (
         <span
-          className='inline-flex items-center gap-1 whitespace-nowrap'
+          className='inline-flex max-w-full min-w-0 items-center gap-1'
           title={t('Cache Write')}
         >
           <ArrowUp className='size-3 shrink-0' aria-hidden />
-          {cacheWrite.toLocaleString()}
+          <span
+            className={
+              showCosts ? 'min-w-0 wrap-anywhere' : 'whitespace-nowrap'
+            }
+          >
+            {cacheWrite.toLocaleString()}
+          </span>
         </span>
       )}
       <TokenCharge
@@ -92,20 +104,20 @@ export function LogTokensCell({
   return (
     <div className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-[0.8125rem] leading-5 tabular-nums'>
       <span className='text-muted-foreground'>{t('Input')}</span>
-      <div className='flex flex-wrap items-baseline justify-end gap-x-1.5 font-medium'>
+      <div className='flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 text-right font-medium wrap-anywhere'>
         <span>{log.prompt_tokens.toLocaleString()}</span>
         <TokenCharge quota={costs?.input} />
       </div>
       {hasCache && (
         <>
           <span className='text-muted-foreground'>{t('Cache')}</span>
-          <div className='text-muted-foreground flex flex-wrap items-center justify-end gap-x-3 gap-y-1'>
+          <div className='text-muted-foreground flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-right'>
             {cacheUsage}
           </div>
         </>
       )}
       <span className='text-muted-foreground'>{t('Output')}</span>
-      <div className='flex flex-wrap items-baseline justify-end gap-x-1.5 font-medium'>
+      <div className='flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 text-right font-medium wrap-anywhere'>
         <span>{log.completion_tokens.toLocaleString()}</span>
         <TokenCharge quota={costs?.output} />
       </div>

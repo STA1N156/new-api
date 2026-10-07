@@ -42,15 +42,8 @@ export function Pricing() {
     null
   )
 
-  const {
-    models,
-    vendors,
-    groupRatio,
-    usableGroup,
-    autoGroups,
-    isLoading,
-    priceRate,
-  } = usePricingData()
+  const { models, vendors, groupRatio, usableGroup, isLoading, priceRate } =
+    usePricingData()
 
   const {
     searchInput,
@@ -240,9 +233,6 @@ export function Pricing() {
                 if (!open) setSelectedModelName(null)
               }}
               model={selectedModel}
-              groupRatio={groupRatio || {}}
-              usableGroup={usableGroup || {}}
-              autoGroups={autoGroups || []}
               priceRate={priceRate ?? 1}
               tokenUnit={tokenUnit}
               showRechargePrice={showRechargePrice}

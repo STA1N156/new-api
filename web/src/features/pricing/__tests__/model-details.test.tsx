@@ -40,6 +40,7 @@ const model = {
   model_ratio: 1,
   completion_ratio: 2,
   enable_groups: ['default'],
+  supported_endpoint_types: ['openai'],
 }
 
 beforeEach(() => {
@@ -88,20 +89,16 @@ it('keeps the model-name copy button working inside Details', async () => {
   render(
     <ThemeProvider>
       <QueryClientProvider client={client}>
-        <ModelDetailsContent
-          model={model}
-          groupRatio={{ default: 1 }}
-          usableGroup={{ default: { desc: '', ratio: 1 } }}
-          autoGroups={[]}
-          priceRate={1}
-          tokenUnit='M'
-        />
+        <ModelDetailsContent model={model} priceRate={1} tokenUnit='M' />
       </QueryClientProvider>
     </ThemeProvider>
   )
   expect(screen.getAllByRole('tab')).toHaveLength(2)
   expect(screen.getByRole('tab', { name: 'Overview' })).toBeVisible()
   expect(screen.queryByRole('tab', { name: 'API' })).not.toBeInTheDocument()
+  expect(screen.queryByText('Pricing by Group')).not.toBeInTheDocument()
+  expect(screen.queryByText('Auto Group Chain')).not.toBeInTheDocument()
+  expect(screen.queryByText('Endpoints')).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Copy model name' }))
   expect(await navigator.clipboard.readText()).toBe('example-model')
   expect(screen.getByRole('button', { name: 'Copied' })).toBeVisible()

@@ -91,7 +91,7 @@ export function LogTokensCell({
   }
 
   return (
-    <div className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-xs leading-5 tabular-nums'>
+    <div className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-sm leading-5 tabular-nums'>
       <span className='text-muted-foreground'>{t('Input')}</span>
       <div className='flex flex-wrap items-baseline justify-end gap-x-1.5 font-medium'>
         <span>{log.prompt_tokens.toLocaleString()}</span>

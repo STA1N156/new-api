@@ -1155,17 +1155,10 @@ export function DetailsDialog(props: DetailsDialogProps) {
         {/* Subscription billing details */}
         {isSubscription && other && (
           <DetailSection label={t('Subscription Billing')}>
-            {other.subscription_plan_id && (
+            {other.subscription_plan_title && (
               <DetailRow
                 label={t('Plan')}
-                value={`#${other.subscription_plan_id} ${other.subscription_plan_title || ''}`.trim()}
-              />
-            )}
-            {other.subscription_id && (
-              <DetailRow
-                label={t('Instance')}
-                value={`#${other.subscription_id}`}
-                mono
+                value={other.subscription_plan_title}
               />
             )}
             {other.subscription_consumed != null && (

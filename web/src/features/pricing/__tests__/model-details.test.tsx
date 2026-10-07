@@ -92,7 +92,6 @@ it('keeps the model-name copy button working inside Details', async () => {
           model={model}
           groupRatio={{ default: 1 }}
           usableGroup={{ default: { desc: '', ratio: 1 } }}
-          endpointMap={{}}
           autoGroups={[]}
           priceRate={1}
           tokenUnit='M'
@@ -100,6 +99,9 @@ it('keeps the model-name copy button working inside Details', async () => {
       </QueryClientProvider>
     </ThemeProvider>
   )
+  expect(screen.getAllByRole('tab')).toHaveLength(2)
+  expect(screen.getByRole('tab', { name: 'Overview' })).toBeVisible()
+  expect(screen.queryByRole('tab', { name: 'API' })).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Copy model name' }))
   expect(await navigator.clipboard.readText()).toBe('example-model')
   expect(screen.getByRole('button', { name: 'Copied' })).toBeVisible()

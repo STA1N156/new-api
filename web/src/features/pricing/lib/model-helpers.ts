@@ -95,13 +95,6 @@ export function getDisplayGroupRatio(
 }
 
 /**
- * Replace model placeholder in endpoint path
- */
-export function replaceModelInPath(path: string, modelName: string): string {
-  return path.replaceAll('{model}', modelName)
-}
-
-/**
  * Check if model is token-based pricing
  */
 export function isTokenBasedModel(model: PricingModel): boolean {

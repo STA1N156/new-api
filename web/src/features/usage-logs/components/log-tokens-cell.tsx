@@ -21,15 +21,17 @@ import { useTranslation } from 'react-i18next'
 
 import type { UsageLog } from '../data/schema'
 import { parseLogOther } from '../lib/format'
-import { getCacheWriteTokens, getLogTokenCosts } from '../lib/token-costs'
-import { useLogPriceDisplay } from './usage-logs-provider'
+import {
+  formatTokenCostPercentages,
+  getCacheWriteTokens,
+  getLogTokenCosts,
+} from '../lib/token-costs'
 
-function TokenCharge({ quota }: { quota: number | undefined }) {
-  const { formatTokenCharge } = useLogPriceDisplay()
-  if (quota == null) return null
+function TokenCostShare({ percentage }: { percentage: string | undefined }) {
+  if (percentage == null) return null
   return (
     <span className='text-muted-foreground max-w-full min-w-0 font-normal wrap-anywhere'>
-      ({formatTokenCharge(quota)})
+      ({percentage})
     </span>
   )
 }
@@ -46,6 +48,7 @@ export function LogTokensCell({
   const cacheRead = other?.cache_tokens || 0
   const cacheWrite = getCacheWriteTokens(other)
   const costs = showCosts ? getLogTokenCosts(log, other) : null
+  const percentages = costs ? formatTokenCostPercentages(costs) : null
   const hasCache = cacheRead > 0 || cacheWrite > 0
   const cacheUsage = (
     <>
@@ -79,9 +82,7 @@ export function LogTokensCell({
           </span>
         </span>
       )}
-      <TokenCharge
-        quota={costs ? costs.cacheRead + costs.cacheWrite : undefined}
-      />
+      <TokenCostShare percentage={percentages?.cache} />
     </>
   )
 
@@ -106,7 +107,7 @@ export function LogTokensCell({
       <span className='text-muted-foreground'>{t('Input')}</span>
       <div className='flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 text-right font-medium wrap-anywhere'>
         <span>{log.prompt_tokens.toLocaleString()}</span>
-        <TokenCharge quota={costs?.input} />
+        <TokenCostShare percentage={percentages?.input} />
       </div>
       {hasCache && (
         <>
@@ -119,7 +120,7 @@ export function LogTokensCell({
       <span className='text-muted-foreground'>{t('Output')}</span>
       <div className='flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 text-right font-medium wrap-anywhere'>
         <span>{log.completion_tokens.toLocaleString()}</span>
-        <TokenCharge quota={costs?.output} />
+        <TokenCostShare percentage={percentages?.output} />
       </div>
     </div>
   )

@@ -23,8 +23,6 @@ import {
 } from '@/lib/currency'
 import { formatLogQuota } from '@/lib/format'
 
-import { formatTokenCharge } from './token-costs'
-
 const priceOptions = { digitsLarge: 4, digitsSmall: 6, abbreviate: false }
 
 /** Only the display changes; recorded quota and unit prices stay untouched. */
@@ -44,8 +42,6 @@ export function createLogPriceDisplay(rechargePriceRate?: number) {
       rechargePriceRate === undefined
         ? formatBillingCurrencyFromUSD(usd, priceOptions)
         : formatRechargePrice(usd, rechargePriceRate, priceOptions),
-    formatTokenCharge: (quota: number) =>
-      formatTokenCharge(quota, rechargePriceRate),
   }
 }
 

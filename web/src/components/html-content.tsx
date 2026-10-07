@@ -95,10 +95,6 @@ function hardenIsolatedHtml(html: string): string {
   const template = document.createElement('template')
   template.innerHTML = html
 
-  template.content.querySelectorAll('[data-site-origin]').forEach((element) => {
-    element.textContent = window.location.origin
-  })
-
   template.content.querySelectorAll('a[target="_blank"]').forEach((link) => {
     const rel = new Set(
       link.getAttribute('rel')?.split(/\s+/).filter(Boolean) ?? []

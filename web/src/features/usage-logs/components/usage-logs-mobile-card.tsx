@@ -237,7 +237,8 @@ function MobileTimingField({ log }: { log: UsageLog }) {
       frtMs={other?.frt}
       isStream={log.is_stream}
       indicator='dot'
-      className='min-w-0'
+      inline
+      className='col-span-2 min-w-0'
     />
   )
 }
@@ -275,12 +276,12 @@ function CommonLogsCard<TData>({
               <LogTokensCell log={rowData} showCosts />
             )}
             {(cells.has('use_time') || cells.has('is_stream')) && (
-              <div className='grid auto-cols-fr grid-flow-col items-center gap-4'>
+              <div className='grid auto-cols-fr grid-flow-col items-center gap-2'>
                 {cells.has('use_time') && <MobileTimingField log={rowData} />}
                 {cells.has('is_stream') && (
                   <CompactCell
                     cell={cells.get('is_stream')}
-                    className='[&>div]:items-center [&>div]:gap-1 [&>div]:text-sm [&>div]:leading-5'
+                    className='[&>div]:flex-row [&>div]:items-center [&>div]:justify-end [&>div]:gap-1.5'
                   />
                 )}
               </div>

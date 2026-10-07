@@ -56,6 +56,7 @@ interface TimingMetricsCellProps {
   frtMs?: number
   isStream: boolean
   className?: string
+  inline?: boolean
   /**
    * `bar` (default) draws a full-height color segment beside the labels,
    * matching the dense desktop table. `dot` swaps that segment for small
@@ -87,11 +88,18 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
   const labels = (
     <div
       className={cn(
-        'flex min-h-8 min-w-0 flex-1 flex-col justify-start gap-1',
-        indicator === 'dot' ? 'text-sm leading-5' : 'text-xs leading-4'
+        'min-w-0 flex-1 text-xs leading-4',
+        props.inline
+          ? 'grid auto-cols-fr grid-flow-col items-center gap-2'
+          : 'flex min-h-8 flex-col justify-start gap-1'
       )}
     >
-      <div className='flex items-center gap-1.5'>
+      <div
+        className={cn(
+          'flex items-center gap-1.5',
+          props.inline && 'justify-start'
+        )}
+      >
         {indicator === 'dot' && (
           <span
             aria-hidden
@@ -104,7 +112,7 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
         <span
           className={cn(
             'text-muted-foreground min-w-0',
-            indicator === 'dot' ? 'whitespace-nowrap' : 'flex-1'
+            props.inline ? 'whitespace-nowrap' : 'flex-1'
           )}
         >
           {t('First token')}
@@ -118,7 +126,12 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
           {firstTokenLabel}
         </span>
       </div>
-      <div className='flex items-center gap-1.5'>
+      <div
+        className={cn(
+          'flex items-center gap-1.5',
+          props.inline && 'justify-center'
+        )}
+      >
         {indicator === 'dot' && (
           <span
             aria-hidden
@@ -131,7 +144,7 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
         <span
           className={cn(
             'text-muted-foreground min-w-0',
-            indicator === 'dot' ? 'whitespace-nowrap' : 'flex-1'
+            props.inline ? 'whitespace-nowrap' : 'flex-1'
           )}
         >
           {t('Duration')}

@@ -19,10 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-  CodeBlock,
-  CodeBlockCopyButton,
-} from '@/components/ai-elements/code-block'
 import { MessageContent } from '@/components/ai-elements/message'
 import {
   Reasoning,
@@ -53,7 +49,6 @@ type PlaygroundMessageContentProps = {
   actions: ReactNode
   alignment: MessageAlignment
   errorActions?: ReactNode
-  isSourceVisible?: boolean
   message: Message
   versionContent: string
 }
@@ -62,7 +57,6 @@ export function PlaygroundMessageContent({
   actions,
   alignment,
   errorActions,
-  isSourceVisible = false,
   message,
   versionContent,
 }: PlaygroundMessageContentProps) {
@@ -151,36 +145,20 @@ export function PlaygroundMessageContent({
               ))}
             </div>
           )}
-          {isSourceVisible ? (
-            <CodeBlock
-              code={versionContent}
-              className='my-0 group-[.is-assistant]:w-full group-[.is-assistant]:max-w-[78ch]'
-              collapsedLines={24}
-              defaultCollapsed={false}
-              language='markdown'
-              maxExpandedLines={48}
-              showLineNumbers
-              showToolbar
-              title={t('Raw response')}
+          <MessageContent
+            variant='flat'
+            className={cn(getMessageContentStyles())}
+          >
+            <Response
+              final={isMessageFinal}
+              animate={message.from === 'assistant'}
             >
-              <CodeBlockCopyButton />
-            </CodeBlock>
-          ) : (
-            <MessageContent
-              variant='flat'
-              className={cn(getMessageContentStyles())}
-            >
-              <Response
-                final={isMessageFinal}
-                animate={message.from === 'assistant'}
-              >
-                {displayContent}
-              </Response>
-              {message.from === 'assistant' && !isMessageFinal && (
-                <span className='playground-stream-cursor' aria-hidden />
-              )}
-            </MessageContent>
-          )}
+              {displayContent}
+            </Response>
+            {message.from === 'assistant' && !isMessageFinal && (
+              <span className='playground-stream-cursor' aria-hidden />
+            )}
+          </MessageContent>
           {actions}
         </>
       )}

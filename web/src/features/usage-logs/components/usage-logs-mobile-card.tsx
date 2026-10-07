@@ -168,10 +168,10 @@ function MobileLogTimeStatus({
   const variant = config.color as StatusVariant
 
   return (
-    <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1'>
+    <div className='grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3'>
       <div
         className={cn(
-          'inline-flex items-center gap-1 text-xs leading-none font-medium',
+          'inline-flex items-center gap-1 text-xs leading-tight font-medium',
           textColorMap[variant]
         )}
       >
@@ -181,7 +181,7 @@ function MobileLogTimeStatus({
         />
         <span>{t(config.label)}</span>
       </div>
-      <time className='text-muted-foreground text-xs leading-tight tabular-nums'>
+      <time className='text-muted-foreground text-right text-xs leading-tight tabular-nums'>
         {formatTimestampToDate(timestamp)}
       </time>
     </div>
@@ -256,7 +256,7 @@ function CommonLogsCard<TData>({
   const hasUsage = rowData && isDisplayableLogType(rowData.type)
 
   return (
-    <div className='space-y-2.5'>
+    <div className='space-y-2.5 [--text-xs:0.8125rem]'>
       <MobileLogTimeStatus
         createdAt={rowData?.created_at}
         type={rowData?.type}

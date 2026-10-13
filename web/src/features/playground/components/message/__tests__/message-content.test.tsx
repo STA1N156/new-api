@@ -16,8 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { fireEvent, render, screen } from '@testing-library/react'
-import { expect, it } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { expect, it, vi } from 'vitest'
 
 import type { Message } from '../../../types'
 import { PlaygroundMessageContent } from '../playground-message-content'
@@ -62,7 +62,7 @@ it('keeps live thinking collapsed until clicked and preserves the manual choice'
       message={message}
     />
   )
-  const trigger = screen.getByRole('button', { name: 'Thinking...' })
+  const trigger = screen.getByRole('button', { name: /Thinking\.\.\./ })
   expect(trigger).toHaveAttribute('aria-expanded', 'false')
   fireEvent.click(trigger)
   expect(trigger).toHaveAttribute('aria-expanded', 'true')
@@ -75,4 +75,60 @@ it('keeps live thinking collapsed until clicked and preserves the manual choice'
     />
   )
   expect(trigger).toHaveAttribute('aria-expanded', 'true')
+})
+
+it('updates collapsed thinking seconds from its recorded start and stops when thinking finishes', () => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2026-10-14T00:00:00Z'))
+  const message: Message = {
+    key: 'live-timer',
+    from: 'assistant',
+    versions: [{ id: 'v1', content: '' }],
+    status: 'streaming',
+    reasoning: {
+      content: 'Working',
+      duration: 0,
+      startedAt: Date.now() - 2200,
+    },
+    isReasoningStreaming: true,
+  }
+  const { rerender, unmount } = render(
+    <PlaygroundMessageContent
+      actions={null}
+      alignment='left'
+      versionContent=''
+      message={message}
+    />
+  )
+  try {
+    expect(
+      screen.getByRole('button', { name: 'Thinking... 2 seconds' })
+    ).toHaveAttribute('aria-expanded', 'false')
+    act(() => vi.advanceTimersByTime(1000))
+    expect(
+      screen.getByRole('button', { name: 'Thinking... 3 seconds' })
+    ).toBeVisible()
+    rerender(
+      <PlaygroundMessageContent
+        actions={null}
+        alignment='left'
+        versionContent='Answer'
+        message={{
+          ...message,
+          isReasoningStreaming: false,
+          reasoning: { content: 'Working', duration: 4 },
+        }}
+      />
+    )
+    expect(
+      screen.getByRole('button', { name: 'Thought for 4 seconds' })
+    ).toBeVisible()
+    act(() => vi.advanceTimersByTime(5000))
+    expect(
+      screen.getByRole('button', { name: 'Thought for 4 seconds' })
+    ).toBeVisible()
+  } finally {
+    unmount()
+    vi.useRealTimers()
+  }
 })

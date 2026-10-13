@@ -100,6 +100,7 @@ export function PlaygroundMessageContent({
       {hasReasoning && (
         <Reasoning
           duration={message.reasoning?.duration}
+          startedAt={message.reasoning?.startedAt}
           isStreaming={message.isReasoningStreaming}
         >
           <ReasoningTrigger />

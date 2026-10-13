@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import { Gift, ExternalLink, Loader2, Receipt, WalletCards } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SiAlipay, SiWechat } from 'react-icons/si'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -39,6 +38,7 @@ import { getCurrencyDisplay } from '@/lib/currency'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
+import { PAYMENT_TYPES } from '../constants'
 import {
   formatCurrency,
   getDiscountLabel,
@@ -403,11 +403,11 @@ export function RechargeFormCard({
                         )}
                       >
                         <span
-                          className='text-foreground inline-flex shrink-0 items-center gap-2'
+                          className='inline-flex shrink-0 items-center gap-2'
                           aria-hidden
                         >
-                          <SiAlipay className='size-4' />
-                          <SiWechat className='size-4' />
+                          {getPaymentIcon(PAYMENT_TYPES.ALIPAY, 'size-4')}
+                          {getPaymentIcon(PAYMENT_TYPES.WECHAT, 'size-4')}
                         </span>
                         <span>{t('Redemption Code')}</span>
                       </a>

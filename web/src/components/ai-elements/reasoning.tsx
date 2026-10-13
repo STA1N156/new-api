@@ -25,6 +25,7 @@ import {
   memo,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -62,6 +63,7 @@ export type ReasoningProps = ComponentProps<typeof Collapsible> & {
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
   duration?: number
+  startedAt?: number
 }
 
 const MS_IN_S = 1000
@@ -74,6 +76,7 @@ export const Reasoning = memo(
     defaultOpen = false,
     onOpenChange,
     duration: durationProp,
+    startedAt,
     children,
     ...props
   }: ReasoningProps) => {
@@ -82,29 +85,39 @@ export const Reasoning = memo(
       defaultProp: defaultOpen,
       onChange: onOpenChange,
     })
-    const [duration, setDuration] = useControllableState({
-      prop: durationProp,
-      defaultProp: 0,
-    })
+    const [duration, setDuration] = useState(0)
+    const startTimeRef = useRef<number | null>(null)
 
-    const [startTime, setStartTime] = useState<number | null>(null)
-
-    // Track duration when streaming starts and ends
+    // Derive elapsed time from the clock so delayed ticks do not lose seconds.
     useEffect(() => {
-      if (isStreaming) {
-        if (startTime === null) {
-          // eslint-disable-next-line react-hooks/set-state-in-effect
-          setStartTime(Date.now())
+      if (!isStreaming) {
+        if (startTimeRef.current !== null) {
+          setDuration(
+            Math.ceil(Math.max(0, Date.now() - startTimeRef.current) / MS_IN_S)
+          )
+          startTimeRef.current = null
         }
-      } else if (startTime !== null) {
-        setDuration(Math.ceil((Date.now() - startTime) / MS_IN_S))
-        setStartTime(null)
+        return
       }
-    }, [isStreaming, startTime, setDuration])
+
+      const startTime = startedAt ?? Date.now()
+      startTimeRef.current = startTime
+      const updateDuration = () => {
+        setDuration(Math.floor(Math.max(0, Date.now() - startTime) / MS_IN_S))
+      }
+      updateDuration()
+      const timer = window.setInterval(updateDuration, MS_IN_S)
+      return () => window.clearInterval(timer)
+    }, [isStreaming, startedAt])
 
     return (
       <ReasoningContext.Provider
-        value={{ isStreaming, isOpen, setIsOpen, duration }}
+        value={{
+          isStreaming,
+          isOpen,
+          setIsOpen,
+          duration: isStreaming ? duration : (durationProp ?? duration),
+        }}
       >
         <Collapsible
           className={cn('not-prose mb-3 w-full max-w-[78ch]', className)}
@@ -149,8 +162,10 @@ export const ReasoningTrigger = memo(
             >
               <BrainIcon className='size-4' />
             </span>
-            <span className='min-w-0 flex-1 truncate font-medium'>
-              {isStreaming ? t('Thinking...') : thinkingText}
+            <span className='min-w-0 flex-1 truncate font-medium tabular-nums'>
+              {isStreaming
+                ? `${t('Thinking...')} ${duration} ${t('seconds')}`
+                : thinkingText}
             </span>
             <span className='grid size-4 shrink-0 place-items-center'>
               <ChevronDownIcon

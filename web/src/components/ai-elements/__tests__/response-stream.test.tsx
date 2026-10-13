@@ -20,16 +20,17 @@ import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 
 import { Response } from '../response'
+import { StreamingText } from '../streaming-text'
 
-it('shows every streaming update immediately without fade wrappers', () => {
+it('shows every streaming update immediately without animation wrappers', () => {
   const { container, rerender } = render(
     <Response final={false}>Hello</Response>
   )
   expect(screen.getByText('Hello')).toBeVisible()
-  expect(container.querySelector('[data-stream-fade]')).toBeNull()
+  expect(container.querySelector('[data-stream-reveal]')).toBeNull()
   rerender(<Response final={false}>Hello world</Response>)
   expect(screen.getByText('Hello world')).toBeVisible()
-  expect(container.querySelector('[data-stream-fade]')).toBeNull()
+  expect(container.querySelector('[data-stream-reveal]')).toBeNull()
   rerender(<Response final>Hello world</Response>)
   expect(screen.getByText('Hello world')).toBeVisible()
 })
@@ -50,20 +51,20 @@ it('keeps markdown formatting as an incomplete streaming token becomes complete'
     'href',
     'https://example.com'
   )
-  expect(container.querySelector('[data-stream-fade]')).toBeNull()
+  expect(container.querySelector('[data-stream-reveal]')).toBeNull()
 })
 
-it('fades new characters without remounting earlier text or splitting emoji', () => {
+it('softens new characters without remounting earlier text or splitting emoji', () => {
   const { container, rerender } = render(
     <Response animate final={false}>
       你好👩‍💻
     </Response>
   )
-  const firstCharacter = container.querySelector('[data-stream-fade]')
+  const firstCharacter = container.querySelector('[data-stream-reveal]')
   expect(firstCharacter).toHaveTextContent('你')
   expect(
     Array.from(
-      container.querySelectorAll('[data-stream-fade]'),
+      container.querySelectorAll('[data-stream-reveal]'),
       (node) => node.textContent
     )
   ).toEqual(['你', '好', '👩‍💻'])
@@ -74,13 +75,13 @@ it('fades new characters without remounting earlier text or splitting emoji', ()
     </Response>
   )
   expect(container).toHaveTextContent('你好👩‍💻，继续输出。')
-  expect(container.querySelector('[data-stream-fade]')).toBe(firstCharacter)
+  expect(container.querySelector('[data-stream-reveal]')).toBe(firstCharacter)
   rerender(
     <Response animate final>
       你好👩‍💻，继续输出。
     </Response>
   )
-  expect(container.querySelector('[data-stream-fade]')).toBe(firstCharacter)
+  expect(container.querySelector('[data-stream-reveal]')).toBe(firstCharacter)
 })
 
 it('does not replay animation when displaying saved completed messages', () => {
@@ -90,7 +91,7 @@ it('does not replay animation when displaying saved completed messages', () => {
     </Response>
   )
   expect(container).toHaveTextContent('Already finished')
-  expect(container.querySelector('[data-stream-fade]')).toBeNull()
+  expect(container.querySelector('[data-stream-reveal]')).toBeNull()
 })
 
 it('reveals later streaming batches from left to right while earlier text stays still', () => {
@@ -100,7 +101,7 @@ it('reveals later streaming batches from left to right while earlier text stays 
       {prefix}
     </Response>
   )
-  const first = container.querySelector<HTMLElement>('[data-stream-fade]')
+  const first = container.querySelector<HTMLElement>('[data-stream-reveal]')
   const initialDelay = first?.style.animationDelay
   rerender(
     <Response animate final={false}>
@@ -108,7 +109,7 @@ it('reveals later streaming batches from left to right while earlier text stays 
     </Response>
   )
   const added = [
-    ...container.querySelectorAll<HTMLElement>('[data-stream-fade]'),
+    ...container.querySelectorAll<HTMLElement>('[data-stream-reveal]'),
   ].slice(-4)
   const delays = added.map((node) =>
     Number.parseFloat(node.style.animationDelay)
@@ -117,6 +118,57 @@ it('reveals later streaming batches from left to right while earlier text stays 
   expect(delays[0]).toBeLessThan(delays[1] ?? 0)
   expect(delays[1]).toBeLessThan(delays[2] ?? 0)
   expect(delays[2]).toBeLessThan(delays[3] ?? 0)
-  expect(container.querySelector('[data-stream-fade]')).toBe(first)
+  expect(container.querySelector('[data-stream-reveal]')).toBe(first)
   expect(first?.style.animationDelay).toBe(initialDelay)
+})
+
+it('animates a large multiline batch from its beginning while keeping the text intact', () => {
+  const content = `开头\n${'中文 text 👩‍💻\n'.repeat(300)}`
+  const { container, rerender } = render(
+    <StreamingText>{content}</StreamingText>
+  )
+  expect(container.textContent).toBe(content)
+  const parts = container.querySelectorAll('[data-stream-reveal]')
+  expect(parts[0]?.textContent?.startsWith('开头')).toBe(true)
+  expect(parts.length).toBeLessThanOrEqual(160)
+
+  const next = content + '新的段落\n'.repeat(100)
+  rerender(<StreamingText>{next}</StreamingText>)
+  expect(container.textContent).toBe(next)
+  expect(
+    container.querySelectorAll('[data-stream-reveal]').length
+  ).toBeLessThanOrEqual(320)
+})
+
+it('keeps graphemes whole when a stream splits an emoji or combining mark', () => {
+  const { container, rerender } = render(
+    <StreamingText>你好👩</StreamingText>
+  )
+  rerender(<StreamingText>{'你好👩‍💻\ne'}</StreamingText>)
+  rerender(<StreamingText>{'你好👩‍💻\ne\u0301'}</StreamingText>)
+  expect(container.textContent).toBe('你好👩‍💻\ne\u0301')
+  expect(
+    Array.from(
+      container.querySelectorAll('[data-stream-reveal]'),
+      (node) => node.textContent
+    )
+  ).toContain('👩‍💻')
+  expect(
+    Array.from(
+      container.querySelectorAll('[data-stream-reveal]'),
+      (node) => node.textContent
+    )
+  ).toContain('e\u0301')
+})
+
+it('keeps very long plain text streaming animated and preserves its line breaks', () => {
+  const content = '长文本\n'.repeat(5001)
+  const { container } = render(
+    <Response animate final={false}>
+      {content}
+    </Response>
+  )
+  expect(container.textContent).toBe(content)
+  expect(container.querySelector('[data-stream-reveal]')).not.toBeNull()
+  expect(container.firstElementChild).toHaveClass('whitespace-pre-wrap')
 })

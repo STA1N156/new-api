@@ -202,8 +202,8 @@ export function getTimeColor(
 export function getFirstResponseTimeColor(
   seconds: number
 ): 'success' | 'warning' | 'danger' {
-  if (seconds < 8) return 'success'
-  if (seconds < 13) return 'warning'
+  if (seconds < 10) return 'success'
+  if (seconds < 15) return 'warning'
   return 'danger'
 }
 
@@ -227,6 +227,35 @@ export function getResponseTimeColor(
 ): 'success' | 'warning' | 'danger' {
   if (completionTokens < 100 || seconds <= 0) return getTimeColor(seconds)
   return getThroughputColor(completionTokens / seconds)
+}
+
+/** Shared timing colors for log rows, mobile cards, and details. */
+export function getLogTimingColors(props: {
+  modelName: string
+  isStream: boolean
+  useTimeSec: number
+  completionTokens: number
+  frtMs?: number
+}): {
+  firstToken: 'success' | 'warning' | 'danger' | 'neutral'
+  duration: 'success' | 'warning' | 'danger'
+} {
+  if (!props.isStream) return { firstToken: 'success', duration: 'success' }
+
+  const duration = getResponseTimeColor(
+    props.useTimeSec,
+    props.completionTokens
+  )
+  if (props.modelName.includes('抗截断')) {
+    return { firstToken: duration, duration }
+  }
+  return {
+    firstToken:
+      props.frtMs != null && props.frtMs > 0
+        ? getFirstResponseTimeColor(props.frtMs / 1000)
+        : 'neutral',
+    duration,
+  }
 }
 
 /**

@@ -232,6 +232,7 @@ function MobileTimingField({ log }: { log: UsageLog }) {
   const useTime = log.use_time || 0
   return (
     <TimingMetricsCell
+      modelName={log.model_name}
       useTimeSec={useTime}
       completionTokens={log.completion_tokens}
       frtMs={other?.frt}
@@ -265,10 +266,7 @@ function CommonLogsCard<TData>({
         <div className='flex items-center justify-between gap-3'>
           <CompactCell cell={modelCell} className='flex-1' />
           {quotaCell && (
-            <CompactCell
-              cell={quotaCell}
-              className='shrink-0 text-right'
-            />
+            <CompactCell cell={quotaCell} className='shrink-0 text-right' />
           )}
         </div>
       )}

@@ -21,10 +21,10 @@ import { expect, test } from 'vitest'
 import { getFirstResponseTimeColor } from '../format'
 
 test.each([
-  { seconds: 7.999, color: 'success' },
-  { seconds: 8, color: 'warning' },
-  { seconds: 12.999, color: 'warning' },
-  { seconds: 13, color: 'danger' },
+  { seconds: 9.999, color: 'success' },
+  { seconds: 10, color: 'warning' },
+  { seconds: 14.999, color: 'warning' },
+  { seconds: 15, color: 'danger' },
 ])(
   'uses $color for a first-token latency of $seconds seconds',
   ({ seconds, color }) => {

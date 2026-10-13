@@ -33,7 +33,7 @@ import {
 import { formatUseTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-import { getFirstResponseTimeColor, getResponseTimeColor } from '../lib/format'
+import { getLogTimingColors } from '../lib/format'
 import type { LogOtherData } from '../types'
 
 /**
@@ -51,6 +51,7 @@ const barColorMap: Record<StatusVariant, string> = {
 }
 
 interface TimingMetricsCellProps {
+  modelName: string
   useTimeSec: number
   completionTokens: number
   frtMs?: number
@@ -73,14 +74,8 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
     props.isStream && props.frtMs != null && props.frtMs > 0
       ? props.frtMs / 1000
       : null
-  const firstTokenVariant: StatusVariant =
-    firstTokenSeconds == null
-      ? 'neutral'
-      : getFirstResponseTimeColor(firstTokenSeconds)
-  const totalTimeVariant = getResponseTimeColor(
-    props.useTimeSec,
-    props.completionTokens
-  )
+  const { firstToken: firstTokenVariant, duration: totalTimeVariant } =
+    getLogTimingColors(props)
   const firstTokenLabel =
     firstTokenSeconds == null ? '—' : formatUseTime(firstTokenSeconds)
   const totalTimeLabel = formatUseTime(props.useTimeSec)

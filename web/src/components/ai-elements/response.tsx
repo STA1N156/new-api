@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 'use client'
 
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useState, type ReactNode } from 'react'
 import { getMarkdown, parseMarkdownToStructure } from 'stream-markdown-parser'
 
 import { cn } from '@/lib/utils'
@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils'
 import { getMarkdownContent, parseResponseContent } from './response-content'
 import { renderChildren, renderFootnotes } from './response-renderer'
 import type { ResponseProps } from './response-types'
+import { StreamingText } from './streaming-text'
 
 const DEFAULT_PARSER_ID = 'new-api-response'
 const MAX_PARSED_MARKDOWN_CHARS = 20_000
@@ -68,19 +69,22 @@ export const Response = memo((props: ResponseProps) => {
   }, [content, isFinal, markdown, shouldParseMarkdown])
   const parsedContent = useMemo(() => parseResponseContent(nodes), [nodes])
 
-  const renderedContent =
-    parsedContent.bodyNodes.length > 0
-      ? renderChildren(
-          parsedContent.bodyNodes,
-          Boolean(props.animate && hasAnimatedStream)
-        )
-      : content
+  let renderedContent: ReactNode = content
+  if (parsedContent.bodyNodes.length > 0) {
+    renderedContent = renderChildren(
+      parsedContent.bodyNodes,
+      Boolean(props.animate && hasAnimatedStream)
+    )
+  } else if (props.animate && hasAnimatedStream) {
+    renderedContent = <StreamingText>{content}</StreamingText>
+  }
   const footnotes = renderFootnotes(parsedContent.footnotes)
 
   return (
     <div
       className={cn(
         'size-full min-w-0 text-pretty [&>*:first-child]:mt-0 [&>*:last-child]:mb-0',
+        !shouldParseMarkdown && 'whitespace-pre-wrap',
         props.className
       )}
     >

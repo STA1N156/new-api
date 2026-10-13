@@ -673,6 +673,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
 
         return (
           <TimingMetricsCell
+            modelName={log.model_name}
             useTimeSec={useTime}
             completionTokens={log.completion_tokens}
             frtMs={other?.frt}

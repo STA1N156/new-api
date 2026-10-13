@@ -19,9 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import { Gift, ExternalLink, Loader2, Receipt, WalletCards } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { SiAlipay, SiWechat } from 'react-icons/si'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { IconBadge } from '@/components/ui/icon-badge'
 import { Input } from '@/components/ui/input'
@@ -145,6 +146,7 @@ export function RechargeFormCard({
     Array.isArray(waffoPayMethods) && waffoPayMethods.length > 0
   const minTopup = getMinTopupAmount(topupInfo)
   const redemptionEnabled = topupInfo?.enable_redemption !== false
+  const hasRedemptionPurchase = redemptionEnabled && Boolean(topupLink)
 
   if (loading) {
     return (
@@ -325,7 +327,7 @@ export function RechargeFormCard({
                 <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                   {t('Payment Method')}
                 </Label>
-                {hasStandardPaymentMethods ? (
+                {hasStandardPaymentMethods || hasRedemptionPurchase ? (
                   <div className='grid grid-cols-2 gap-1.5 sm:gap-3 lg:grid-cols-3'>
                     {topupInfo?.pay_methods?.map((method) => {
                       const minTopup = Math.max(
@@ -390,17 +392,39 @@ export function RechargeFormCard({
                         button
                       )
                     })}
+                    {hasRedemptionPurchase && (
+                      <a
+                        href={topupLink}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className={cn(
+                          buttonVariants({ variant: 'outline' }),
+                          'min-h-14 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left'
+                        )}
+                      >
+                        <span
+                          className='text-foreground inline-flex shrink-0 items-center gap-2'
+                          aria-hidden
+                        >
+                          <SiAlipay className='size-4' />
+                          <SiWechat className='size-4' />
+                        </span>
+                        <span>{t('Redemption Code')}</span>
+                      </a>
+                    )}
                   </div>
                 ) : null}
-                {!hasStandardPaymentMethods && !hasWaffoPaymentMethods && (
-                  <Alert>
-                    <AlertDescription>
-                      {t(
-                        'No payment methods available. Please contact administrator.'
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                {!hasStandardPaymentMethods &&
+                  !hasWaffoPaymentMethods &&
+                  !hasRedemptionPurchase && (
+                    <Alert>
+                      <AlertDescription>
+                        {t(
+                          'No payment methods available. Please contact administrator.'
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
               </div>
 
               {enableWaffoTopup &&

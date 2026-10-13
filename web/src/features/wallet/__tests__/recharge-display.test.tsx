@@ -175,3 +175,60 @@ it('keeps the redemption prompt as plain text with a separate purchase link', ()
     screen.queryByRole('link', { name: /Get one here/ })
   ).not.toBeInTheDocument()
 })
+
+it('shows the configured code purchase link beside online methods even below the recharge minimum', async () => {
+  const i18n = createInstance()
+  await i18n.init({ lng: 'zh', resources: { zh } })
+  const { rerender } = render(
+    <I18nextProvider i18n={i18n}>
+      <RechargeFormCard
+        {...props}
+        topupLink='https://example.com/codes'
+        topupInfo={{
+          ...props.topupInfo,
+          pay_methods: [{ name: '支付宝', type: 'alipay' }],
+        }}
+        topupAmount={0}
+      />
+    </I18nextProvider>
+  )
+  const purchase = screen.getByRole('link', { name: '兑换码' })
+  expect(purchase).toHaveAttribute('href', 'https://example.com/codes')
+  expect(purchase).toHaveAttribute('target', '_blank')
+  expect(purchase).toHaveAttribute('rel', 'noopener noreferrer')
+  expect(purchase.parentElement).toContainElement(
+    screen.getByRole('button', { name: /支付宝/ })
+  )
+  expect(purchase.querySelectorAll('svg')).toHaveLength(2)
+  expect(purchase).not.toHaveAttribute('aria-disabled', 'true')
+
+  rerender(
+    <I18nextProvider i18n={i18n}>
+      <RechargeFormCard {...props} topupLink='https://example.com/codes' />
+    </I18nextProvider>
+  )
+  expect(screen.getByRole('link', { name: '兑换码' })).toBeVisible()
+  expect(
+    screen.queryByText(
+      i18n.t('No payment methods available. Please contact administrator.')
+    )
+  ).not.toBeInTheDocument()
+
+  rerender(
+    <I18nextProvider i18n={i18n}>
+      <RechargeFormCard {...props} />
+    </I18nextProvider>
+  )
+  expect(screen.queryByRole('link', { name: '兑换码' })).not.toBeInTheDocument()
+
+  rerender(
+    <I18nextProvider i18n={i18n}>
+      <RechargeFormCard
+        {...props}
+        topupLink='https://example.com/codes'
+        topupInfo={{ ...props.topupInfo, enable_redemption: false }}
+      />
+    </I18nextProvider>
+  )
+  expect(screen.queryByRole('link', { name: '兑换码' })).not.toBeInTheDocument()
+})

@@ -39,6 +39,31 @@ test.each([
     expected: { firstToken: 'warning', duration: 'danger' },
   },
   {
+    name: 'a first token exactly one second before completion follows duration',
+    changes: { useTimeSec: 20, frtMs: 19000 },
+    expected: { firstToken: 'warning', duration: 'warning' },
+  },
+  {
+    name: 'a first token one second above the rounded duration follows duration',
+    changes: { useTimeSec: 20, frtMs: 21000 },
+    expected: { firstToken: 'warning', duration: 'warning' },
+  },
+  {
+    name: 'matching first-token and completion times follow throughput for long output',
+    changes: { useTimeSec: 35, frtMs: 35000, completionTokens: 1000 },
+    expected: { firstToken: 'success', duration: 'success' },
+  },
+  {
+    name: 'a gap greater than one second keeps the independent first-token color',
+    changes: { useTimeSec: 20, frtMs: 18999 },
+    expected: { firstToken: 'danger', duration: 'warning' },
+  },
+  {
+    name: 'a missing first-token time is not treated as a near-completion response',
+    changes: { useTimeSec: 0.5, frtMs: 0 },
+    expected: { firstToken: 'neutral', duration: 'success' },
+  },
+  {
     name: 'anti-truncation uses duration for short output',
     changes: { modelName: '测试-抗截断-模型', frtMs: 1000 },
     expected: { firstToken: 'danger', duration: 'danger' },

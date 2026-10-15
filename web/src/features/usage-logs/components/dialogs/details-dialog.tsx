@@ -1003,7 +1003,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
               mono
             />
             <DetailRow
-              label={t('Actual Model')}
+              label={t('Mapped Model')}
               value={other.upstream_model_name}
               mono
             />

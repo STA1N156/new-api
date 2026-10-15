@@ -246,7 +246,11 @@ export function getLogTimingColors(props: {
     props.useTimeSec,
     props.completionTokens
   )
-  if (props.modelName.includes('抗截断')) {
+  const nearTotalDuration =
+    props.frtMs != null &&
+    props.frtMs > 0 &&
+    Math.abs(props.frtMs - props.useTimeSec * 1000) <= 1000
+  if (props.modelName.includes('抗截断') || nearTotalDuration) {
     return { firstToken: duration, duration }
   }
   return {

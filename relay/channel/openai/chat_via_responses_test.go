@@ -39,6 +39,30 @@ func newResponsesChatTestContext(t *testing.T, body string, isStream bool) (*gin
 	return c, recorder, resp, info
 }
 
+func TestResponsesRecordsActualModelBeforeConversion(t *testing.T) {
+	oldTimeout := constant.StreamingTimeout
+	constant.StreamingTimeout = 30
+	t.Cleanup(func() { constant.StreamingTimeout = oldTimeout })
+	for _, stream := range []bool{false, true} {
+		body := `{"id":"resp_actual","model":"gpt-actual","output":[],"usage":{"input_tokens":2,"output_tokens":3,"total_tokens":5}}`
+		if stream {
+			body = "data: {\"type\":\"response.completed\",\"response\":" + body + "}\n\ndata: [DONE]\n\n"
+		}
+		c, _, resp, info := newResponsesChatTestContext(t, body, stream)
+		info.OriginModelName = "requested-alias"
+		info.UpstreamModelName = "mapped-alias"
+		if stream {
+			_, err := OaiResponsesToChatStreamHandler(c, info, resp)
+			require.Nil(t, err)
+		} else {
+			_, err := OaiResponsesToChatHandler(c, info, resp)
+			require.Nil(t, err)
+		}
+		assert.Equal(t, "gpt-actual", info.ResponseModelName)
+		assert.Equal(t, "mapped-alias", info.UpstreamModelName)
+	}
+}
+
 func TestOaiResponsesToChatStreamHandlerConvertsSSEOrderAndUsage(t *testing.T) {
 	oldMode := gin.Mode()
 	gin.SetMode(gin.TestMode)

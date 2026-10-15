@@ -28,6 +28,7 @@ func GetAllLogs(c *gin.Context) {
 		return
 	}
 	pageInfo.SetTotal(int(total))
+	model.FilterLogResponseModels(logs, c.GetInt("role") >= common.RoleRootUser)
 	pageInfo.SetItems(logs)
 	common.ApiSuccess(c, pageInfo)
 	return
@@ -44,7 +45,7 @@ func GetUserLogs(c *gin.Context) {
 	group := c.Query("group")
 	requestId := c.Query("request_id")
 	upstreamRequestId := c.Query("upstream_request_id")
-	logs, total, err := model.GetUserLogs(userId, logType, startTimestamp, endTimestamp, modelName, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), group, requestId, upstreamRequestId)
+	logs, total, err := model.GetUserLogs(userId, logType, startTimestamp, endTimestamp, modelName, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), group, requestId, upstreamRequestId, c.GetInt("role") >= common.RoleRootUser)
 	if err != nil {
 		common.ApiError(c, err)
 		return

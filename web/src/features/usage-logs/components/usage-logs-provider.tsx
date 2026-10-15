@@ -21,6 +21,8 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 
 import { useIsAdmin } from '@/hooks/use-admin'
 import { useStatus } from '@/hooks/use-status'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { createLogPriceDisplay } from '../lib/price-display'
@@ -44,13 +46,36 @@ interface UsageLogsContextValue {
   showRechargePrice: boolean
   setShowRechargePrice: (show: boolean) => void
   rechargePriceRate: number | undefined
+  canViewResponseModel: boolean
+  showResponseModel: boolean
+  setShowResponseModel: (show: boolean) => void
 }
 
 const UsageLogsContext = createContext<UsageLogsContextValue | undefined>(
   undefined
 )
 
+const RESPONSE_MODEL_STORAGE_KEY = 'usage-logs:show-response-model'
+
 export function UsageLogsProvider({ children }: { children: ReactNode }) {
+  const canViewResponseModel = useAuthStore(
+    (state) => (state.auth.user?.role ?? 0) >= ROLE.SUPER_ADMIN
+  )
+  const [showResponseModel, updateShowResponseModel] = useState(() => {
+    try {
+      return localStorage.getItem(RESPONSE_MODEL_STORAGE_KEY) === 'true'
+    } catch {
+      return false
+    }
+  })
+  const setShowResponseModel = (show: boolean) => {
+    updateShowResponseModel(show)
+    try {
+      localStorage.setItem(RESPONSE_MODEL_STORAGE_KEY, String(show))
+    } catch {
+      // Keep the switch usable when browser storage is unavailable.
+    }
+  }
   const { status } = useStatus()
   const [showRechargePrice, setShowRechargePrice] = useState(false)
   const rechargePriceRate = showRechargePrice
@@ -82,6 +107,9 @@ export function UsageLogsProvider({ children }: { children: ReactNode }) {
         showRechargePrice,
         setShowRechargePrice,
         rechargePriceRate,
+        canViewResponseModel,
+        showResponseModel: canViewResponseModel && showResponseModel,
+        setShowResponseModel,
       }}
     >
       {children}

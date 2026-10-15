@@ -603,12 +603,28 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       accessorKey: 'model_name',
       header: t('Model'),
       cell: function ModelCell({ row }) {
+        const { showResponseModel } = useUsageLogsContext()
         const log = row.original
         if (!isDisplayableLogType(log.type)) return null
+        const other = showResponseModel ? parseLogOther(log.other) : null
+        const responseModel =
+          other?.response_model_version ||
+          (other?.response_model_name !== log.model_name &&
+          other?.response_model_name !== other?.upstream_model_name
+            ? other?.response_model_name
+            : undefined)
 
         return (
           <div className='flex max-w-[260px] min-w-0 flex-col max-sm:max-w-none'>
             <ModelBadge modelName={log.model_name} />
+            {responseModel && (
+              <span
+                className='text-muted-foreground mt-1 block truncate text-xs leading-normal'
+                title={`${t('Actual Response Model')}: ${responseModel}`}
+              >
+                {responseModel}
+              </span>
+            )}
           </div>
         )
       },

@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Actual Response Model": "Modèle réellement renvoyé",
+    "Mapped Model": "Modèle remappé",
     "Latest recorded status, including earlier history": "Derniers états enregistrés, y compris les données antérieures",
     "Wallet {{amount}}": "Portefeuille {{amount}}",
     "Wallet only": "Portefeuille uniquement",

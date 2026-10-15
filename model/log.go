@@ -113,12 +113,30 @@ func assignDisplayLogIds(logs []*Log, startIdx int) {
 	}
 }
 
-func formatUserLogs(logs []*Log, startIdx int) {
+func FilterLogResponseModels(logs []*Log, canView bool) {
+	if canView {
+		return
+	}
+	for _, log := range logs {
+		other, _ := common.StrToMap(log.Other)
+		if other["response_model_name"] != nil || other["response_model_version"] != nil {
+			delete(other, "response_model_name")
+			delete(other, "response_model_version")
+			log.Other = common.MapToJsonStr(other)
+		}
+	}
+}
+
+func formatUserLogs(logs []*Log, startIdx int, canViewResponseModel bool) {
 	for i := range logs {
 		logs[i].ChannelName = ""
 		var otherMap map[string]interface{}
 		otherMap, _ = common.StrToMap(logs[i].Other)
 		if otherMap != nil {
+			if !canViewResponseModel {
+				delete(otherMap, "response_model_name")
+				delete(otherMap, "response_model_version")
+			}
 			// Remove admin-only debug fields.
 			delete(otherMap, "admin_info")
 			// Remove operation-audit details (operator/route info), admin-only.
@@ -137,7 +155,7 @@ func GetLogByTokenId(tokenId int) (logs []*Log, err error) {
 		order = clickHouseLogOrder("")
 	}
 	err = LOG_DB.Model(&Log{}).Where("token_id = ?", tokenId).Order(order).Limit(common.MaxRecentItems).Find(&logs).Error
-	formatUserLogs(logs, 0)
+	formatUserLogs(logs, 0, false)
 	return logs, err
 }
 
@@ -545,7 +563,7 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 
 const logSearchCountLimit = 10000
 
-func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string, canViewResponseModel bool) (logs []*Log, total int64, err error) {
 	var tx *gorm.DB
 	if logType == LogTypeUnknown {
 		tx = LOG_DB.Where("logs.user_id = ?", userId)
@@ -589,7 +607,7 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 		return nil, 0, errors.New("查询日志失败")
 	}
 
-	formatUserLogs(logs, startIdx)
+	formatUserLogs(logs, startIdx, canViewResponseModel)
 	return logs, total, err
 }
 
@@ -710,12 +728,16 @@ func DeleteOldLogBatch(ctx context.Context, targetTimestamp int64, limit int) (i
 		).Error; err != nil {
 			return 0, err
 		}
+		invalidateStatisticsCache()
 		return total, nil
 	}
 
 	result := LOG_DB.WithContext(ctx).Where("created_at < ?", targetTimestamp).Limit(limit).Delete(&Log{})
 	if nil != result.Error {
 		return 0, result.Error
+	}
+	if result.RowsAffected > 0 {
+		invalidateStatisticsCache()
 	}
 	return result.RowsAffected, nil
 }

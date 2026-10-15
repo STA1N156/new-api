@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Actual Response Model": "実際の応答モデル",
+    "Mapped Model": "マッピング後のモデル",
     "Latest recorded status, including earlier history": "過去の履歴を含む最新の記録状態",
     "Wallet {{amount}}": "ウォレット {{amount}}",
     "Wallet only": "ウォレットのみ",

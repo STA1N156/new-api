@@ -58,20 +58,7 @@ func GetDailyStatistics(date string, now time.Time, days int) (*DailyStatistics,
 	if days > 1 {
 		step = 86400
 	}
-	hours, err := getStatisticsBuckets(start, end, step)
-	if err != nil {
-		return nil, err
-	}
-	// Compare equal elapsed time, including the same partial hour/day.
-	previous, err := getStatisticsBuckets(start-int64(days)*86400, end-int64(days)*86400, step)
-	if err != nil {
-		return nil, err
-	}
-	result := &DailyStatistics{Date: date, Today: today, Days: days, AsOf: now.Unix(), Hours: hours}
-	for _, row := range previous {
-		result.Previous.add(row)
-	}
-	return result, nil
+	return getCachedDailyStatistics(date, today, days, start, end, step, now)
 }
 
 func (s *StatisticsHour) add(row StatisticsHour) {
@@ -89,34 +76,21 @@ func (s *StatisticsHour) add(row StatisticsHour) {
 	s.TopupCount += row.TopupCount
 }
 
-func getStatisticsBuckets(start, end, step int64) ([]StatisticsHour, error) {
+func newStatisticsRows(start, end, step int64) []StatisticsHour {
 	rows := make([]StatisticsHour, (end-start+step-1)/step)
 	for i := range rows {
 		rows[i].Timestamp = start + int64(i)*step
 	}
-	// UTC+8 day boundaries; the same expression also works for hourly buckets.
-	requestBucket := fmt.Sprintf("created_at - ((created_at + 28800) %% %d)", step)
+	return rows
+}
+
+func getStatisticsBuckets(start, end, step int64, requests []StatisticsHour) ([]StatisticsHour, error) {
+	rows := append([]StatisticsHour(nil), requests...)
 	paymentBucket := fmt.Sprintf("complete_time - ((complete_time + 28800) %% %d)", step)
 	redemptionBucket := fmt.Sprintf("redeemed_time - ((redeemed_time + 28800) %% %d)", step)
 
-	// Retries can write several logs for one request; count it once, including failures.
-	// Billing metadata is serialized JSON. Legacy logs without a source use the wallet.
-	subscriptionSource := `REPLACE(COALESCE(other, ''), ' ', '') LIKE '%"billing_source":"subscription"%'`
-	requests := LOG_DB.Model(&Log{}).
-		Select("MIN(created_at) AS created_at, SUM(CASE WHEN type = ? THEN quota ELSE 0 END) AS consumed_quota, "+
-			"SUM(CASE WHEN type = ? AND "+subscriptionSource+" THEN quota ELSE 0 END) AS subscription_consumed_quota, "+
-			"MAX(CASE WHEN type = ? THEN CASE WHEN "+subscriptionSource+" THEN 1 ELSE 0 END END) AS consumed_subscription, "+
-			"MAX(CASE WHEN "+subscriptionSource+" THEN 1 ELSE 0 END) AS request_subscription",
-			LogTypeConsume, LogTypeConsume, LogTypeConsume).
-		Where("created_at >= ? AND created_at < ? AND type IN ?", start, end, []int{LogTypeConsume, LogTypeError}).
-		Group("user_id, request_id, CASE WHEN request_id IS NULL OR request_id = '' THEN id ELSE 0 END")
 	subscriptionTrades := DB.Model(&SubscriptionOrder{}).Select("1").Where("subscription_orders.trade_no = top_ups.trade_no")
 	queries := []*gorm.DB{
-		LOG_DB.Table("(?) AS requests", requests).
-			Select(requestBucket + " AS timestamp, COUNT(*) AS requests, SUM(consumed_quota) AS consumed_quota, " +
-				"SUM(subscription_consumed_quota) AS subscription_consumed_quota, " +
-				"SUM(COALESCE(consumed_subscription, request_subscription)) AS subscription_requests").
-			Group(requestBucket),
 		DB.Model(&TopUp{}).
 			Select(paymentBucket+" AS timestamp, SUM(money) AS online_topup, COUNT(*) AS topup_count, COUNT(*) AS online_topup_count").
 			Where("status = ? AND complete_time >= ? AND complete_time < ?", common.TopUpStatusSuccess, start, end).

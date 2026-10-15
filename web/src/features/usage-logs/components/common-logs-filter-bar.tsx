@@ -24,6 +24,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -117,7 +118,13 @@ export function CommonLogsFilterBar<TData>(
   const queryClient = useQueryClient()
   const searchParams = route.useSearch()
   const { isAdminView: isAdmin } = useLogsViewScope()
-  const { sensitiveVisible, setSensitiveVisible } = useUsageLogsContext()
+  const {
+    sensitiveVisible,
+    setSensitiveVisible,
+    canViewResponseModel,
+    showResponseModel,
+    setShowResponseModel,
+  } = useUsageLogsContext()
   const fetchingLogs = useIsFetching({ queryKey: ['logs'] })
 
   const searchState = useMemo<CommonLogDraft>(() => {
@@ -414,6 +421,16 @@ export function CommonLogsFilterBar<TData>(
   return (
     <LogsFilterToolbar
       table={props.table}
+      viewOptions={
+        canViewResponseModel && (
+          <DropdownMenuCheckboxItem
+            checked={showResponseModel}
+            onCheckedChange={setShowResponseModel}
+          >
+            {t('Actual Response Model')}
+          </DropdownMenuCheckboxItem>
+        )
+      }
       stats={statsBar}
       actionStart={sensitiveToggle}
       primaryFilters={

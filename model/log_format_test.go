@@ -5,6 +5,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +25,7 @@ func TestFormatUserLogsStripsQuotaSaturation(t *testing.T) {
 	})
 	logs := []*Log{{Other: other}}
 
-	formatUserLogs(logs, 0)
+	formatUserLogs(logs, 0, false)
 
 	parsed, err := common.StrToMap(logs[0].Other)
 	require.NoError(t, err)
@@ -32,4 +33,24 @@ func TestFormatUserLogsStripsQuotaSaturation(t *testing.T) {
 	require.False(t, hasAdminInfo, "admin_info (and nested quota_saturation) must be stripped for non-admin views")
 	// Non-admin billing fields remain visible.
 	require.Contains(t, parsed, "model_price")
+}
+
+func TestLogResponseModelVisibility(t *testing.T) {
+	for _, canView := range []bool{false, true} {
+		logs := []*Log{{Other: `{"response_model_name":"actual","response_model_version":"version","upstream_model_name":"mapped","admin_info":{"use_channel":[1]}}`}}
+		FilterLogResponseModels(logs, canView)
+		other, err := common.StrToMap(logs[0].Other)
+		require.NoError(t, err)
+		assert.Equal(t, canView, other["response_model_name"] == "actual")
+		assert.Equal(t, canView, other["response_model_version"] == "version")
+		assert.Equal(t, "mapped", other["upstream_model_name"])
+		assert.Contains(t, other, "admin_info")
+
+		formatUserLogs(logs, 0, canView)
+		other, err = common.StrToMap(logs[0].Other)
+		require.NoError(t, err)
+		assert.Equal(t, canView, other["response_model_name"] == "actual")
+		assert.Equal(t, canView, other["response_model_version"] == "version")
+		assert.NotContains(t, other, "admin_info")
+	}
 }

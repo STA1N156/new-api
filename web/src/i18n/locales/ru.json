@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Actual Response Model": "Модель из ответа",
+    "Mapped Model": "Переназначенная модель",
     "Latest recorded status, including earlier history": "Последние записанные состояния, включая более ранние данные",
     "Wallet {{amount}}": "Кошелёк {{amount}}",
     "Wallet only": "Только кошелёк",

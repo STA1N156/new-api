@@ -1,0 +1,4 @@
+# Use with docker-compose.yml to deploy this repository's prebuilt image.
+services:
+  new-api:
+    image: ghcr.io/sta1n156/new-api:latest

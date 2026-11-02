@@ -96,13 +96,20 @@ func isEpayTopUpEnabled() bool {
 	if !isPaymentComplianceConfirmed() {
 		return false
 	}
-	return isEpayWebhookConfigured() && len(operation_setting.PayMethods) > 0
+	for _, method := range operation_setting.PayMethods {
+		if isEpayMethodConfigured(method["type"]) {
+			return true
+		}
+	}
+	return false
 }
 
-func isEpayWebhookConfigured() bool {
-	return strings.TrimSpace(operation_setting.PayAddress) != "" &&
-		strings.TrimSpace(operation_setting.EpayId) != "" &&
-		strings.TrimSpace(operation_setting.EpayKey) != ""
+func isEpayMethodConfigured(method string) bool {
+	switch method {
+	case "", "stripe", "creem", "waffo", "waffo_pancake", "balance":
+		return false
+	}
+	return operation_setting.GetEpayGateway(operation_setting.SelectEpayGateway(method)).Configured()
 }
 
 func isEpayWebhookEnabled() bool {

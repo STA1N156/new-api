@@ -32,6 +32,8 @@ export interface StatisticsHour {
   subscription_topup_count: number
   redemption_topup: number
   topup_count: number
+  registrations: number
+  invited_registrations: number
 }
 
 export interface DailyStatistics {
@@ -41,6 +43,7 @@ export interface DailyStatistics {
   as_of: number
   hours: StatisticsHour[]
   previous: StatisticsHour
+  previous_hours: StatisticsHour[]
 }
 
 export async function getDailyStatistics(

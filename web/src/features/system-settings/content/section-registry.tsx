@@ -24,6 +24,7 @@ import { ChatSettingsSection } from './chat-settings-section'
 import { DashboardSection } from './dashboard-section'
 import { DrawingSettingsSection } from './drawing-settings-section'
 import { FAQSection } from './faq-section'
+import { ScrollingAnnouncementSection } from './scrolling-announcement-section'
 import { UptimeKumaSection } from './uptime-kuma-section'
 
 /**
@@ -57,10 +58,15 @@ const CONTENT_SECTIONS = [
     id: 'announcements',
     titleKey: 'Announcements',
     build: (settings: ContentSettings) => (
-      <AnnouncementsSection
-        enabled={settings['console_setting.announcements_enabled']}
-        data={settings['console_setting.announcements']}
-      />
+      <div className='space-y-6'>
+        <ScrollingAnnouncementSection
+          defaultValue={settings['console_setting.scrolling_announcement']}
+        />
+        <AnnouncementsSection
+          enabled={settings['console_setting.announcements_enabled']}
+          data={settings['console_setting.announcements']}
+        />
+      </div>
     ),
   },
   {

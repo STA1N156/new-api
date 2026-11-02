@@ -187,6 +187,49 @@ afterEach(() => {
 })
 
 describe('redemption drawer', () => {
+  test('keeps a subscription code linked to its plan when editing the name', async () => {
+    const original = {
+      ...redemption(1, 0),
+      subscription_plan_id: 7,
+      subscription_plan_title: 'Monthly plan',
+      subscription_price: 10,
+    }
+    const updates: Array<Record<string, unknown>> = []
+    apiClient.get = async (url) => ({
+      data: {
+        success: true,
+        data:
+          url === '/api/subscription/admin/plans'
+            ? [
+                {
+                  plan: {
+                    id: 7,
+                    title: 'Monthly plan',
+                    price_amount: 10,
+                    enabled: true,
+                  },
+                },
+              ]
+            : original,
+      },
+    })
+    apiClient.put = async (_url, data) => {
+      updates.push(data as Record<string, unknown>)
+      return { data: { success: true, data: original } }
+    }
+    await renderDrawer(original)
+    await waitForLoadedForm()
+    expect(await screen.findByText('Monthly plan · ¥10.00')).toBeVisible()
+    changeInput(getControlByLabel('Name'), 'renamed')
+    submitForm()
+    await waitFor(() => expect(updates).toHaveLength(1))
+    expect(updates[0]).toMatchObject({
+      name: 'renamed',
+      quota: 0,
+      subscription_plan_id: 7,
+    })
+  })
+
   test('shows the reported CNY quota without floating-point noise', async () => {
     const original = redemption(1, 13888889)
     apiClient.get = async () => ({ data: { success: true, data: original } })

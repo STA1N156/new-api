@@ -39,7 +39,7 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
       <SearchProvider>
         <SidebarProvider
           defaultOpen={defaultOpen}
-          className='flex-col has-data-[announcement-banner]:[--app-header-height:5.5rem]'
+          className='announcement-layout flex-col'
         >
           <SkipToMain />
           <AppHeader />

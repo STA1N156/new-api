@@ -45,7 +45,7 @@ func SubscriptionRequestEpay(c *gin.Context) {
 		common.ApiErrorMsg(c, "套餐金额过低")
 		return
 	}
-	if !operation_setting.ContainsPayMethod(req.PaymentMethod) {
+	if !operation_setting.ContainsPayMethod(req.PaymentMethod) || !isEpayMethodConfigured(req.PaymentMethod) {
 		common.ApiErrorMsg(c, "支付方式不存在")
 		return
 	}
@@ -78,7 +78,8 @@ func SubscriptionRequestEpay(c *gin.Context) {
 	tradeNo := fmt.Sprintf("%s%d", common.GetRandomString(6), time.Now().Unix())
 	tradeNo = fmt.Sprintf("SUBUSR%dNO%s", userId, tradeNo)
 
-	client := GetEpayClient()
+	gateway := operation_setting.SelectEpayGateway(req.PaymentMethod)
+	client := GetEpayClient(gateway)
 	if client == nil {
 		common.ApiErrorMsg(c, "当前管理员未配置支付信息")
 		return
@@ -91,6 +92,7 @@ func SubscriptionRequestEpay(c *gin.Context) {
 		TradeNo:         tradeNo,
 		PaymentMethod:   req.PaymentMethod,
 		PaymentProvider: model.PaymentProviderEpay,
+		EpayGateway:     gateway,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
 	}
@@ -141,13 +143,13 @@ func SubscriptionEpayNotify(c *gin.Context) {
 		return
 	}
 
-	client := GetEpayClient()
-	if client == nil {
+	order := model.GetSubscriptionOrderByTradeNo(params["out_trade_no"])
+	if order == nil || order.PaymentProvider != model.PaymentProviderEpay {
 		_, _ = c.Writer.Write([]byte("fail"))
 		return
 	}
-	verifyInfo, err := client.Verify(params)
-	if err != nil || !verifyInfo.VerifyStatus {
+	verifyInfo, err := verifyEpayPayment(params, order.EpayGateway, order.TradeNo, order.Money)
+	if err != nil {
 		_, _ = c.Writer.Write([]byte("fail"))
 		return
 	}
@@ -196,13 +198,13 @@ func SubscriptionEpayReturn(c *gin.Context) {
 		return
 	}
 
-	client := GetEpayClient()
-	if client == nil {
+	order := model.GetSubscriptionOrderByTradeNo(params["out_trade_no"])
+	if order == nil || order.PaymentProvider != model.PaymentProviderEpay {
 		c.Redirect(http.StatusFound, paymentReturnPath("/wallet?pay=fail"))
 		return
 	}
-	verifyInfo, err := client.Verify(params)
-	if err != nil || !verifyInfo.VerifyStatus {
+	verifyInfo, err := verifyEpayPayment(params, order.EpayGateway, order.TradeNo, order.Money)
+	if err != nil {
 		c.Redirect(http.StatusFound, paymentReturnPath("/wallet?pay=fail"))
 		return
 	}

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { ArrowUpDown, Check, Filter, Grid2X2, Table2 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -40,12 +40,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getCurrencyDisplay } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import {
   VIEW_MODES,
@@ -55,13 +53,6 @@ import {
 } from '../constants'
 import type { PricingModel, PricingVendor } from '../types'
 import { PricingSidebar } from './pricing-sidebar'
-
-type SegmentOption = {
-  value: string
-  label?: string
-  icon?: React.ComponentType<{ className?: string }>
-  tooltip?: string
-}
 
 export interface PricingToolbarProps {
   filteredCount: number
@@ -87,71 +78,12 @@ export interface PricingToolbarProps {
   onClearFilters: () => void
 }
 
-function SegmentedControl(props: {
-  options: SegmentOption[]
-  value: string
-  onChange: (value: string) => void
-  ariaLabel: string
-}) {
-  return (
-    <div
-      role='group'
-      aria-label={props.ariaLabel}
-      className='bg-muted/60 inline-flex h-8 shrink-0 items-center rounded-lg border p-0.5'
-    >
-      {props.options.map((option) => {
-        const Icon = option.icon
-        const isActive = option.value === props.value
-        const button = (
-          <button
-            key={option.value}
-            type='button'
-            onClick={() => props.onChange(option.value)}
-            aria-pressed={isActive}
-            className={cn(
-              'inline-flex h-full items-center justify-center rounded-md text-xs font-medium transition-all',
-              Icon && !option.label ? 'w-7' : 'gap-1.5 px-3',
-              isActive
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {Icon && <Icon className='size-3.5' />}
-            {option.label}
-          </button>
-        )
-
-        if (!option.tooltip) {
-          return button
-        }
-
-        return (
-          <Tooltip key={option.value}>
-            <TooltipTrigger render={button} />
-            <TooltipContent side='bottom' className='text-xs'>
-              {option.tooltip}
-            </TooltipContent>
-          </Tooltip>
-        )
-      })}
-    </div>
-  )
-}
-
 export function PricingToolbar(props: PricingToolbarProps) {
   const { t } = useTranslation()
+  useSystemConfigStore((state) => state.config.currency)
+  const { meta } = getCurrencyDisplay()
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const sortLabels = getSortLabels(t)
-
-  const handleViewModeChange = useCallback(
-    (value: string) => props.onViewModeChange(value as ViewMode),
-    [props]
-  )
-
-  const handleRechargePriceChange = useCallback(
-    (value: string) => props.onRechargePriceChange(value === 'recharge'),
-    [props]
-  )
 
   return (
     <div className='rounded-xl border p-3'>
@@ -173,15 +105,32 @@ export function PricingToolbar(props: PricingToolbarProps) {
             )}
           </Button>
 
-          <SegmentedControl
-            options={[
-              { value: 'standard', label: t('Standard') },
-              { value: 'recharge', label: t('Recharge') },
-            ]}
+          <Tabs
             value={props.showRechargePrice ? 'recharge' : 'standard'}
-            onChange={handleRechargePriceChange}
-            ariaLabel={t('Price display mode')}
-          />
+            onValueChange={(value) =>
+              props.onRechargePriceChange(value === 'recharge')
+            }
+            className='shrink-0'
+          >
+            <TabsList aria-label={t('Price display mode')}>
+              <TabsTrigger
+                value='standard'
+                title={t('Standard')}
+                aria-label={t('Standard')}
+                className='min-w-9'
+              >
+                {meta.kind === 'tokens' ? t('Tokens') : meta.symbol}
+              </TabsTrigger>
+              <TabsTrigger
+                value='recharge'
+                title={t('Recharge')}
+                aria-label={t('Recharge')}
+                className='min-w-9'
+              >
+                ¥
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <div className='text-muted-foreground ml-auto flex items-baseline gap-1 text-sm sm:ml-0'>
             <span className='text-foreground font-semibold tabular-nums'>
@@ -230,23 +179,30 @@ export function PricingToolbar(props: PricingToolbarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <SegmentedControl
-            options={[
-              {
-                value: VIEW_MODES.CARD,
-                icon: Grid2X2,
-                tooltip: t('Card view'),
-              },
-              {
-                value: VIEW_MODES.TABLE,
-                icon: Table2,
-                tooltip: t('Table view'),
-              },
-            ]}
+          <Tabs
             value={props.viewMode}
-            onChange={handleViewModeChange}
-            ariaLabel={t('View mode')}
-          />
+            onValueChange={(value) => props.onViewModeChange(value as ViewMode)}
+            className='shrink-0'
+          >
+            <TabsList aria-label={t('View mode')}>
+              <TabsTrigger
+                value={VIEW_MODES.CARD}
+                title={t('Card view')}
+                aria-label={t('Card view')}
+                className='min-w-9'
+              >
+                <Grid2X2 className='size-3.5' aria-hidden />
+              </TabsTrigger>
+              <TabsTrigger
+                value={VIEW_MODES.TABLE}
+                title={t('Table view')}
+                aria-label={t('Table view')}
+                className='min-w-9'
+              >
+                <Table2 className='size-3.5' aria-hidden />
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
 

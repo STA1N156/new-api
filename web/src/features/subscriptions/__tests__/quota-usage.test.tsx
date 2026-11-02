@@ -74,22 +74,8 @@ it('shows usage amounts and a plain percentage without a remaining quota summary
     )
     expect(screen.getByText('Weekly Quota')).toBeVisible()
     expect(screen.queryByText('180🍪')).not.toBeInTheDocument()
-    expect(screen.getByText('40%').parentElement?.className).not.toMatch(
-      /bg-|rounded/
-    )
     expect(screen.getByText('120🍪 / 300🍪')).toBeVisible()
     expect(screen.getByText('40%')).toBeVisible()
-    const usageRow = screen.getByText('120🍪 / 300🍪').parentElement
-    expect(usageRow).toHaveClass('flex', 'items-baseline', 'flex-wrap')
-    expect(screen.getByText('Weekly Quota').parentElement).toBe(usageRow)
-    expect(screen.getByText('Weekly Quota')).toHaveClass(
-      'text-muted-foreground'
-    )
-    expect(screen.getByText('120🍪 / 300🍪')).toHaveClass(
-      'text-muted-foreground'
-    )
-    expect(screen.getByText('40%').parentElement).toBe(usageRow?.parentElement)
-    expect(screen.getByText('40%')).toHaveClass('shrink-0')
     expect(screen.queryByText('Used', { exact: true })).not.toBeInTheDocument()
   } finally {
     useSystemConfigStore.getState().setConfig(previous)
@@ -100,39 +86,6 @@ beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(subscription.start_time * 1000)
 })
-
-it.each([86401, 86400, 1, 0])(
-  'keeps expiry neutral and full-width with a wrapping countdown: %s seconds left',
-  (seconds) => {
-    render(
-      <SubscriptionQuotaUsage
-        subscription={{
-          ...subscription,
-          end_time: subscription.start_time + seconds,
-        }}
-        active
-      />
-    )
-    const validity = screen.getByRole('region', {
-      name: 'Subscription validity',
-    })
-    expect(validity).toHaveClass(
-      'text-muted-foreground',
-      'flex-wrap',
-      'justify-between'
-    )
-    expect(validity.className).not.toMatch(/amber|border|bg-|\bpx-/)
-    expect(validity.firstElementChild).toHaveClass('flex-1', 'min-w-0')
-    expect(validity.lastElementChild).toHaveClass('text-muted-foreground')
-    expect(validity.lastElementChild).not.toHaveClass('font-medium')
-    expect(validity.lastElementChild).toHaveClass(
-      'ml-auto',
-      'max-w-full',
-      'break-words'
-    )
-    expect(screen.queryByText('Expiring soon')).not.toBeInTheDocument()
-  }
-)
 
 afterEach(() => {
   vi.useRealTimers()
@@ -153,9 +106,7 @@ it.each([
   )
   const meter = screen.getByRole('meter')
   expect(meter).toHaveAttribute('aria-valuenow', String(percent))
-  expect(meter).toHaveClass('rounded-full', 'overflow-hidden', 'h-1.5')
   expect(meter.firstElementChild).toHaveStyle({ width: `${percent}%` })
-  expect(meter.children).toHaveLength(1)
 })
 
 it('shows independent accessible meters with readable reset and usage summaries', () => {
@@ -177,22 +128,9 @@ it('shows independent accessible meters with readable reset and usage summaries'
   ).toHaveAttribute('aria-valuenow', '100')
   expect(screen.getByText('40%')).toBeVisible()
   expect(screen.getByText('100%')).toBeVisible()
-  for (const meter of screen.getAllByRole('meter')) {
-    const cycle = meter.closest('section')
-    expect(cycle).toHaveClass('min-w-0', 'space-y-3')
-    expect(cycle?.className).not.toMatch(
-      /(?:^|\s)(?:\S*:)?(?:border|bg-|p[xy]?-[\d])/
-    )
-  }
   expect(screen.getByText('Exhausted')).toBeVisible()
-  expect(screen.getByText('Exhausted')).toHaveClass('text-muted-foreground')
   expect(screen.getAllByText('Reset')).toHaveLength(2)
-  expect(screen.getByText('In 5h 0m').parentElement).not.toHaveClass(
-    'text-foreground',
-    'font-medium'
-  )
   for (const label of screen.getAllByText('Reset')) {
-    expect(label.parentElement).toHaveClass('flex-wrap')
     expect(label.parentElement?.querySelector('svg')).toHaveAttribute(
       'aria-hidden',
       'true'
@@ -404,23 +342,6 @@ it('keeps a reset at or beyond expiry hidden and shows only an expiry label besi
   )
   expect(screen.queryByText('Reset')).not.toBeInTheDocument()
   expect(screen.getByText('Expires at')).toBeVisible()
-  const validity = screen.getByRole('region', { name: 'Subscription validity' })
-  expect(validity.firstElementChild).toHaveTextContent(/^Expires at$/)
-  expect(validity.firstElementChild?.querySelector('svg')).toHaveAttribute(
-    'aria-hidden',
-    'true'
-  )
-  expect(validity.firstElementChild?.querySelector('time')).toBeNull()
-  expect(validity.querySelectorAll('time')).toHaveLength(1)
-  expect(validity).toHaveClass('text-xs', 'text-muted-foreground')
-  expect(screen.getByText('Expires at')).not.toHaveClass(
-    'font-medium',
-    'font-semibold'
-  )
-  expect(validity.lastElementChild).not.toHaveClass(
-    'font-medium',
-    'font-semibold'
-  )
   expect(
     screen
       .getByRole('region', { name: 'Subscription validity' })

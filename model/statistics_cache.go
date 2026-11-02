@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const statisticsCacheSeconds = 30
+const statisticsCacheSeconds = 20
 
 type statisticsCacheKey struct {
 	db, logs *gorm.DB
@@ -27,6 +27,7 @@ type statisticsCacheEntry struct {
 	mu                sync.Mutex
 	result            *DailyStatistics
 	current, previous *statisticsRequestSnapshot
+	previousTrend     *statisticsRequestSnapshot
 }
 
 var statisticsCacheMu sync.Mutex
@@ -86,14 +87,35 @@ func getCachedDailyStatistics(date, today string, days int, start, end, step int
 	for _, row := range previousHours {
 		result.Previous.add(row)
 	}
+	// Keep totals comparable to the current cutoff, but show the complete previous
+	// period as the dashed trend. Extend the existing snapshot on the first load
+	// instead of scanning that period from scratch a second time.
+	previousTrend := previous
+	result.PreviousHours = previousHours
+	if previousEnd < start {
+		base := entry.previousTrend
+		if base == nil {
+			base = previous
+		}
+		previousTrend, err = updateStatisticsRequests(base, previousStart, start, step, latestID)
+		if err != nil {
+			return nil, err
+		}
+		result.PreviousHours, err = getStatisticsBuckets(previousStart, start, step, previousTrend.rows)
+		if err != nil {
+			return nil, err
+		}
+	}
 	// Publish only after all queries succeed; a failure must not advance checkpoints.
 	entry.current, entry.previous, entry.result = current, previous, result
+	entry.previousTrend = previousTrend
 	return cloneDailyStatistics(result), nil
 }
 
 func cloneDailyStatistics(value *DailyStatistics) *DailyStatistics {
 	result := *value
 	result.Hours = append([]StatisticsHour(nil), value.Hours...)
+	result.PreviousHours = append([]StatisticsHour(nil), value.PreviousHours...)
 	return &result
 }
 

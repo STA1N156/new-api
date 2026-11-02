@@ -41,8 +41,8 @@ export function CreemProductsSection({
   if (loading) {
     return (
       <div className='grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 md:grid-cols-3'>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className='h-24 rounded-lg' />
+        {['first', 'second', 'third'].map((key) => (
+          <Skeleton key={key} className='h-24 rounded-lg' />
         ))}
       </div>
     )
@@ -58,7 +58,7 @@ export function CreemProductsSection({
         <Card
           key={product.productId}
           data-card-hover='false'
-          className='cursor-pointer'
+          className='border-border/60 hover:border-foreground/25 hover:bg-muted/40 cursor-pointer gap-0 border bg-transparent py-0 shadow-none ring-0'
           onClick={() => onProductSelect(product)}
         >
           <CardContent className='p-3 text-center sm:p-4'>

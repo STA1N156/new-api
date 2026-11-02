@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"unicode/utf8"
@@ -89,16 +90,23 @@ func AddRedemption(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"success": false, "message": msg})
 		return
 	}
+	if err := redemption.SetSubscriptionPlan(redemption.SubscriptionPlanId); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	var keys []string
 	for i := 0; i < redemption.Count; i++ {
 		key := common.GetUUID()
 		cleanRedemption := model.Redemption{
-			UserId:      c.GetInt("id"),
-			Name:        redemption.Name,
-			Key:         key,
-			CreatedTime: common.GetTimestamp(),
-			Quota:       redemption.Quota,
-			ExpiredTime: redemption.ExpiredTime,
+			UserId:                c.GetInt("id"),
+			Name:                  redemption.Name,
+			Key:                   key,
+			CreatedTime:           common.GetTimestamp(),
+			Quota:                 redemption.Quota,
+			ExpiredTime:           redemption.ExpiredTime,
+			SubscriptionPlanId:    redemption.SubscriptionPlanId,
+			SubscriptionPlanTitle: redemption.SubscriptionPlanTitle,
+			SubscriptionPrice:     redemption.SubscriptionPrice,
 		}
 		err = cleanRedemption.Insert()
 		if err != nil {
@@ -113,9 +121,11 @@ func AddRedemption(c *gin.Context) {
 		keys = append(keys, key)
 	}
 	recordManageAudit(c, "redemption.create", map[string]interface{}{
-		"name":  redemption.Name,
-		"count": redemption.Count,
-		"quota": logger.LogQuota(redemption.Quota),
+		"name":                 redemption.Name,
+		"count":                redemption.Count,
+		"quota":                logger.LogQuota(redemption.Quota),
+		"subscription_plan_id": redemption.SubscriptionPlanId,
+		"subscription_price":   redemption.SubscriptionPrice,
 	})
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -152,6 +162,10 @@ func UpdateRedemption(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if cleanRedemption.Status == common.RedemptionCodeStatusUsed {
+		common.ApiError(c, errors.New("已使用的兑换码不能修改"))
+		return
+	}
 	if statusOnly == "" {
 		if valid, msg := validateExpiredTime(c, redemption.ExpiredTime); !valid {
 			c.JSON(http.StatusOK, gin.H{"success": false, "message": msg})
@@ -159,10 +173,22 @@ func UpdateRedemption(c *gin.Context) {
 		}
 		// If you add more fields, please also update redemption.Update()
 		cleanRedemption.Name = redemption.Name
-		cleanRedemption.Quota = redemption.Quota
+		if cleanRedemption.SubscriptionPlanId != redemption.SubscriptionPlanId {
+			if err := cleanRedemption.SetSubscriptionPlan(redemption.SubscriptionPlanId); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+		}
+		if cleanRedemption.SubscriptionPlanId == 0 {
+			cleanRedemption.Quota = redemption.Quota
+		}
 		cleanRedemption.ExpiredTime = redemption.ExpiredTime
 	}
 	if statusOnly != "" {
+		if redemption.Status != common.RedemptionCodeStatusEnabled && redemption.Status != common.RedemptionCodeStatusDisabled {
+			common.ApiError(c, errors.New("兑换码状态无效"))
+			return
+		}
 		cleanRedemption.Status = redemption.Status
 	}
 	err = cleanRedemption.Update()

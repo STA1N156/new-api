@@ -21,6 +21,7 @@ import { ConfigDrawer } from '@/components/config-drawer'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { GlobalScrollingAnnouncement } from '@/components/scrolling-announcement'
 import { Search } from '@/components/search'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
@@ -146,6 +147,7 @@ export function AppHeader({
           </div>
         )}
       </Header>
+      <GlobalScrollingAnnouncement />
       {showNotifications && !rightContent && (
         <AnnouncementBanner
           count={notifications.pendingAnnouncementCount}

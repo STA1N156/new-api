@@ -25,6 +25,7 @@ import { Dialog } from '@/components/dialog'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { GlobalScrollingAnnouncement } from '@/components/scrolling-announcement'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -93,6 +94,8 @@ export function PublicHeader(props: PublicHeaderProps) {
   const notifications = useNotifications()
   const routerState = useRouterState()
   const pathname = routerState.location.pathname
+  const showBanners =
+    pathname !== '/' && !/^\/(pricing|rankings)(\/|$)/.test(pathname)
 
   const user = auth.user
   const isAuthenticated = !!user
@@ -177,7 +180,7 @@ export function PublicHeader(props: PublicHeaderProps) {
   return (
     <>
       <header className='pointer-events-none fixed inset-x-0 top-0 z-50'>
-        {showNotifications && (
+        {showNotifications && showBanners && (
           <AnnouncementBanner
             count={notifications.pendingAnnouncementCount}
             onView={notifications.viewAnnouncementBanner}
@@ -341,6 +344,7 @@ export function PublicHeader(props: PublicHeaderProps) {
             </div>
           </nav>
         </div>
+        {showBanners && <GlobalScrollingAnnouncement />}
       </header>
 
       {/* Mobile full-screen overlay */}
@@ -352,14 +356,7 @@ export function PublicHeader(props: PublicHeaderProps) {
             : 'pointer-events-none opacity-0'
         )}
       >
-        <div
-          className={cn(
-            'flex h-full flex-col justify-between px-8 pb-10',
-            showNotifications && notifications.pendingAnnouncementCount > 0
-              ? 'pt-30'
-              : 'pt-20'
-          )}
-        >
+        <div className='flex h-full flex-col justify-between px-8 pt-[var(--public-content-top,5rem)] pb-10'>
           <nav className='flex flex-col gap-1'>
             {links.map((link, i) => {
               const isActive = pathname === link.href

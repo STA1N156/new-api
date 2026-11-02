@@ -77,8 +77,13 @@ export function TimingMetricsCell(props: TimingMetricsCellProps) {
   const { firstToken: firstTokenVariant, duration: totalTimeVariant } =
     getLogTimingColors(props)
   const firstTokenLabel =
-    firstTokenSeconds == null ? '—' : formatUseTime(firstTokenSeconds)
-  const totalTimeLabel = formatUseTime(props.useTimeSec)
+    firstTokenSeconds == null
+      ? '—'
+      : formatUseTime(firstTokenSeconds).replace('m ', 'm\u2009')
+  const totalTimeLabel = formatUseTime(props.useTimeSec).replace(
+    'm ',
+    'm\u2009'
+  )
 
   const labels = (
     <div
@@ -224,7 +229,11 @@ export function StreamTpsCell(props: StreamTpsCellProps) {
                   <p>
                     {t('Stream Status')}: {t('Error')}
                   </p>
-                  <p>{props.streamStatus?.end_reason || 'unknown'}</p>
+                  <p>
+                    {props.streamStatus?.end_reason === 'client_gone'
+                      ? t('Client canceled')
+                      : props.streamStatus?.end_reason || 'unknown'}
+                  </p>
                   {(props.streamStatus?.error_count ?? 0) > 0 && (
                     <p>
                       {t('Soft Errors')}: {props.streamStatus?.error_count}

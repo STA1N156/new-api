@@ -285,3 +285,6 @@ custom_oauth.provider_id_field_invalid: "无法从提供商响应中提取用户
 
 user.qq_email_numeric_required: "已开启邮箱别名限制，QQ 邮箱仅支持纯数字账号，例如 12345678@qq.com。"
 user.email_alias_restricted: "已开启邮箱别名限制，邮箱账号中不能包含 + 或 .。"
+user.email_domain_restricted: "该邮箱暂不支持注册。仅支持以下邮箱注册：{{.Domains}}。"
+user.qq_email_numeric_type: "纯数字 QQ 邮箱（例如 12345678@qq.com）"
+user.email_registration_unavailable: "暂未配置可注册的邮箱类型，请联系管理员。"

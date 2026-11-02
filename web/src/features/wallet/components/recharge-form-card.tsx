@@ -55,6 +55,9 @@ import type {
 } from '../types'
 import { CreemProductsSection } from './creem-products-section'
 
+const paymentMethodClassName =
+  'border-border/60 hover:border-foreground/25 min-h-14 min-w-0 justify-start gap-2 rounded-lg bg-transparent px-3 py-2 text-left shadow-none hover:bg-muted/40 dark:border-border/60 dark:bg-transparent dark:hover:bg-muted/40'
+
 interface RechargeFormCardProps {
   topupInfo: TopupInfo | null
   presetAmounts: PresetAmount[]
@@ -150,12 +153,15 @@ export function RechargeFormCard({
 
   if (loading) {
     return (
-      <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
-        <CardHeader className='border-b p-3 !pb-3 sm:p-5 sm:!pb-5'>
+      <Card
+        data-card-hover='false'
+        className='ring-border/70 gap-0 overflow-hidden py-0 shadow-none'
+      >
+        <CardHeader className='p-3 !pb-3 sm:p-5 sm:!pb-5'>
           <Skeleton className='h-6 w-32' />
           <Skeleton className='mt-2 h-4 w-48' />
         </CardHeader>
-        <CardContent className='space-y-4 p-3 sm:space-y-6 sm:p-5'>
+        <CardContent className='space-y-4 p-3 pt-0 sm:space-y-6 sm:p-5 sm:pt-0'>
           <div className='space-y-4 sm:space-y-6'>
             {/* Preset Amounts Skeleton */}
             <div className='space-y-3'>
@@ -205,6 +211,8 @@ export function RechargeFormCard({
       icon={<WalletCards className='h-4 w-4' />}
       iconTone='success'
       disableHoverEffect
+      className='ring-border/70 shadow-none'
+      headerClassName='border-b-0'
       action={
         onOpenBilling ? (
           <Button
@@ -218,7 +226,7 @@ export function RechargeFormCard({
           </Button>
         ) : null
       }
-      contentClassName='space-y-4 sm:space-y-6'
+      contentClassName='space-y-4 pt-0 sm:space-y-6 sm:pt-0'
     >
       {/* Online Topup Section */}
       {hasAnyTopup ? (
@@ -252,10 +260,10 @@ export function RechargeFormCard({
                           key={preset.value}
                           variant='outline'
                           className={cn(
-                            'flex h-auto min-h-16 min-w-0 flex-col items-start gap-2 rounded-lg px-3 py-2.5 text-left whitespace-normal sm:p-3',
+                            'hover:border-foreground/25 flex h-auto min-h-16 min-w-0 flex-col items-start gap-2 rounded-lg px-3 py-2.5 text-left whitespace-normal shadow-none hover:bg-muted/40 sm:p-3 dark:hover:bg-muted/40',
                             selectedPreset === preset.value
-                              ? 'border-foreground bg-foreground/5 dark:border-foreground dark:bg-foreground/10'
-                              : 'border-muted'
+                              ? 'border-foreground/35 bg-foreground/5 dark:border-foreground/35 dark:bg-foreground/5'
+                              : 'border-border/60 bg-transparent dark:border-border/60 dark:bg-transparent'
                           )}
                           onClick={() => onSelectPreset(preset)}
                           aria-pressed={selectedPreset === preset.value}
@@ -308,7 +316,7 @@ export function RechargeFormCard({
                     placeholder={`Minimum ${minTopup}`}
                     className='h-9 text-base sm:h-10 sm:text-lg'
                   />
-                  <div className='bg-muted/30 flex min-h-9 items-center justify-between gap-2 rounded-md border px-3 lg:min-w-52'>
+                  <div className='bg-muted/20 flex min-h-9 items-center justify-between gap-2 rounded-md px-3 lg:min-w-52'>
                     <span className='text-muted-foreground truncate text-xs'>
                       {t('Amount to pay:')}
                     </span>
@@ -356,7 +364,7 @@ export function RechargeFormCard({
                               ? `${method.name}. ${disabledReason}`
                               : method.name
                           }
-                          className='min-h-14 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left'
+                          className={paymentMethodClassName}
                         >
                           {paymentLoading === method.type ? (
                             <Loader2 className='h-4 w-4 animate-spin' />
@@ -399,7 +407,7 @@ export function RechargeFormCard({
                         rel='noopener noreferrer'
                         className={cn(
                           buttonVariants({ variant: 'outline' }),
-                          'min-h-14 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left'
+                          paymentMethodClassName
                         )}
                       >
                         <span
@@ -476,7 +484,7 @@ export function RechargeFormCard({
                                 ? `${method.name}. ${disabledReason}`
                                 : method.name
                             }
-                            className='min-h-14 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left'
+                            className={paymentMethodClassName}
                           >
                             {methodIcon}
                             <span className='flex min-w-0 flex-col items-start gap-0.5'>

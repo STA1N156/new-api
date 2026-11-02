@@ -1051,7 +1051,11 @@ export function DetailsDialog(props: DetailsDialogProps) {
             {other.stream_status.end_reason && (
               <DetailRow
                 label={t('End Reason')}
-                value={other.stream_status.end_reason}
+                value={
+                  other.stream_status.end_reason === 'client_gone'
+                    ? t('Client canceled')
+                    : other.stream_status.end_reason
+                }
               />
             )}
             {(other.stream_status.error_count ?? 0) > 0 && (

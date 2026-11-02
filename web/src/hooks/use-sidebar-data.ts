@@ -21,6 +21,7 @@ import {
   ChartNoAxesCombined,
   Box,
   CreditCard,
+  Cookie,
   FileText,
   FlaskConical,
   Key,
@@ -71,6 +72,11 @@ export function useSidebarData(): SidebarData {
         id: 'general',
         title: t('General'),
         items: [
+          {
+            title: t('Lucky Bakery', { lng: 'zhCN', context: 'sidebar' }),
+            url: '/baking',
+            icon: Cookie,
+          },
           {
             title: t('Overview'),
             url: '/dashboard/overview',

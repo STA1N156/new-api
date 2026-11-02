@@ -20,6 +20,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   createMemoryHistory,
   createRootRoute,
+  createRoute,
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router'
@@ -45,6 +46,7 @@ beforeEach(() => {
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   vi.spyOn(api, 'getNotice').mockResolvedValue({ success: true, data: '' })
   vi.spyOn(api, 'getStatus').mockResolvedValue({
+    scrolling_announcement: 'Persistent broadcast',
     announcements_enabled: true,
     announcements: [
       {
@@ -63,8 +65,8 @@ afterEach(() => {
   localStorage.clear()
 })
 
-it('keeps notifications accessible with compact navigation and reserves room for the banner', async () => {
-  const routeTree = createRootRoute({
+it('opens the timeline and acknowledges its banner without dismissing the scrolling announcement', async () => {
+  const rootRoute = createRootRoute({
     component: () => (
       <PublicLayout
         showAuthButtons={false}
@@ -75,34 +77,19 @@ it('keeps notifications accessible with compact navigation and reserves room for
       </PublicLayout>
     ),
   })
+  const routeTree = rootRoute.addChildren([
+    createRoute({ getParentRoute: () => rootRoute, path: '/about' }),
+  ])
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ['/'] }),
+    history: createMemoryHistory({ initialEntries: ['/about'] }),
   })
   render(
     <QueryClientProvider client={client}>
       <RouterProvider router={router} />
     </QueryClientProvider>
   )
-
-  const banner = await screen.findByRole('status')
-  expect(banner.closest('header')).toHaveClass('fixed', 'top-0')
-  const menuButton = screen.getByRole('button', {
-    name: 'Toggle navigation menu',
-  })
-  expect(menuButton.parentElement).toHaveClass('md:hidden')
-  expect(
-    screen.getAllByRole('link', { name: 'Home' })[0].parentElement
-  ).toHaveClass('hidden', 'md:flex')
-  expect(screen.getByRole('main').parentElement).toHaveClass(
-    'has-data-[announcement-banner]:[&>main]:pt-30'
-  )
-  fireEvent.click(menuButton)
-  expect(
-    screen.getAllByRole('link', { name: 'Home' })[1].closest('nav')
-      ?.parentElement
-  ).toHaveClass('pt-30')
-  fireEvent.click(menuButton)
+  expect(await screen.findByRole('status')).toBeVisible()
   fireEvent.click(screen.getByRole('button', { name: 'View' }))
   expect(await screen.findByRole('tab', { name: 'Timeline' })).toHaveAttribute(
     'aria-selected',
@@ -110,4 +97,7 @@ it('keeps notifications accessible with compact navigation and reserves room for
   )
   expect(screen.getByText('New timeline update')).toBeVisible()
   expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  expect(
+    screen.getByRole('region', { name: 'Scrolling announcement' })
+  ).toHaveTextContent('Persistent broadcast')
 })

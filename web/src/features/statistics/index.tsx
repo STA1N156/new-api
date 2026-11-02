@@ -45,6 +45,7 @@ export function Statistics() {
   const [topupScope, setTopupScope] = useState('all')
   const [requestScope, setRequestScope] = useState('all')
   const [consumptionScope, setConsumptionScope] = useState('all')
+  const [registrationScope, setRegistrationScope] = useState('all')
   const showOnline = topupScope === 'all' || topupScope === 'online'
   const showSubscriptions =
     topupScope === 'all' || topupScope === 'subscription'
@@ -62,8 +63,8 @@ export function Statistics() {
     queryKey: ['daily-statistics', date],
     queryFn: ({ signal }) =>
       getDailyStatistics(days > 1 ? '' : date, signal, days),
-    staleTime: 30000,
-    refetchInterval: !date || days > 1 ? 30000 : false,
+    staleTime: 20000,
+    refetchInterval: !date || days > 1 ? 20000 : false,
     retry: false,
   })
   const today =
@@ -76,21 +77,26 @@ export function Statistics() {
   )
   const hours = query.data?.hours ?? []
   const previous = query.data?.previous
+  const previousHours = query.data?.previous_hours ?? []
   let selectionLabel = date || `${t('Today')} · ${today}`
   let comparisonLabel = date
     ? t('Compared with previous day')
     : t('Compared with yesterday at this time')
+  let previousLabel = date ? t('Previous day') : t('Yesterday')
   if (days > 1) {
     selectionLabel = t('Last {{days}} days', { days })
     comparisonLabel = t('Compared with previous {{days}} days at this time', {
       days,
     })
+    previousLabel = t('Previous period')
   }
   const chartPeriod = {
     timestamps: hours.map((hour) => hour.timestamp),
     days,
     asOf: query.data?.as_of ?? 0,
     comparisonLabel,
+    currentLabel: days > 1 ? t('Current period') : date || t('Today'),
+    previousLabel,
   }
   const formatQuota = (value: number) =>
     formatQuotaWithCurrency(value, { abbreviate: false })
@@ -100,6 +106,16 @@ export function Statistics() {
     `¥${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   const formatCount = (value: number) =>
     value.toLocaleString(undefined, { maximumFractionDigits: 0 })
+  const formatPeople = (value: number) =>
+    t('{{count}} people', { count: value })
+  const independentRegistrations = hours.reduce(
+    (sum, hour) => sum + registrationsBySource(hour, 'independent'),
+    0
+  )
+  const invitedRegistrations = hours.reduce(
+    (sum, hour) => sum + registrationsBySource(hour, 'invited'),
+    0
+  )
   const usageDetails = (
     metric: 'requests' | 'consumed_quota',
     source: string,
@@ -201,7 +217,7 @@ export function Statistics() {
         ) : (
           <div className='grid grid-cols-1 gap-4'>
             {query.isPending ? (
-              [0, 1, 2].map((key) => (
+              [0, 1, 2, 3].map((key) => (
                 <Skeleton key={key} className='h-80 rounded-2xl' />
               ))
             ) : (
@@ -224,6 +240,9 @@ export function Statistics() {
                   )}
                   wholeNumbers
                   values={hours.map((hour) =>
+                    usageBySource(hour, 'requests', requestScope)
+                  )}
+                  previousValues={previousHours.map((hour) =>
                     usageBySource(hour, 'requests', requestScope)
                   )}
                   color='var(--chart-1)'
@@ -250,6 +269,9 @@ export function Statistics() {
                     consumptionScope
                   )}
                   values={hours.map((hour) =>
+                    usageBySource(hour, 'consumed_quota', consumptionScope)
+                  )}
+                  previousValues={previousHours.map((hour) =>
                     usageBySource(hour, 'consumed_quota', consumptionScope)
                   )}
                   color='var(--chart-3)'
@@ -301,12 +323,49 @@ export function Statistics() {
                       (showSubscriptions ? hour.subscription_topup : 0) +
                       (showRedemptions ? hour.redemption_topup : 0)
                   )}
+                  previousValues={previousHours.map(
+                    (hour) =>
+                      (showOnline ? hour.online_topup : 0) +
+                      (showSubscriptions ? hour.subscription_topup : 0) +
+                      (showRedemptions ? hour.redemption_topup : 0)
+                  )}
                   color='var(--chart-5)'
                   format={formatMoney}
                   formatAxis={(value) =>
                     value.toLocaleString(undefined, { notation: 'compact' })
                   }
                   detail={topupDetails.join(' · ')}
+                />
+                <HourlyChart
+                  {...chartPeriod}
+                  title={t('Registrations')}
+                  actions={
+                    <StatisticsFilter
+                      label={t('Registrations')}
+                      value={registrationScope}
+                      onChange={setRegistrationScope}
+                      options={[
+                        { value: 'all', label: t('All') },
+                        { value: 'independent', label: t('Independent only') },
+                        { value: 'invited', label: t('Invited only') },
+                      ]}
+                    />
+                  }
+                  previousTotal={registrationsBySource(
+                    previous,
+                    registrationScope
+                  )}
+                  values={hours.map((hour) =>
+                    registrationsBySource(hour, registrationScope)
+                  )}
+                  previousValues={previousHours.map((hour) =>
+                    registrationsBySource(hour, registrationScope)
+                  )}
+                  wholeNumbers
+                  color='var(--chart-2)'
+                  format={formatPeople}
+                  formatAxis={formatCount}
+                  detail={`${t('Independent {{count}} people', { count: independentRegistrations })} · ${t('Invited {{count}} people', { count: invitedRegistrations })}`}
                 />
               </>
             )}
@@ -315,6 +374,17 @@ export function Statistics() {
       </SectionPageLayout.Content>
     </SectionPageLayout>
   )
+}
+
+function registrationsBySource(
+  row: StatisticsHour | undefined,
+  source: string
+) {
+  const total = row?.registrations ?? 0
+  const invited = row?.invited_registrations ?? 0
+  if (source === 'invited') return invited
+  if (source === 'independent') return total - invited
+  return total
 }
 
 function usageBySource(

@@ -65,6 +65,7 @@ const statistics: DailyStatistics = {
   today: '2026-09-21',
   days: 1,
   as_of: Date.parse('2026-09-21T23:59:59+08:00') / 1000,
+  previous_hours: [],
   previous: {
     timestamp: 0,
     requests: 6,
@@ -79,6 +80,8 @@ const statistics: DailyStatistics = {
     subscription_topup_count: 1,
     redemption_topup: 50,
     topup_count: 4,
+    registrations: 2,
+    invited_registrations: 1,
   },
   hours: Array.from({ length: 24 }, (_, hour) => ({
     timestamp: 1790006400 + hour * 3600,
@@ -94,6 +97,8 @@ const statistics: DailyStatistics = {
     subscription_topup_count: Number(hour === 12),
     redemption_topup: hour === 12 ? 100 : 0,
     topup_count: hour === 12 ? 5 : Number(hour === 11) * 3,
+    registrations: hour === 12 ? 5 : 0,
+    invited_registrations: hour === 12 ? 2 : 0,
   })),
 }
 
@@ -105,7 +110,7 @@ function renderStatistics() {
   )
 }
 
-it('shows three totals with redemptions merged into top-ups and switches the selected day', async () => {
+it('shows statistics with redemptions merged into top-ups and switches the selected day', async () => {
   const user = userEvent.setup()
   const get = vi
     .spyOn(api, 'get')
@@ -183,6 +188,30 @@ it('shows three totals with redemptions merged into top-ups and switches the sel
       '¥0.00 / 0 transactions'
     )
   ).toBeVisible()
+})
+
+it('shows independent and invited registration counts and filters the total and comparison together', async () => {
+  const user = userEvent.setup()
+  i18next.addResourceBundle('zh', 'translation', zh.translation)
+  await i18next.changeLanguage('zh')
+  vi.spyOn(api, 'get').mockResolvedValue({
+    data: { success: true, data: statistics },
+  })
+  renderStatistics()
+  const registrations = await screen.findByRole('region', { name: '注册' })
+  expect(within(registrations).getByText('5 人')).toBeVisible()
+  expect(within(registrations).getByText('自主 3 人 · 邀请 2 人')).toBeVisible()
+  const filter = within(registrations).getByRole('combobox', { name: '注册' })
+  await user.click(filter)
+  await user.click(await screen.findByRole('option', { name: '仅看邀请' }))
+  expect(filter).toHaveTextContent('仅看邀请')
+  expect(within(registrations).getByText('2 人')).toBeVisible()
+  expect(within(registrations).getByText('100.0%')).toBeVisible()
+  await user.click(filter)
+  await user.click(await screen.findByRole('option', { name: '仅看自主' }))
+  expect(filter).toHaveTextContent('仅看自主')
+  expect(within(registrations).getByText('3 人')).toBeVisible()
+  expect(within(registrations).getByText('200.0%')).toBeVisible()
 })
 
 it('uses 笔 for transaction totals and 直充/订阅/兑换 labels in Chinese', async () => {

@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { flexRender, type Cell, type Table } from '@tanstack/react-table'
 import { Database } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -157,9 +158,11 @@ function SummaryField<TData>({
 function MobileLogTimeStatus({
   createdAt,
   type,
+  action,
 }: {
   createdAt: unknown
   type: unknown
+  action?: ReactNode
 }) {
   const { t } = useTranslation()
   const timestamp = typeof createdAt === 'number' ? createdAt : undefined
@@ -168,22 +171,28 @@ function MobileLogTimeStatus({
   const variant = config.color as StatusVariant
 
   return (
-    <div className='grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3'>
-      <div
-        className={cn(
-          'inline-flex items-center gap-1 text-xs leading-tight font-medium',
-          textColorMap[variant]
-        )}
-      >
-        <span
-          className={cn('size-1.5 shrink-0 rounded-full', dotColorMap[variant])}
-          aria-hidden='true'
-        />
-        <span>{t(config.label)}</span>
+    <div className='flex items-center gap-2'>
+      <div className='grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-start gap-3'>
+        <div
+          className={cn(
+            'inline-flex items-center gap-1 text-xs leading-tight font-medium',
+            textColorMap[variant]
+          )}
+        >
+          <span
+            className={cn(
+              'size-1.5 shrink-0 rounded-full',
+              dotColorMap[variant]
+            )}
+            aria-hidden='true'
+          />
+          <span>{t(config.label)}</span>
+        </div>
+        <time className='text-muted-foreground text-right text-xs leading-tight tabular-nums'>
+          {formatTimestampToDate(timestamp)}
+        </time>
       </div>
-      <time className='text-muted-foreground text-right text-xs leading-tight tabular-nums'>
-        {formatTimestampToDate(timestamp)}
-      </time>
+      {action}
     </div>
   )
 }
@@ -255,66 +264,92 @@ function CommonLogsCard<TData>({
   const quotaCell = cells.get('quota')
   const rowData = cells.get('created_at')?.row.original as UsageLog | undefined
   const hasUsage = rowData && isDisplayableLogType(rowData.type)
+  const showUser = !!rowData?.username && cells.has('user')
+  const showChannel = hasUsage && cells.has('channel')
+  const showToken = hasUsage && !!rowData.token_name && cells.has('token_name')
+  const showTiming =
+    rowData &&
+    isTimingLogType(rowData.type) &&
+    (cells.has('use_time') || cells.has('is_stream'))
+  const details = cells.has('content') ? (
+    <CompactCell
+      cell={cells.get('content')}
+      className={cn(
+        'ml-auto overflow-visible',
+        hasUsage ? 'shrink-0' : 'w-full'
+      )}
+    />
+  ) : null
 
   return (
     <div className='space-y-2.5 [--text-xs:0.8125rem]'>
       <MobileLogTimeStatus
         createdAt={rowData?.created_at}
         type={rowData?.type}
+        action={
+          hasUsage && !showUser && !showChannel && !showToken ? details : null
+        }
       />
-      {hasUsage && (
+      {hasUsage && (modelCell || quotaCell) && (
         <div className='flex items-center justify-between gap-3'>
-          <CompactCell cell={modelCell} className='flex-1' />
+          {modelCell && <CompactCell cell={modelCell} className='flex-1' />}
           {quotaCell && (
-            <CompactCell cell={quotaCell} className='shrink-0 text-right' />
-          )}
-        </div>
-      )}
-      {hasUsage &&
-        (cells.has('prompt_tokens') ||
-          cells.has('use_time') ||
-          cells.has('is_stream')) && (
-          <div className='border-border/60 space-y-3 border-y py-2.5'>
-            {cells.has('prompt_tokens') && (
-              <LogTokensCell log={rowData} showCosts />
-            )}
-            {(cells.has('use_time') || cells.has('is_stream')) && (
-              <div className='grid auto-cols-fr grid-flow-col items-center gap-2'>
-                {cells.has('use_time') && <MobileTimingField log={rowData} />}
-                {cells.has('is_stream') && (
-                  <CompactCell
-                    cell={cells.get('is_stream')}
-                    className='text-right [&_.whitespace-nowrap]:whitespace-normal [&_span]:wrap-anywhere [&>div]:flex-row [&>div]:flex-wrap [&>div]:items-center [&>div]:justify-end [&>div]:gap-1.5'
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      {(cells.has('user') || (hasUsage && cells.has('channel'))) && (
-        <div className='grid grid-cols-2 items-start gap-x-4 gap-y-2.5'>
-          {rowData?.username && cells.has('user') && (
-            <div className='flex min-w-0 items-center gap-2'>
-              <span className='text-muted-foreground shrink-0 text-xs'>
-                {t('User')}
-              </span>
-              <MobileUserField log={rowData} />
-            </div>
-          )}
-          {hasUsage && (
-            <SummaryField
-              label={t('Channel')}
-              cell={cells.get('channel')}
-              className='flex items-center gap-2 bg-transparent p-0 [&>div:first-child]:mb-0 [&>div:first-child]:shrink-0'
-              valueClassName='[&_.flex-col]:max-w-none'
+            <CompactCell
+              cell={quotaCell}
+              className='ml-auto shrink-0 text-right'
             />
           )}
         </div>
       )}
-      {((hasUsage && rowData.token_name && cells.has('token_name')) ||
-        cells.has('content')) && (
+      {hasUsage && (cells.has('prompt_tokens') || showTiming) && (
+        <div className='border-border/60 space-y-3 border-y py-2.5'>
+          {cells.has('prompt_tokens') && (
+            <LogTokensCell log={rowData} showCosts />
+          )}
+          {showTiming && (
+            <div className='grid auto-cols-fr grid-flow-col items-center gap-2'>
+              {cells.has('use_time') && <MobileTimingField log={rowData} />}
+              {cells.has('is_stream') && (
+                <CompactCell
+                  cell={cells.get('is_stream')}
+                  className='text-right [&_.whitespace-nowrap]:whitespace-normal [&_span]:wrap-anywhere [&>div]:flex-row [&>div]:flex-wrap [&>div]:items-center [&>div]:justify-end [&>div]:gap-1.5'
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {(showUser || showChannel) && (
+        <div className='flex min-w-0 items-center gap-3'>
+          <div
+            className={cn(
+              'grid min-w-0 flex-1 items-start gap-x-4 gap-y-2.5',
+              showUser && showChannel ? 'grid-cols-2' : 'grid-cols-1'
+            )}
+          >
+            {showUser && rowData && (
+              <div className='flex min-w-0 items-center gap-2'>
+                <span className='text-muted-foreground shrink-0 text-xs'>
+                  {t('User')}
+                </span>
+                <MobileUserField log={rowData} />
+              </div>
+            )}
+            {showChannel && (
+              <SummaryField
+                label={t('Channel')}
+                cell={cells.get('channel')}
+                className='flex items-center gap-2 bg-transparent p-0 [&>div:first-child]:mb-0 [&>div:first-child]:shrink-0'
+                valueClassName='[&_.flex-col]:max-w-none'
+              />
+            )}
+          </div>
+          {hasUsage && !showToken && details}
+        </div>
+      )}
+      {(showToken || (!hasUsage && details)) && (
         <div className='flex min-w-0 items-start justify-between gap-3'>
-          {hasUsage && rowData.token_name && cells.has('token_name') && (
+          {showToken && (
             <div className='flex min-w-0 flex-1 items-start gap-2 pt-1'>
               <span className='text-muted-foreground shrink-0 pt-1 text-xs'>
                 {t('Token')}
@@ -322,15 +357,7 @@ function CommonLogsCard<TData>({
               <CompactCell cell={cells.get('token_name')} className='flex-1' />
             </div>
           )}
-          {cells.has('content') && (
-            <CompactCell
-              cell={cells.get('content')}
-              className={cn(
-                'ml-auto overflow-visible',
-                hasUsage ? 'shrink-0' : 'w-full'
-              )}
-            />
-          )}
+          {details}
         </div>
       )}
     </div>

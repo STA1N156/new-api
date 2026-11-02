@@ -34,7 +34,7 @@ type PublicLayoutProps = {
 
 export function PublicLayout(props: PublicLayoutProps) {
   return (
-    <div className='bg-background text-foreground relative min-h-svh overflow-x-clip has-data-[announcement-banner]:[&>main]:pt-30'>
+    <div className='announcement-layout bg-background text-foreground relative min-h-svh overflow-x-clip [&>main]:pt-[var(--public-content-top)]'>
       <PublicHeader
         navContent={props.navContent}
         navLinks={props.navLinks}
@@ -51,7 +51,9 @@ export function PublicLayout(props: PublicLayoutProps) {
           {props.children}
         </main>
       ) : (
-        props.children
+        <div className='pt-[calc(var(--announcement-banner-height)+var(--scrolling-announcement-height))]'>
+          {props.children}
+        </div>
       )}
     </div>
   )

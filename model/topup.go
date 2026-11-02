@@ -19,6 +19,7 @@ type TopUp struct {
 	TradeNo         string  `json:"trade_no" gorm:"unique;type:varchar(255);index"`
 	PaymentMethod   string  `json:"payment_method" gorm:"type:varchar(50)"`
 	PaymentProvider string  `json:"payment_provider" gorm:"type:varchar(50);default:''"`
+	EpayGateway     string  `json:"-" gorm:"type:varchar(16);default:''"`
 	CreateTime      int64   `json:"create_time"`
 	CompleteTime    int64   `json:"complete_time"`
 	Status          string  `json:"status"`
@@ -87,7 +88,10 @@ func creditTopUpQuota(tx *gorm.DB, topUp *TopUp, creditedQuota int, updates map[
 	if err := creditUserQuota(tx, topUp.UserId, creditedQuota, updates); err != nil {
 		return err
 	}
-	return creditInvitationReward(tx, topUp, topUp.UserId, creditedQuota)
+	if err := creditInvitationReward(tx, topUp, topUp.UserId, creditedQuota); err != nil {
+		return err
+	}
+	return creditBakingQuota(tx, topUp.UserId, fmt.Sprintf("topup:%d", topUp.Id), creditedQuota)
 }
 
 // creditUserQuota atomically enforces the wallet ceiling while adding

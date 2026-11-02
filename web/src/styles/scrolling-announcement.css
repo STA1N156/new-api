@@ -1,0 +1,35 @@
+.announcement-layout {
+  --announcement-banner-height: 0rem;
+  --scrolling-announcement-height: 0rem;
+  --app-header-height: calc(
+    3rem + var(--announcement-banner-height) +
+      var(--scrolling-announcement-height)
+  );
+  --public-content-top: calc(
+    5rem + var(--announcement-banner-height) +
+      var(--scrolling-announcement-height)
+  );
+}
+.announcement-layout:has([data-announcement-banner]) {
+  --announcement-banner-height: 2.5rem;
+}
+.announcement-layout:has([data-scrolling-announcement]) {
+  --scrolling-announcement-height: 2rem;
+}
+.scrolling-announcement[data-scrolling='true']
+  .scrolling-announcement-viewport {
+  mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+}
+.scrolling-announcement[data-scrolling='true'] .scrolling-announcement-track {
+  will-change: transform;
+}
+.scrolling-announcement[data-scrolling='false']
+  .scrolling-announcement-separator {
+  visibility: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrolling-announcement-viewport {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}

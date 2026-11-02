@@ -21,6 +21,15 @@ import { expect, it } from 'vitest'
 
 import { useSidebarData } from '../use-sidebar-data'
 
+it('shows the baking event in General for ordinary users', () => {
+  const { result } = renderHook(() => useSidebarData())
+  const item = result.current.navGroups
+    .find((group) => group.id === 'general')
+    ?.items.find((entry) => 'url' in entry && entry.url === '/baking')
+  expect(item).toBeDefined()
+  expect(item?.requiredRole).toBeUndefined()
+})
+
 it('places Statistics immediately after Users and limits it to super administrators', () => {
   const { result } = renderHook(() => useSidebarData())
   const items =

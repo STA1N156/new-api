@@ -189,6 +189,10 @@ func UserCriticalRateLimit(scope string) func(c *gin.Context) {
 	)
 }
 
+func BakingActionRateLimit() func(c *gin.Context) {
+	return userRateLimitFactory(60, 60, "baking")
+}
+
 func DownloadRateLimit() func(c *gin.Context) {
 	return rateLimitFactory(common.DownloadRateLimitNum, common.DownloadRateLimitDuration, "DW")
 }

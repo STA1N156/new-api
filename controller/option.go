@@ -344,6 +344,13 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	case "console_setting.scrolling_announcement":
+		value := strings.TrimSpace(option.Value.(string))
+		if len([]rune(value)) > 500 {
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": "滚动公告不能超过500个字"})
+			return
+		}
+		option.Value = value
 	case "console_setting.faq":
 		err = console_setting.ValidateConsoleSettings(option.Value.(string), "FAQ")
 		if err != nil {

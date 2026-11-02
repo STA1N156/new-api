@@ -1,0 +1,1359 @@
+.baking-activity {
+  position: relative;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --serif: var(--font-body);
+  --clay-soft: color-mix(in srgb, var(--primary) 12%, var(--card));
+  font-size: 15px;
+  line-height: 1.6;
+}
+.baking-activity * {
+  box-sizing: border-box;
+}
+.baking-activity[data-locked='true'] .baking-effects {
+  display: none;
+}
+.baking-locked-region {
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+.baking-locked-preview {
+  filter: blur(10px);
+  opacity: 0.65;
+}
+.baking-locked-preview .card {
+  min-height: 126px;
+  padding: 24px;
+}
+.baking-locked-preview .card::before,
+.baking-locked-preview .card::after {
+  content: '';
+  display: block;
+  width: 38%;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--muted);
+}
+.baking-locked-preview .card::after {
+  width: 65%;
+  height: 30px;
+  margin-top: 20px;
+}
+.baking-locked-preview .preview-progress {
+  min-height: 160px;
+  margin-bottom: 24px;
+}
+.baking-locked-preview .main-layout .card {
+  min-height: 430px;
+}
+.baking-locked-preview .main-layout .card::after {
+  width: 100%;
+  height: 300px;
+}
+.baking-activity button,
+.baking-activity a {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.baking-activity button {
+  cursor: pointer;
+}
+.baking-activity button:disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+.baking-activity a {
+  color: inherit;
+  text-decoration: none;
+}
+.baking-activity h1,
+.baking-activity h2,
+.baking-activity h3,
+.baking-activity p {
+  margin: 0;
+}
+.baking-activity svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.baking-activity .cookie-currency {
+  display: inline-block;
+  flex: none;
+  font-family:
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+}
+.baking-activity button:focus-visible,
+.baking-activity a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+.baking-activity .mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.baking-activity .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.baking-activity .card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  min-width: 0;
+}
+.baking-activity .stat-card {
+  padding: 21px 23px;
+}
+.baking-activity .stat-label {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.baking-activity .stat-label svg {
+  width: 15px;
+  height: 15px;
+}
+.baking-activity .stat-value {
+  margin-top: 13px;
+  font: 500 32px/1.2 var(--mono);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.8px;
+}
+.baking-activity .stat-value .cookie-currency {
+  font-size: 26px;
+}
+.baking-activity .stat-value small {
+  font: 13px var(--serif);
+  color: var(--muted-foreground);
+  margin-left: 1px;
+  letter-spacing: 0;
+}
+.baking-activity .main-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 355px;
+  gap: 24px;
+  align-items: start;
+}
+.baking-activity .game-card {
+  overflow: hidden;
+}
+.baking-activity .game-heading {
+  padding: 24px 26px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.baking-activity .current-label {
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+.baking-activity .current-value {
+  font: 500 42px/1.2 var(--mono);
+  letter-spacing: -1px;
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 45px;
+}
+.baking-activity .current-value .cookie-currency {
+  font-size: 28px;
+}
+.baking-activity .stage-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  margin-top: 3px;
+}
+.baking-activity .stage-tag b {
+  font: 500 11px var(--mono);
+  color: var(--foreground);
+}
+.baking-activity .oven-stage {
+  height: 270px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 1px 20px 0;
+  isolation: isolate;
+}
+.baking-activity .oven-machine {
+  position: relative;
+  width: 274px;
+  height: 177px;
+  background: var(--secondary);
+  border: 1px solid var(--input);
+  border-radius: 18px 18px 11px 11px;
+  padding: 13px 17px 16px;
+  box-shadow:
+    inset 0 1px 0 #ffffff40,
+    0 9px 16px #1f211409;
+  transform: translateY(5px);
+}
+.baking-activity .oven-top {
+  height: 29px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.baking-activity .oven-brand {
+  font: 9px var(--mono);
+  letter-spacing: 1.5px;
+  color: var(--muted-foreground);
+}
+.baking-activity .oven-display {
+  font: 12px var(--mono);
+  color: var(--primary);
+  border: 1px solid var(--input);
+  background: var(--background);
+  border-radius: 5px;
+  padding: 4px 10px;
+  min-width: 57px;
+  text-align: center;
+}
+.baking-activity .oven-dial {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--input);
+  background: var(--card);
+  border-radius: 50%;
+  position: relative;
+  transition: transform 0.4s;
+}
+.baking-activity .oven-dial:before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 7px;
+  background: var(--muted-foreground);
+  left: 10px;
+  top: 3px;
+  border-radius: 1px;
+}
+.baking-activity .oven-chamber {
+  position: relative;
+  margin-top: 23px;
+  perspective: 700px;
+}
+.baking-activity .oven-door {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 5px solid var(--input);
+  border-radius: 10px;
+  background: linear-gradient(125deg, #ffffff0d, #bcc6ad08);
+  box-shadow:
+    inset 0 0 0 1px #ffffff25,
+    2px 2px 3px #14141315;
+  transform-origin: left center;
+  transform: rotateY(0deg);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.baking-activity [data-door-open='true'] .oven-door {
+  transform: rotateY(-108deg);
+  transition-duration: 0.4s;
+}
+.baking-activity .oven-door-glass {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 5px;
+}
+.baking-activity .oven-handle {
+  width: 7px;
+  height: 42px;
+  border-radius: 4px;
+  background: var(--card);
+  border: 1px solid var(--input);
+  box-shadow: 0 2px 0 #14141308;
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+}
+.baking-activity .oven-window {
+  height: 92px;
+  border: 5px solid var(--input);
+  border-radius: 10px;
+  background: #333630;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.baking-activity .oven-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, #cb934f32, transparent 85%);
+  transition: background 0.4s;
+}
+.baking-activity .oven-rack {
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  bottom: 16px;
+  height: 3px;
+  border-bottom: 1px solid #a8aa93;
+  background: repeating-linear-gradient(
+    90deg,
+    #858d73 0,
+    #858d73 2px,
+    transparent 2px,
+    transparent 11px
+  );
+}
+.baking-activity .oven-cookie {
+  width: 68px;
+  height: 68px;
+  position: relative;
+  z-index: 1;
+  transform: translateY(-3px) scaleY(0.85);
+  transition:
+    filter 0.8s ease,
+    opacity 0.6s ease,
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.baking-activity .oven-cookie > svg {
+  width: 100%;
+  height: 100%;
+}
+.baking-activity .oven-shine {
+  position: absolute;
+  inset: -30% auto auto 28%;
+  height: 160%;
+  width: 24px;
+  background: #fff;
+  opacity: 0.035;
+  transform: rotate(28deg);
+}
+.baking-activity .oven-machine:before,
+.baking-activity .oven-machine:after {
+  content: '';
+  position: absolute;
+  width: 25px;
+  height: 7px;
+  bottom: -7px;
+  left: 24px;
+  background: var(--input);
+  border-radius: 0 0 4px 4px;
+}
+.baking-activity .oven-machine:after {
+  left: auto;
+  right: 24px;
+}
+.baking-activity .oven-smoke {
+  position: absolute;
+  width: 100px;
+  height: 66px;
+  top: 4px;
+  left: calc(50% - 50px);
+  opacity: 0;
+  color: var(--muted-foreground);
+  transition: opacity 0.3s;
+  z-index: -1;
+}
+.baking-activity .oven-smoke svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.baking-activity .oven-smoke path {
+  animation: baking-smoke 2.8s ease-out infinite;
+}
+.baking-activity .oven-smoke path:nth-child(2) {
+  animation-delay: 0.4s;
+}
+.baking-activity .oven-smoke path:nth-child(3) {
+  animation-delay: 0.8s;
+}
+.baking-activity .baking .oven-cookie {
+  animation: baking-bake-rise var(--bake-duration, 3200ms) linear both;
+}
+.baking-activity .baking .oven-dial {
+  transform: rotate(110deg);
+}
+.baking-activity .baking .oven-glow {
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    color-mix(in srgb, var(--bake-accent) 70%, transparent),
+    transparent 95%
+  );
+  animation: baking-warm var(--bake-duration, 3200ms) ease-in-out both;
+}
+.baking-activity .baking .oven-smoke {
+  opacity: 0.25;
+}
+.baking-activity .burnt .oven-cookie {
+  filter: grayscale(1) brightness(0.28);
+  animation: baking-cookie-burn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.baking-activity .burnt .oven-glow {
+  background: radial-gradient(ellipse at 50% 100%, #5b544d55, transparent 90%);
+}
+.baking-activity .burnt .oven-smoke {
+  opacity: 0.7;
+}
+.baking-activity .success .oven-cookie {
+  transition: none;
+  transform: translateY(-3px) scaleY(0.85);
+}
+.baking-activity .claimed .oven-cookie {
+  opacity: 0;
+  transform: translateY(-15px) scale(0.4);
+}
+.baking-activity .state-message {
+  text-align: center;
+  padding: 0 22px 23px;
+  min-height: 54px;
+}
+.baking-activity .state-message h2 {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.baking-activity .state-message.success h2 {
+  color: var(--success);
+}
+.baking-activity .state-message.burnt h2 {
+  color: var(--destructive);
+}
+.baking-activity .state-message.claimed h2 {
+  color: var(--success);
+}
+.baking-activity .next-info {
+  margin: 16px 26px 0;
+  padding: 19px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.baking-activity .next-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+.baking-activity .next-item + .next-item {
+  border-left: 1px solid var(--border);
+  padding-left: 20px;
+}
+.baking-activity .next-item b {
+  font: 500 20px var(--mono);
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.baking-activity .next-item .cookie-currency {
+  font-size: 20px;
+}
+.baking-activity .next-item.rate b {
+  color: var(--primary);
+}
+.baking-activity .actions {
+  padding: 22px 26px 15px;
+  display: flex;
+  gap: 14px;
+}
+.baking-activity .button {
+  min-height: 44px;
+  padding: 12px 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
+  white-space: nowrap;
+}
+.baking-activity .button svg {
+  width: 18px;
+  height: 18px;
+}
+.baking-activity .primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.baking-activity .primary:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+.baking-activity .outline {
+  border-color: var(--border);
+  background: var(--background);
+  color: var(--foreground);
+}
+.baking-activity .outline:hover:not(:disabled) {
+  background: var(--muted);
+}
+.baking-activity .actions .button {
+  flex: 1;
+}
+.baking-activity .risk-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  padding: 0 20px 19px;
+  line-height: 1.7;
+}
+.baking-activity .risk-note svg {
+  width: 13px;
+  height: 13px;
+}
+.baking-activity .side {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.baking-activity .card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 22px 22px 17px;
+}
+.baking-activity .card-title h2 {
+  font-size: 17px;
+  font-weight: 500;
+}
+.baking-activity .card-title > span {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.baking-activity .level-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.baking-activity .level-table th {
+  font-weight: 400;
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.baking-activity .level-table th:first-child {
+  width: 48%;
+}
+.baking-activity .level-table th:nth-child(2) {
+  width: 24%;
+  text-align: right;
+}
+.baking-activity .level-table th:last-child {
+  width: 28%;
+  text-align: right;
+}
+.baking-activity .level-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.baking-activity .level-table tr:last-child td {
+  border-bottom: 0;
+}
+.baking-activity .level-table tr.current td {
+  background: var(--clay-soft);
+}
+.baking-activity .level-table td:nth-child(n + 2) {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+.baking-activity .level-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.baking-activity .level-name svg {
+  width: 29px;
+  height: 29px;
+}
+.baking-activity .level-name strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.baking-activity .level-name small {
+  display: block;
+  font: 11px/1.5 var(--mono);
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+.baking-activity .level-table tr.current .level-name strong {
+  color: var(--primary);
+}
+.baking-activity .level-table td:last-child {
+  color: var(--muted-foreground);
+}
+.baking-activity .rules {
+  padding: 0 22px 20px;
+}
+.baking-activity .rules h3 {
+  font-size: 14px;
+  font-weight: 500;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.baking-activity .rules ul {
+  padding-left: 17px;
+  margin: 11px 0 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  line-height: 1.9;
+}
+.baking-activity .rules li + li {
+  margin-top: 6px;
+}
+.baking-activity .history-title {
+  padding-bottom: 7px;
+}
+.baking-activity .history-title h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.baking-activity .history-title svg {
+  width: 17px;
+  height: 17px;
+  color: var(--primary);
+}
+.baking-activity .record-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 22px 9px;
+  display: grid;
+}
+.baking-activity .record-list li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 0;
+  min-width: 0;
+}
+.baking-activity .record-list li + li {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.baking-activity .record-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--muted) 65%, var(--card));
+  display: grid;
+  place-items: center;
+}
+.baking-activity .record-icon svg {
+  width: 32px;
+  height: 32px;
+}
+.baking-activity .record-icon.positive {
+  background: color-mix(in srgb, var(--success) 7%, var(--card));
+}
+.baking-activity .record-icon.burnt svg {
+  filter: grayscale(0.75) brightness(0.65);
+}
+.baking-activity .record-copy {
+  min-width: 0;
+}
+.baking-activity .record-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+.baking-activity .record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 8px;
+  font: 12px/1.6 var(--mono);
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+.baking-activity .record-meta span + span::before {
+  content: '·';
+  margin-right: 8px;
+  opacity: 0.6;
+}
+.baking-activity .record-amount {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  font: 500 17px/1.4 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+.baking-activity .record-amount .cookie-currency {
+  font-size: 14px;
+}
+.baking-activity .record-list .positive {
+  color: var(--success);
+}
+.baking-activity .record-list .empty-record {
+  display: block;
+  font-size: 14px;
+  color: var(--muted-foreground);
+  padding: 18px 0 23px;
+  line-height: 1.8;
+}
+.baking-activity .history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  font-size: 13px;
+}
+.baking-activity .history-pagination > span {
+  min-width: 50px;
+  text-align: center;
+  color: var(--muted-foreground);
+}
+@keyframes baking-warm {
+  0% {
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.72;
+  }
+}
+@keyframes baking-smoke {
+  0% {
+    transform: translate(0, 12px) scaleX(0.8);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(7px, -13px) scaleX(1.15);
+    opacity: 0;
+  }
+}
+@keyframes baking-bake-rise {
+  0% {
+    opacity: 0.35;
+    transform: translate(0, 22px) scale(0.72, 0.53) rotate(-6deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(1px) scale(0.94, 0.78) rotate(0);
+  }
+  42% {
+    transform: translateY(-4px) scale(1.03, 0.91) rotate(-1deg);
+  }
+  64% {
+    transform: translateY(-8px) scale(1.13, 1.02) rotate(2deg);
+  }
+  84% {
+    transform: translateY(-5px) scale(1.08, 0.96) rotate(-1deg);
+  }
+  100% {
+    transform: translateY(-4px) scale(1.04, 0.92);
+  }
+}
+@keyframes baking-cookie-burn {
+  0% {
+    transform: translateY(-4px) scale(1.04, 0.92);
+    filter: grayscale(0) brightness(1);
+  }
+  45% {
+    transform: translateY(-2px) scale(1, 0.77) rotate(-3deg);
+  }
+  100% {
+    transform: translateY(3px) scale(1.03, 0.66) rotate(-8deg);
+    filter: grayscale(1) brightness(0.28);
+  }
+}
+
+.baking-activity.baking-effects {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  overflow: clip;
+  pointer-events: none;
+}
+.baking-activity #fx-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 60;
+}
+.baking-activity .fx-cookie,
+.baking-activity .fx-bloom,
+.baking-activity .fx-rays,
+.baking-activity .fx-trail,
+.baking-activity .fx-ring,
+.baking-activity .fx-spark,
+.baking-activity .fx-puff,
+.baking-activity .fx-label {
+  position: absolute;
+  pointer-events: none;
+  z-index: 61;
+  will-change: transform, opacity;
+}
+.baking-activity .fx-cookie {
+  transform-origin: center;
+  backface-visibility: hidden;
+  contain: layout style;
+}
+.baking-activity .fx-cookie svg {
+  width: 100%;
+  height: 100%;
+}
+.baking-activity .fx-ring {
+  z-index: 60;
+  border: 1px solid color-mix(in srgb, var(--fx-accent) 70%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--fx-accent) 25%, transparent),
+    color-mix(in srgb, var(--fx-accent) 8%, transparent) 55%,
+    transparent 70%
+  );
+  box-shadow: 0 0 25px color-mix(in srgb, var(--fx-accent) 15%, transparent);
+}
+.baking-activity .fx-spark {
+  color: var(--fx-accent);
+}
+.baking-activity .fx-spark svg {
+  width: 100%;
+  height: 100%;
+}
+.baking-activity .fx-puff {
+  background: radial-gradient(
+    circle,
+    #77736750,
+    #79766d16 50%,
+    transparent 72%
+  );
+  border-radius: 50%;
+}
+.baking-activity .fx-label {
+  font: 500 22px var(--mono);
+  color: var(--success);
+  white-space: nowrap;
+}
+.baking-activity[data-cookie-reveal] .oven-cookie {
+  visibility: hidden;
+}
+.baking-activity .baking .oven-window {
+  box-shadow: inset 0 0 26px
+    color-mix(in srgb, var(--bake-accent) 30%, transparent);
+}
+.baking-activity .baking .oven-shine {
+  animation: baking-glass-glint var(--bake-duration, 3200ms) ease-in-out both;
+}
+.baking-activity .burnt .oven-machine {
+  animation: baking-oven-oops 0.55s ease-out;
+}
+.baking-activity .success .oven-display {
+  animation: baking-display-pop 0.65s ease-out;
+}
+.baking-activity .state-message.success h2,
+.baking-activity .state-message.burnt h2 {
+  animation: baking-result-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes baking-glass-glint {
+  0%,
+  18% {
+    transform: translateX(-70px) rotate(28deg);
+    opacity: 0.02;
+  }
+  45% {
+    opacity: 0.12;
+  }
+  85%,
+  100% {
+    transform: translateX(170px) rotate(28deg);
+    opacity: 0;
+  }
+}
+@keyframes baking-oven-oops {
+  0%,
+  100% {
+    translate: 0;
+  }
+  22% {
+    translate: -4px;
+  }
+  44% {
+    translate: 3px;
+  }
+  66% {
+    translate: -2px;
+  }
+  82% {
+    translate: 1px;
+  }
+}
+@keyframes baking-display-pop {
+  40% {
+    background: var(--clay-soft);
+    box-shadow: 0 0 14px #d9a65d40;
+  }
+}
+@keyframes baking-result-enter {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.baking-activity [hidden] {
+  display: none !important;
+}
+@media (max-width: 900px) {
+  .baking-activity .main-layout {
+    grid-template-columns: minmax(0, 1fr) 305px;
+    gap: 18px;
+  }
+  .baking-activity .game-heading {
+    padding-left: 19px;
+    padding-right: 19px;
+  }
+  .baking-activity .next-info {
+    margin-left: 19px;
+    margin-right: 19px;
+    gap: 12px;
+  }
+  .baking-activity .next-item {
+    font-size: 12px;
+    gap: 8px;
+  }
+  .baking-activity .next-item + .next-item {
+    padding-left: 12px;
+  }
+  .baking-activity .actions {
+    padding-left: 19px;
+    padding-right: 19px;
+    gap: 9px;
+  }
+  .baking-activity .actions .button {
+    font-size: 14px;
+    padding: 12px 10px;
+  }
+  .baking-activity .level-table td,
+  .baking-activity .level-table th {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .baking-activity .summary-grid {
+    gap: 15px;
+  }
+  .baking-activity .stat-card {
+    padding: 19px;
+  }
+  .baking-activity .stat-value {
+    font-size: 29px;
+  }
+}
+@media (max-width: 680px) {
+  .baking-activity .history-title {
+    padding: 18px 16px 5px;
+  }
+  .baking-activity .record-list {
+    padding-inline: 16px;
+  }
+  .baking-activity .record-list li {
+    gap: 10px;
+    padding-block: 12px;
+  }
+  .baking-activity .record-amount {
+    font-size: 16px;
+  }
+  .baking-activity .summary-grid {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .baking-activity .stat-card {
+    padding: 16px 12px;
+    border-radius: 10px;
+  }
+  .baking-activity .stat-label {
+    font-size: 12px;
+    gap: 5px;
+  }
+  .baking-activity .stat-label svg {
+    display: none;
+  }
+  .baking-activity .stat-value {
+    font-size: 26px;
+    letter-spacing: -0.6px;
+    gap: 5px;
+    margin-top: 11px;
+  }
+  .baking-activity .stat-value .cookie-currency {
+    font-size: 18px;
+  }
+  .baking-activity .stat-value small {
+    font-size: 11px;
+  }
+  .baking-activity .main-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .baking-activity .game-heading {
+    padding: 21px 20px 0;
+  }
+  .baking-activity .current-label {
+    font-size: 13px;
+  }
+  .baking-activity .current-value {
+    font-size: 37px;
+    margin-top: 7px;
+    min-height: 40px;
+  }
+  .baking-activity .current-value .cookie-currency {
+    font-size: 25px;
+  }
+  .baking-activity .stage-tag {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+  .baking-activity .stage-tag b {
+    font-size: 10px;
+  }
+  .baking-activity .oven-stage {
+    height: 239px;
+    margin-top: 4px;
+  }
+  .baking-activity .oven-machine {
+    transform: translateY(4px) scale(0.92);
+  }
+  .baking-activity .oven-smoke {
+    top: 1px;
+  }
+  .baking-activity .state-message {
+    min-height: 51px;
+    padding: 0 18px 21px;
+  }
+  .baking-activity .state-message h2 {
+    font-size: 21px;
+  }
+  .baking-activity .next-info {
+    margin: 14px 20px 0;
+    padding: 17px 0;
+    gap: 12px;
+  }
+  .baking-activity .next-item {
+    font-size: 12px;
+  }
+  .baking-activity .next-item b {
+    font-size: 18px;
+    gap: 5px;
+  }
+  .baking-activity .next-item .cookie-currency {
+    font-size: 15px;
+  }
+  .baking-activity .actions {
+    padding: 20px 20px 15px;
+    gap: 11px;
+  }
+  .baking-activity .actions .button {
+    min-height: 47px;
+    font-size: 14px;
+    padding: 12px 9px;
+  }
+  .baking-activity .risk-note {
+    font-size: 12px;
+    padding-bottom: 20px;
+  }
+  .baking-activity .card-title {
+    padding-top: 16px;
+  }
+  .baking-activity .level-table th {
+    padding: 11px 16px;
+  }
+  .baking-activity .level-table td {
+    padding: 16px 16px;
+  }
+  .baking-activity .level-table th:first-child {
+    width: 48%;
+  }
+  .baking-activity .level-table th:nth-child(2) {
+    width: 24%;
+  }
+  .baking-activity .level-table th:last-child {
+    width: 28%;
+  }
+  .baking-activity .level-name {
+    gap: 9px;
+  }
+  .baking-activity .level-name svg {
+    width: 30px;
+    height: 30px;
+  }
+}
+@media (max-width: 360px) {
+  .baking-activity .stat-value {
+    font-size: 23px;
+  }
+  .baking-activity .stat-label {
+    font-size: 11px;
+  }
+  .baking-activity .next-item {
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .baking-activity *,
+  .baking-activity *:before,
+  .baking-activity *:after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.baking-activity .button {
+  height: auto;
+}
+.baking-activity .event-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--primary);
+  background: var(--clay-soft);
+}
+.baking-activity .credit-card {
+  margin-bottom: 24px;
+  padding-bottom: 22px;
+}
+.baking-activity .credit-card .card-title {
+  flex-wrap: wrap;
+}
+.baking-activity .credit-card .card-title > span {
+  font-size: 13px;
+}
+.baking-activity .credit-track {
+  height: 6px;
+  margin: 0 22px;
+  border-radius: 6px;
+  background: var(--muted);
+  overflow: hidden;
+}
+.baking-activity .credit-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+  transition: width 0.4s ease;
+}
+.baking-activity .credit-milestones {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 12px;
+  padding: 20px 22px 0;
+}
+.baking-activity .credit-milestones > div {
+  display: grid;
+  gap: 7px;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.baking-activity .credit-milestones .reached {
+  color: var(--primary);
+}
+.baking-activity .milestone-grant {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+}
+.baking-activity .milestone-grant svg {
+  width: 13px;
+  height: 13px;
+}
+.baking-activity .history-mobile {
+  display: none;
+}
+@media (max-width: 980px) {
+  .baking-activity .history-mobile {
+    display: block;
+  }
+  .baking-activity .history-desktop {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .baking-activity .credit-milestones {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px 8px;
+    padding: 18px 14px 0;
+  }
+  .baking-activity .event-notice {
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+}
+main:has(> .baking-page-header) {
+  display: block;
+  overflow-y: auto;
+}
+main:has(> .baking-page-header) > .baking-page-header + div {
+  overflow: visible;
+}
+.baking-page-header {
+  width: 100%;
+  max-width: 1272px;
+  margin-inline: auto;
+}
+.baking-page-header h2 {
+  font-size: clamp(18px, 1.5vw, 22px);
+  line-height: 1.5;
+}
+.baking-date-badge {
+  white-space: nowrap;
+}
+.baking-activity #bank-cookie {
+  display: inline-flex;
+}
+.baking-activity .game-card[data-fx-level='4'] .stage-tag,
+.baking-activity .game-card[data-fx-level='5'] .stage-tag {
+  border-color: color-mix(in srgb, var(--bake-accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--bake-accent) 12%, var(--card));
+}
+.baking-activity .game-card[data-fx-level='5'] .state-message.success h2 {
+  color: var(--warning);
+}
+.baking-activity .oven-motes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.baking-activity .oven-motes span {
+  position: absolute;
+  bottom: 44px;
+  color: var(--bake-accent);
+  opacity: 0;
+  animation: baking-mote-rise 2.1s ease-out infinite;
+}
+.baking-activity .oven-motes svg {
+  width: 11px;
+  height: 11px;
+}
+.baking-activity .fx-bloom {
+  z-index: 59;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--fx-accent) 55%, transparent),
+    color-mix(in srgb, var(--fx-accent) 20%, transparent) 45%,
+    transparent 72%
+  );
+}
+.baking-activity .fx-rays {
+  z-index: 59;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    var(--fx-accent) 0deg 6deg,
+    transparent 6deg 30deg
+  );
+  mask-image: radial-gradient(
+    circle,
+    transparent 12%,
+    #000 30%,
+    transparent 72%
+  );
+}
+.baking-activity .fx-trail {
+  border-radius: 50%;
+  background: var(--fx-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--fx-accent) 45%, transparent);
+}
+@keyframes baking-mote-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.35) rotate(0deg);
+  }
+  25% {
+    opacity: var(--bake-power);
+  }
+  70% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift), calc(-1 * var(--rise)), 0) scale(1.1)
+      rotate(100deg);
+  }
+}
+@media (max-width: 600px) {
+  .baking-page-header > div:last-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .baking-page-header > div:last-child > div {
+    max-width: 100%;
+  }
+  .baking-activity .oven-motes span:nth-child(even) {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .baking-activity .oven-motes {
+    display: none;
+  }
+}

@@ -42,6 +42,13 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -50,6 +57,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { getAdminPlans } from '@/features/subscriptions/api'
+import { formatSubscriptionPrice } from '@/features/subscriptions/lib'
+import type { PlanRecord } from '@/features/subscriptions/types'
 import { getCurrencyDisplay, getCurrencyLabel } from '@/lib/currency'
 import {
   formatQuota,
@@ -87,6 +97,8 @@ export function RedemptionsMutateDrawer({
   const redemptionId = currentRow?.id
   const { triggerRefresh } = useRedemptions()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [plans, setPlans] = useState<PlanRecord[]>([])
+  const [plansLoading, setPlansLoading] = useState(false)
   const [redemptionLoadState, setRedemptionLoadState] = useState<
     'idle' | 'loading' | 'ready' | 'error'
   >('idle')
@@ -98,6 +110,39 @@ export function RedemptionsMutateDrawer({
     resolver: zodResolver(getRedemptionFormSchema(t)),
     defaultValues: REDEMPTION_FORM_DEFAULT_VALUES,
   })
+  const isSubscription = form.watch('type') === 'subscription'
+  const selectedPlanId = form.watch('subscription_plan_id')
+  const planOptions = plans
+    .filter(({ plan }) => plan.enabled || plan.id === selectedPlanId)
+    .map(({ plan }) => {
+      const price =
+        loadedRedemption?.subscription_plan_id === plan.id
+          ? (loadedRedemption.subscription_price ?? plan.price_amount)
+          : plan.price_amount
+      return {
+        value: String(plan.id),
+        label: `${plan.title} · ${formatSubscriptionPrice(price)}`,
+      }
+    })
+
+  useEffect(() => {
+    if (!open || !isSubscription) return
+    let cancelled = false
+    setPlansLoading(true)
+    void getAdminPlans()
+      .then((result) => {
+        if (!cancelled) setPlans(result.success ? result.data || [] : [])
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) handleServerError(error)
+      })
+      .finally(() => {
+        if (!cancelled) setPlansLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, isSubscription])
 
   // Load existing data when updating
   useEffect(() => {
@@ -165,9 +210,11 @@ export function RedemptionsMutateDrawer({
       const basePayload = transformFormDataToPayload(data)
 
       if (isUpdate && currentRow && loadedRedemption) {
-        const quota = form.getFieldState('quota_dollars').isDirty
-          ? basePayload.quota
-          : loadedRedemption.quota
+        const keepQuota =
+          !isSubscription &&
+          !loadedRedemption.subscription_plan_id &&
+          !form.getFieldState('quota_dollars').isDirty
+        const quota = keepQuota ? loadedRedemption.quota : basePayload.quota
         const result = await updateRedemption({
           ...basePayload,
           quota,
@@ -203,8 +250,13 @@ export function RedemptionsMutateDrawer({
     if (!isUpdate) {
       const name = form.getValues('name')
       if (!name?.trim()) {
-        const quota = parseQuotaFromDollars(form.getValues('quota_dollars'))
-        form.setValue('name', formatQuota(quota), { shouldValidate: true })
+        const defaultName = isSubscription
+          ? plans.find(({ plan }) => plan.id === selectedPlanId)?.plan.title ||
+            t('Subscription Plan')
+          : formatQuota(parseQuotaFromDollars(form.getValues('quota_dollars')))
+        form.setValue('name', [...defaultName].slice(0, 20).join(''), {
+          shouldValidate: true,
+        })
       }
     }
 
@@ -271,6 +323,41 @@ export function RedemptionsMutateDrawer({
               <SideDrawerSection>
                 <FormField
                   control={form.control}
+                  name='type'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('Redemption type')}</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        items={[
+                          { value: 'quota', label: t('Wallet balance') },
+                          {
+                            value: 'subscription',
+                            label: t('Subscription Plan'),
+                          },
+                        ]}
+                      >
+                        <FormControl>
+                          <SelectTrigger className='w-full'>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value='quota'>
+                            {t('Wallet balance')}
+                          </SelectItem>
+                          <SelectItem value='subscription'>
+                            {t('Subscription Plan')}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name='name'
                   render={({ field }) => (
                     <FormItem>
@@ -286,36 +373,81 @@ export function RedemptionsMutateDrawer({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name='quota_dollars'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{quotaLabel}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type='number'
-                          step={quotaStep}
-                          placeholder={quotaPlaceholder}
-                          onChange={(e) =>
-                            field.onChange(
-                              Number.parseFloat(e.target.value) || 0
-                            )
+                {isSubscription ? (
+                  <FormField
+                    control={form.control}
+                    name='subscription_plan_id'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('Subscription Plan')}</FormLabel>
+                        <Select
+                          value={field.value > 0 ? String(field.value) : null}
+                          onValueChange={(value) =>
+                            field.onChange(Number(value) || 0)
                           }
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {tokensOnly
-                          ? t('Enter the quota amount in tokens')
-                          : t('Enter the quota amount in {{currency}}', {
-                              currency: currencyLabel,
-                            })}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                          items={planOptions}
+                          disabled={plansLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger className='w-full'>
+                              <SelectValue
+                                placeholder={
+                                  plansLoading
+                                    ? t('Loading...')
+                                    : t('Select a subscription plan')
+                                }
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {planOptions.map((plan) => (
+                              <SelectItem key={plan.value} value={plan.value}>
+                                {plan.label}
+                              </SelectItem>
+                            ))}
+                            {!plansLoading && planOptions.length === 0 && (
+                              <div className='text-muted-foreground p-3 text-sm'>
+                                {t('No subscription plans available')}
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name='quota_dollars'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{quotaLabel}</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type='number'
+                            step={quotaStep}
+                            placeholder={quotaPlaceholder}
+                            onChange={(e) =>
+                              field.onChange(
+                                Number.parseFloat(e.target.value) || 0
+                              )
+                            }
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          {tokensOnly
+                            ? t('Enter the quota amount in tokens')
+                            : t('Enter the quota amount in {{currency}}', {
+                                currency: currencyLabel,
+                              })}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}

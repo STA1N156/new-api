@@ -26,15 +26,18 @@ type StatisticsHour struct {
 	SubscriptionTopupCount    int64   `json:"subscription_topup_count"`
 	RedemptionTopup           float64 `json:"redemption_topup"`
 	TopupCount                int64   `json:"topup_count"`
+	Registrations             int64   `json:"registrations"`
+	InvitedRegistrations      int64   `json:"invited_registrations"`
 }
 
 type DailyStatistics struct {
-	Date     string           `json:"date"`
-	Today    string           `json:"today"`
-	Days     int              `json:"days"`
-	AsOf     int64            `json:"as_of"`
-	Hours    []StatisticsHour `json:"hours"`
-	Previous StatisticsHour   `json:"previous"`
+	Date          string           `json:"date"`
+	Today         string           `json:"today"`
+	Days          int              `json:"days"`
+	AsOf          int64            `json:"as_of"`
+	Hours         []StatisticsHour `json:"hours"`
+	Previous      StatisticsHour   `json:"previous"`
+	PreviousHours []StatisticsHour `json:"previous_hours"`
 }
 
 var ErrStatisticsDate = errors.New("请选择近30天内的日期，或近7天、近30天汇总")
@@ -74,6 +77,8 @@ func (s *StatisticsHour) add(row StatisticsHour) {
 	s.SubscriptionTopupCount += row.SubscriptionTopupCount
 	s.RedemptionTopup += row.RedemptionTopup
 	s.TopupCount += row.TopupCount
+	s.Registrations += row.Registrations
+	s.InvitedRegistrations += row.InvitedRegistrations
 }
 
 func newStatisticsRows(start, end, step int64) []StatisticsHour {
@@ -88,9 +93,14 @@ func getStatisticsBuckets(start, end, step int64, requests []StatisticsHour) ([]
 	rows := append([]StatisticsHour(nil), requests...)
 	paymentBucket := fmt.Sprintf("complete_time - ((complete_time + 28800) %% %d)", step)
 	redemptionBucket := fmt.Sprintf("redeemed_time - ((redeemed_time + 28800) %% %d)", step)
+	registrationBucket := fmt.Sprintf("created_at - ((created_at + 28800) %% %d)", step)
 
 	subscriptionTrades := DB.Model(&SubscriptionOrder{}).Select("1").Where("subscription_orders.trade_no = top_ups.trade_no")
 	queries := []*gorm.DB{
+		DB.Unscoped().Model(&User{}).
+			Select(registrationBucket+" AS timestamp, COUNT(*) AS registrations, SUM(CASE WHEN inviter_id > 0 THEN 1 ELSE 0 END) AS invited_registrations").
+			Where("created_at >= ? AND created_at < ?", start, end).
+			Group(registrationBucket),
 		DB.Model(&TopUp{}).
 			Select(paymentBucket+" AS timestamp, SUM(money) AS online_topup, COUNT(*) AS topup_count, COUNT(*) AS online_topup_count").
 			Where("status = ? AND complete_time >= ? AND complete_time < ?", common.TopUpStatusSuccess, start, end).
@@ -116,14 +126,16 @@ func getStatisticsBuckets(start, end, step int64, requests []StatisticsHour) ([]
 
 	// Price each code's face value separately, not the combined redeemed quota.
 	var redemptions []struct {
-		Timestamp int64
-		Quota     int64
-		Count     int64
+		Timestamp          int64
+		Quota              int64
+		Count              int64
+		SubscriptionPlanId int
+		SubscriptionPrice  float64
 	}
 	err := DB.Unscoped().Model(&Redemption{}).
-		Select(redemptionBucket+" AS timestamp, quota, COUNT(*) AS count").
+		Select(redemptionBucket+" AS timestamp, quota, subscription_plan_id, subscription_price, COUNT(*) AS count").
 		Where("status = ? AND redeemed_time >= ? AND redeemed_time < ?", common.RedemptionCodeStatusUsed, start, end).
-		Group(redemptionBucket + ", quota").Scan(&redemptions).Error
+		Group(redemptionBucket + ", quota, subscription_plan_id, subscription_price").Scan(&redemptions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +149,14 @@ func getStatisticsBuckets(start, end, step int64, requests []StatisticsHour) ([]
 	price := decimal.NewFromFloat(operation_setting.Price)
 	settings := operation_setting.GetPaymentSetting()
 	for _, code := range redemptions {
+		if code.SubscriptionPlanId > 0 {
+			rows[(code.Timestamp-start)/step].add(StatisticsHour{
+				RedeemedCount:   code.Count,
+				RedemptionTopup: decimal.NewFromFloat(code.SubscriptionPrice).Round(2).Mul(decimal.NewFromInt(code.Count)).InexactFloat64(),
+				TopupCount:      code.Count,
+			})
+			continue
+		}
 		quota := decimal.NewFromInt(code.Quota)
 		money := quota.Div(quotaPerUnit).Mul(price)
 		for _, amount := range settings.AmountOptions {

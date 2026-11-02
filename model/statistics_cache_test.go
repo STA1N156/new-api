@@ -24,12 +24,14 @@ func TestDailyStatisticsResultCache(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, DB.Create(&Log{UserId: 9138, RequestId: "cached-new", Type: LogTypeConsume, CreatedAt: now.Unix() + 1, Quota: 7}).Error)
 	first.Hours[0].Requests = 999
-	cached, err := GetDailyStatistics("", now.Add(29*time.Second), 1)
+	first.PreviousHours[0].Requests = 999
+	cached, err := GetDailyStatistics("", now.Add(19*time.Second), 1)
 	require.NoError(t, err)
 	require.Equal(t, now.Unix(), cached.AsOf)
 	require.Zero(t, cached.Hours[0].Requests)
+	require.Zero(t, cached.PreviousHours[0].Requests)
 	require.Zero(t, cached.Hours[10].Requests)
-	refreshed, err := GetDailyStatistics("", now.Add(30*time.Second), 1)
+	refreshed, err := GetDailyStatistics("", now.Add(20*time.Second), 1)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, refreshed.Hours[10].Requests)
 	require.EqualValues(t, 7, refreshed.Hours[10].ConsumedQuota)
@@ -72,6 +74,12 @@ func TestDailyStatisticsIncrementalPreviousPeriod(t *testing.T) {
 			require.NoError(t, err)
 			require.EqualValues(t, 1, first.Previous.Requests)
 			require.Zero(t, first.Previous.ConsumedQuota)
+			var fullPrevious StatisticsHour
+			for _, row := range first.PreviousHours {
+				fullPrevious.add(row)
+			}
+			require.EqualValues(t, 1, fullPrevious.Requests)
+			require.EqualValues(t, 20, fullPrevious.ConsumedQuota)
 			refreshed, err := GetDailyStatistics("", now.Add(31*time.Second), days)
 			require.NoError(t, err)
 			require.EqualValues(t, 1, refreshed.Previous.Requests)

@@ -19,20 +19,38 @@ For commercial licensing, please contact support@quantumnous.com
 import { useTranslation } from 'react-i18next'
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getCurrencyDisplay } from '@/lib/currency'
+import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { useUsageLogsContext } from './usage-logs-provider'
 
 export function LogPriceToggle() {
   const { t } = useTranslation()
   const { showRechargePrice, setShowRechargePrice } = useUsageLogsContext()
+  useSystemConfigStore((state) => state.config.currency)
+  const { meta } = getCurrencyDisplay()
   return (
     <Tabs
       value={showRechargePrice ? 'recharge' : 'standard'}
       onValueChange={(value) => setShowRechargePrice(value === 'recharge')}
     >
       <TabsList aria-label={t('Price display mode')}>
-        <TabsTrigger value='standard'>{t('Standard')}</TabsTrigger>
-        <TabsTrigger value='recharge'>{t('Recharge')}</TabsTrigger>
+        <TabsTrigger
+          value='standard'
+          title={t('Standard')}
+          aria-label={t('Standard')}
+          className='min-w-9'
+        >
+          {meta.kind === 'tokens' ? t('Tokens') : meta.symbol}
+        </TabsTrigger>
+        <TabsTrigger
+          value='recharge'
+          title={t('Recharge')}
+          aria-label={t('Recharge')}
+          className='min-w-9'
+        >
+          ¥
+        </TabsTrigger>
       </TabsList>
     </Tabs>
   )

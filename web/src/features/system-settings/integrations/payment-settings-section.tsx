@@ -94,14 +94,37 @@ function isHttpOriginUrl(value: string) {
   }
 }
 
+const epayAddressSchema = z.string().refine((value) => {
+  const trimmed = value.trim()
+  if (!trimmed) return true
+  return /^https?:\/\//.test(trimmed)
+}, 'Provide a valid callback URL starting with http:// or https://')
+
+const EPAY_GATEWAYS = [
+  {
+    title: 'Alipay',
+    address: 'EpayAlipayAddress',
+    merchant: 'EpayAlipayId',
+    secret: 'EpayAlipayKey',
+  },
+  {
+    title: 'WeChat Pay',
+    address: 'EpayWxpayAddress',
+    merchant: 'EpayWxpayId',
+    secret: 'EpayWxpayKey',
+  },
+] as const
+
 const paymentSchema = z.object({
-  PayAddress: z.string().refine((value) => {
-    const trimmed = value.trim()
-    if (!trimmed) return true
-    return /^https?:\/\//.test(trimmed)
-  }, 'Provide a valid callback URL starting with http:// or https://'),
+  PayAddress: epayAddressSchema,
   EpayId: z.string(),
   EpayKey: z.string(),
+  EpayAlipayAddress: epayAddressSchema,
+  EpayAlipayId: z.string(),
+  EpayAlipayKey: z.string(),
+  EpayWxpayAddress: epayAddressSchema,
+  EpayWxpayId: z.string(),
+  EpayWxpayKey: z.string(),
   Price: z.coerce.number().min(0),
   MinTopUp: z.coerce.number().min(0),
   CustomCallbackAddress: z
@@ -421,6 +444,12 @@ export function PaymentSettingsSection({
       PayAddress: removeTrailingSlash(values.PayAddress),
       EpayId: values.EpayId.trim(),
       EpayKey: values.EpayKey.trim(),
+      EpayAlipayAddress: removeTrailingSlash(values.EpayAlipayAddress.trim()),
+      EpayAlipayId: values.EpayAlipayId.trim(),
+      EpayAlipayKey: values.EpayAlipayKey.trim(),
+      EpayWxpayAddress: removeTrailingSlash(values.EpayWxpayAddress.trim()),
+      EpayWxpayId: values.EpayWxpayId.trim(),
+      EpayWxpayKey: values.EpayWxpayKey.trim(),
       Price: values.Price,
       MinTopUp: values.MinTopUp,
       CustomCallbackAddress: removeTrailingSlash(values.CustomCallbackAddress),
@@ -463,6 +492,16 @@ export function PaymentSettingsSection({
       PayAddress: removeTrailingSlash(initialRef.current.PayAddress),
       EpayId: initialRef.current.EpayId.trim(),
       EpayKey: initialRef.current.EpayKey.trim(),
+      EpayAlipayAddress: removeTrailingSlash(
+        initialRef.current.EpayAlipayAddress.trim()
+      ),
+      EpayAlipayId: initialRef.current.EpayAlipayId.trim(),
+      EpayAlipayKey: initialRef.current.EpayAlipayKey.trim(),
+      EpayWxpayAddress: removeTrailingSlash(
+        initialRef.current.EpayWxpayAddress.trim()
+      ),
+      EpayWxpayId: initialRef.current.EpayWxpayId.trim(),
+      EpayWxpayKey: initialRef.current.EpayWxpayKey.trim(),
       Price: initialRef.current.Price,
       MinTopUp: initialRef.current.MinTopUp,
       CustomCallbackAddress: removeTrailingSlash(
@@ -518,6 +557,18 @@ export function PaymentSettingsSection({
 
     if (sanitized.EpayKey && sanitized.EpayKey !== initial.EpayKey) {
       updates.push({ key: 'EpayKey', value: sanitized.EpayKey })
+    }
+
+    for (const gateway of EPAY_GATEWAYS) {
+      for (const key of [gateway.address, gateway.merchant]) {
+        if (sanitized[key] !== initial[key]) {
+          updates.push({ key, value: sanitized[key] })
+        }
+      }
+      const key = gateway.secret
+      if (sanitized[key] && sanitized[key] !== initial[key]) {
+        updates.push({ key, value: sanitized[key] })
+      }
     }
 
     if (sanitized.Price !== initial.Price) {
@@ -1139,7 +1190,9 @@ export function PaymentSettingsSection({
                 <div>
                   <h3 className='text-lg font-medium'>{t('Epay Gateway')}</h3>
                   <p className='text-muted-foreground text-sm'>
-                    {t('Configuration for Epay payment integration')}
+                    {t(
+                      'Leave the dedicated endpoint blank to use the default gateway. Blank secrets keep their saved values.'
+                    )}
                   </p>
                 </div>
 
@@ -1153,6 +1206,63 @@ export function PaymentSettingsSection({
                   </AlertDescription>
                 </Alert>
 
+                <div className='grid gap-4 lg:grid-cols-2'>
+                  {EPAY_GATEWAYS.map((gateway) => (
+                    <section
+                      key={gateway.address}
+                      className='bg-card space-y-4 rounded-xl border p-4'
+                    >
+                      <h4 className='font-medium'>{t(gateway.title)}</h4>
+                      {[
+                        {
+                          name: gateway.address,
+                          label: 'Epay endpoint',
+                          type: 'url',
+                          placeholder: 'https://pay.example.com',
+                        },
+                        {
+                          name: gateway.merchant,
+                          label: 'Epay merchant ID',
+                          type: 'text',
+                          placeholder: '10001',
+                        },
+                        {
+                          name: gateway.secret,
+                          label: 'Epay secret key',
+                          type: 'password',
+                          placeholder: 'Enter new key to update',
+                        },
+                      ].map((input) => (
+                        <FormField
+                          key={input.name}
+                          control={form.control}
+                          name={input.name}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t(input.label)}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type={input.type}
+                                  placeholder={t(input.placeholder)}
+                                  autoComplete={
+                                    input.type === 'password'
+                                      ? 'new-password'
+                                      : 'off'
+                                  }
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </section>
+                  ))}
+                </div>
+                <h4 className='pt-2 font-medium'>
+                  {t('Default Epay gateway')}
+                </h4>
                 <div className='grid gap-6 md:grid-cols-2'>
                   <FormField
                     control={form.control}

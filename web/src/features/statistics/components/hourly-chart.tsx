@@ -19,7 +19,14 @@ For commercial licensing, please contact support@quantumnous.com
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import {
+  Area,
+  ComposedChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 import {
   ChartContainer,
@@ -31,6 +38,9 @@ import { cn } from '@/lib/utils'
 interface HourlyChartProps {
   title: string
   values: number[]
+  previousValues: number[]
+  currentLabel: string
+  previousLabel: string
   color: string
   detail: string
   format: (value: number) => string
@@ -52,7 +62,16 @@ export function HourlyChart(props: HourlyChartProps) {
   const labels = props.timestamps.map((timestamp) =>
     new Date((timestamp + 8 * 3600) * 1000).toISOString().slice(0, 10)
   )
-  const data = props.values.map((value, index) => {
+  const data = Array.from({
+    length: Math.max(props.values.length, props.previousValues.length),
+  }).flatMap<{
+    index: number
+    value: number | null
+    previous: number | null
+    label: string
+  }>((_, index) => {
+    const value = props.values[index] ?? null
+    const previous = props.previousValues[index] ?? null
     const timestamp = props.timestamps[index]
     const currentHour =
       !daily && props.asOf >= timestamp && props.asOf < timestamp + 3600
@@ -66,11 +85,19 @@ export function HourlyChart(props: HourlyChartProps) {
       }
       label = `${String(index).padStart(2, '0')}:00 – ${endLabel}`
     }
-    return {
-      index: currentHour ? (props.asOf - props.timestamps[0]) / 3600 : index,
-      value,
-      label,
+    const currentIndex = (props.asOf - props.timestamps[0]) / 3600
+    if (currentHour && currentIndex > index) {
+      return [
+        {
+          index,
+          value: null,
+          previous,
+          label: `${String(index).padStart(2, '0')}:00 – ${String(index + 1).padStart(2, '0')}:00`,
+        },
+        { index: currentIndex, value, previous: null, label },
+      ]
     }
+    return [{ index, value, previous, label }]
   })
   const ticks = daily
     ? props.values
@@ -123,9 +150,27 @@ export function HourlyChart(props: HourlyChartProps) {
           </span>
         )}
       </div>
-      <p className='text-muted-foreground mt-1 min-h-8 text-xs leading-relaxed'>
-        {props.detail}
-      </p>
+      <div className='text-muted-foreground mt-1 flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs leading-relaxed'>
+        <p>{props.detail}</p>
+        <div className='flex items-center gap-3'>
+          <span className='inline-flex items-center gap-1.5'>
+            <span
+              className='w-4 border-t-2'
+              style={{ borderColor: props.color }}
+              aria-hidden
+            />
+            {props.currentLabel}
+          </span>
+          <span className='inline-flex items-center gap-1.5'>
+            <span
+              className='w-4 border-t-2 border-dashed'
+              style={{ borderColor: props.color }}
+              aria-hidden
+            />
+            {props.previousLabel}
+          </span>
+        </div>
+      </div>
       <div
         className='mt-4 -ml-3 overflow-x-auto overscroll-x-contain pb-2'
         role='region'
@@ -134,9 +179,12 @@ export function HourlyChart(props: HourlyChartProps) {
       >
         <ChartContainer
           className='aspect-auto h-52 w-full min-w-[760px] sm:h-60'
-          config={{ value: { label: props.title, color: props.color } }}
+          config={{
+            value: { label: props.currentLabel, color: props.color },
+            previous: { label: props.previousLabel, color: props.color },
+          }}
         >
-          <AreaChart
+          <ComposedChart
             data={data}
             margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
           >
@@ -170,13 +218,22 @@ export function HourlyChart(props: HourlyChartProps) {
                   labelFormatter={(_, payload) =>
                     payload[0]?.payload.label ?? ''
                   }
-                  formatter={(value) => props.format(Number(value))}
+                  formatter={(value, name) => (
+                    <div className='flex flex-1 items-center justify-between gap-4'>
+                      <span className='text-muted-foreground'>{name}</span>
+                      <span className='font-mono font-medium'>
+                        {props.format(Number(value))}
+                      </span>
+                    </div>
+                  )}
                 />
               }
             />
             <Area
               type='monotone'
               dataKey='value'
+              name={props.currentLabel}
+              connectNulls
               stroke='var(--color-value)'
               fill='var(--color-value)'
               fillOpacity={0.08}
@@ -185,7 +242,19 @@ export function HourlyChart(props: HourlyChartProps) {
               activeDot={{ r: 4 }}
               isAnimationActive={false}
             />
-          </AreaChart>
+            <Line
+              type='monotone'
+              dataKey='previous'
+              name={props.previousLabel}
+              stroke='var(--color-previous)'
+              strokeWidth={2}
+              strokeDasharray='5 5'
+              connectNulls
+              dot={false}
+              activeDot={{ r: 3 }}
+              isAnimationActive={false}
+            />
+          </ComposedChart>
         </ChartContainer>
       </div>
     </section>

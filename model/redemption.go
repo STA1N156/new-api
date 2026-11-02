@@ -3,29 +3,34 @@ package model
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
+	"github.com/shopspring/decimal"
 
 	"gorm.io/gorm"
 )
 
 type Redemption struct {
-	Id              int            `json:"id"`
-	UserId          int            `json:"user_id"`
-	Key             string         `json:"key" gorm:"type:char(32);uniqueIndex"`
-	Status          int            `json:"status" gorm:"default:1"`
-	Name            string         `json:"name" gorm:"index"`
-	Quota           int            `json:"quota" gorm:"default:100"`
-	CreatedTime     int64          `json:"created_time" gorm:"bigint"`
-	RedeemedTime    int64          `json:"redeemed_time" gorm:"bigint"`
-	Count           int            `json:"count" gorm:"-:all"` // only for api request
-	UsedUserId      int            `json:"used_user_id"`
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
-	ExpiredTime     int64          `json:"expired_time" gorm:"bigint"` // 过期时间，0 表示不过期
-	RewardInviterId int            `json:"reward_inviter_id" gorm:"default:0"`
-	RewardQuota     int            `json:"reward_quota" gorm:"default:0"`
+	Id                    int            `json:"id"`
+	UserId                int            `json:"user_id"`
+	Key                   string         `json:"key" gorm:"type:char(32);uniqueIndex"`
+	Status                int            `json:"status" gorm:"default:1"`
+	Name                  string         `json:"name" gorm:"index"`
+	Quota                 int            `json:"quota"`
+	SubscriptionPlanId    int            `json:"subscription_plan_id" gorm:"default:0"`
+	SubscriptionPlanTitle string         `json:"subscription_plan_title" gorm:"type:varchar(128);default:''"`
+	SubscriptionPrice     float64        `json:"subscription_price" gorm:"default:0"`
+	CreatedTime           int64          `json:"created_time" gorm:"bigint"`
+	RedeemedTime          int64          `json:"redeemed_time" gorm:"bigint"`
+	Count                 int            `json:"count" gorm:"-:all"` // only for api request
+	UsedUserId            int            `json:"used_user_id"`
+	DeletedAt             gorm.DeletedAt `gorm:"index"`
+	ExpiredTime           int64          `json:"expired_time" gorm:"bigint"` // 过期时间，0 表示不过期
+	RewardInviterId       int            `json:"reward_inviter_id" gorm:"default:0"`
+	RewardQuota           int            `json:"reward_quota" gorm:"default:0"`
 }
 
 func GetAllRedemptions(startIdx int, num int) (redemptions []*Redemption, total int64, err error) {
@@ -136,21 +141,55 @@ func GetRedemptionById(id int) (*Redemption, error) {
 	return &redemption, err
 }
 
-func Redeem(key string, userId int) (quota int, err error) {
+type RedemptionResult struct {
+	Quota                 int    `json:"quota"`
+	SubscriptionId        int    `json:"subscription_id,omitempty"`
+	SubscriptionPlanTitle string `json:"subscription_plan_title,omitempty"`
+}
+
+// Snapshot the plan's price when issuing a code; later price changes must not
+// alter its contribution to the event or invitation rewards.
+func (redemption *Redemption) SetSubscriptionPlan(planId int) error {
+	if planId < 0 {
+		return errors.New("请选择有效的订阅套餐")
+	}
+	if planId == 0 {
+		redemption.SubscriptionPlanId = 0
+		redemption.SubscriptionPlanTitle = ""
+		redemption.SubscriptionPrice = 0
+		return nil
+	}
+	plan, err := GetSubscriptionPlanById(planId)
+	if err != nil || !plan.Enabled {
+		return errors.New("订阅套餐不存在或未启用")
+	}
+	if plan.PriceAmount < 0 || math.IsNaN(plan.PriceAmount) || math.IsInf(plan.PriceAmount, 0) {
+		return errors.New("订阅套餐价格无效")
+	}
+	redemption.SubscriptionPlanId = plan.Id
+	redemption.SubscriptionPlanTitle = plan.Title
+	redemption.SubscriptionPrice = plan.PriceAmount
+	redemption.Quota = 0
+	return nil
+}
+
+func Redeem(key string, userId int) (*RedemptionResult, error) {
 	if key == "" {
-		return 0, errors.New("未提供兑换码")
+		return nil, errors.New("未提供兑换码")
 	}
 	if userId == 0 {
-		return 0, errors.New("无效的 user id")
+		return nil, errors.New("无效的 user id")
 	}
 	redemption := &Redemption{}
+	redeemed := &RedemptionResult{}
+	groupChanged := false
 
 	keyCol := "`key`"
 	if common.UsingMainDatabase(common.DatabaseTypePostgreSQL) {
 		keyCol = `"key"`
 	}
 	common.RandomSleep()
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err := DB.Transaction(func(tx *gorm.DB) error {
 		err := lockForUpdate(tx).Where(keyCol+" = ?", key).First(redemption).Error
 		if err != nil {
 			return errors.New("无效的兑换码")
@@ -177,21 +216,62 @@ func Redeem(key string, userId int) (quota int, err error) {
 		if result.RowsAffected == 0 {
 			return errors.New("该兑换码已被使用")
 		}
+		if redemption.SubscriptionPlanId > 0 {
+			// Issued codes remain valid when a plan is delisted, as with paid orders.
+			plan, err := getSubscriptionPlanByIdTx(tx, redemption.SubscriptionPlanId)
+			if err != nil {
+				return err
+			}
+			// Serialize this user's purchases so separate codes cannot bypass the plan limit.
+			var user User
+			if err := lockForUpdate(tx).Select("id").First(&user, userId).Error; err != nil {
+				return err
+			}
+			subscription, err := CreateUserSubscriptionFromPlanTx(tx, userId, plan, "redemption")
+			if err != nil {
+				return err
+			}
+			redeemed.SubscriptionId = subscription.Id
+			redeemed.SubscriptionPlanTitle = plan.Title
+			groupChanged = subscription.PrevUserGroup != ""
+			quota, err := subscriptionInvitationQuota(&SubscriptionOrder{Money: redemption.SubscriptionPrice})
+			if err != nil {
+				return err
+			}
+			if err := creditInvitationReward(tx, redemption, userId, quota); err != nil {
+				return err
+			}
+			return creditBakingCookies(tx, userId, fmt.Sprintf("redemption:%d", redemption.Id), decimal.NewFromFloat(redemption.SubscriptionPrice).Mul(decimal.NewFromInt(10)), bakingNow())
+		}
 		if err := creditUserQuota(tx, userId, redemption.Quota, nil); err != nil {
 			return err
 		}
-		return creditInvitationReward(tx, redemption, userId, redemption.Quota)
+		if err := creditInvitationReward(tx, redemption, userId, redemption.Quota); err != nil {
+			return err
+		}
+		redeemed.Quota = redemption.Quota
+		return creditBakingQuota(tx, userId, fmt.Sprintf("redemption:%d", redemption.Id), redemption.Quota)
 	})
 	if err != nil {
 		common.SysError("redemption failed: " + err.Error())
-		return 0, ErrRedeemFailed
+		return nil, ErrRedeemFailed
+	}
+	if redeemed.SubscriptionId > 0 {
+		if groupChanged {
+			refreshSubscriptionUserGroupCache(userId, "subscription redemption")
+		}
+		RecordLog(userId, LogTypeTopup, fmt.Sprintf("通过兑换码开通订阅，套餐: %s，兑换码ID %d", redeemed.SubscriptionPlanTitle, redemption.Id))
+		return redeemed, nil
 	}
 	syncCreditUserQuotaCache(userId, redemption.Quota, "redemption")
 	RecordLog(userId, LogTypeTopup, fmt.Sprintf("通过兑换码充值 %s，兑换码ID %d", logger.LogQuota(redemption.Quota), redemption.Id))
-	return redemption.Quota, nil
+	return redeemed, nil
 }
 
 func (redemption *Redemption) Insert() error {
+	if redemption.SubscriptionPlanId == 0 && redemption.Quota == 0 {
+		redemption.Quota = 100
+	}
 	var err error
 	err = DB.Create(redemption).Error
 	return err
@@ -204,9 +284,15 @@ func (redemption *Redemption) SelectUpdate() error {
 
 // Update Make sure your token's fields is completed, because this will update non-zero values
 func (redemption *Redemption) Update() error {
-	var err error
-	err = DB.Model(redemption).Select("name", "status", "quota", "redeemed_time", "expired_time").Updates(redemption).Error
-	return err
+	result := DB.Model(redemption).Where("status <> ?", common.RedemptionCodeStatusUsed).
+		Select("name", "status", "quota", "expired_time", "subscription_plan_id", "subscription_plan_title", "subscription_price").Updates(redemption)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("兑换码已使用或已发生变更，请刷新后重试")
+	}
+	return nil
 }
 
 func (redemption *Redemption) Delete() error {

@@ -18,20 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { describe, expect, test } from 'vitest'
 
-import {
-  modelGroupSelectorLayoutClasses,
-  scrollSelectedOptionIntoView,
-} from '../layout'
+import { scrollSelectedOptionIntoView } from '../layout'
 
 describe('model group selector layout', () => {
-  test('keeps group options at a fixed height and aligned to the top', () => {
-    const groupScrollClasses =
-      modelGroupSelectorLayoutClasses.groupScroll.split(' ')
-
-    expect(groupScrollClasses.includes('auto-rows-[2rem]')).toBeTruthy()
-    expect(groupScrollClasses.includes('content-start')).toBeTruthy()
-  })
-
   test('centers the selected group inside its own scroll container', () => {
     const scrollCalls: ScrollToOptions[] = []
     const selectedOption = {

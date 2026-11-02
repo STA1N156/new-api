@@ -16,10 +16,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
+import { BAKING_QUERY_KEY } from '@/features/baking/api'
+import { BakingWalletBanner } from '@/features/baking/components/wallet-banner'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { getSelf } from '@/lib/api'
@@ -61,6 +64,8 @@ interface WalletProps {
 
 export function Wallet(props: WalletProps) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [redemptionVersion, setRedemptionVersion] = useState(0)
   const [user, setUser] = useState<UserWalletData | null>(null)
   const [userLoading, setUserLoading] = useState(true)
   const [topupAmount, setTopupAmount] = useState(0)
@@ -218,6 +223,8 @@ export function Wallet(props: WalletProps) {
     const success = await redeemCode(redemptionCode)
     if (success) {
       setRedemptionCode('')
+      setRedemptionVersion((version) => version + 1)
+      void queryClient.invalidateQueries({ queryKey: BAKING_QUERY_KEY })
       await fetchUser()
     }
   }
@@ -289,6 +296,7 @@ export function Wallet(props: WalletProps) {
         <SectionPageLayout.Content>
           <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
             <WalletStatsCard user={user} loading={userLoading} />
+            <BakingWalletBanner />
 
             <div
               className={
@@ -332,6 +340,7 @@ export function Wallet(props: WalletProps) {
               </div>
 
               <SubscriptionPlansCard
+                key={redemptionVersion}
                 topupInfo={topupInfo}
                 onAvailabilityChange={handleSubscriptionAvailabilityChange}
                 userQuota={user?.quota}

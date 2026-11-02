@@ -285,3 +285,6 @@ custom_oauth.provider_id_field_invalid: "無法從供應者響應中提取使用
 
 user.qq_email_numeric_required: "已開啟信箱別名限制，QQ 信箱僅支援純數字帳號，例如 12345678@qq.com。"
 user.email_alias_restricted: "已開啟信箱別名限制，信箱帳號中不能包含 + 或 .。"
+user.email_domain_restricted: "此信箱暫不支援註冊。僅支援以下信箱註冊：{{.Domains}}。"
+user.qq_email_numeric_type: "純數字 QQ 信箱（例如 12345678@qq.com）"
+user.email_registration_unavailable: "尚未設定可註冊的信箱類型，請聯絡管理員。"

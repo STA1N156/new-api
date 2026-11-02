@@ -169,6 +169,7 @@ export type AuthSettings = {
 export type ContentSettings = {
   'console_setting.api_info': string
   'console_setting.announcements': string
+  'console_setting.scrolling_announcement': string
   'console_setting.faq': string
   'console_setting.uptime_kuma_groups': string
   'console_setting.api_info_enabled': boolean
@@ -290,6 +291,12 @@ export type BillingSettings = {
   PayAddress: string
   EpayId: string
   EpayKey: string
+  EpayAlipayAddress: string
+  EpayAlipayId: string
+  EpayAlipayKey: string
+  EpayWxpayAddress: string
+  EpayWxpayId: string
+  EpayWxpayKey: string
   Price: number
   MinTopUp: number
   CustomCallbackAddress: string

@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"net/url"
 	"testing"
 
+	"github.com/Calcium-Ion/go-epay/epay"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/stretchr/testify/require"
@@ -166,4 +168,82 @@ func TestEpayWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 
 	operation_setting.PayMethods = nil
 	require.False(t, isEpayWebhookEnabled())
+}
+
+func configureSplitEpayForTest(t *testing.T) {
+	t.Helper()
+	confirmPaymentComplianceForTest(t)
+	for _, config := range []struct {
+		target *string
+		value  string
+	}{
+		{&operation_setting.PayAddress, "https://default.example.test"},
+		{&operation_setting.EpayId, "1001"},
+		{&operation_setting.EpayKey, "default-local-test"},
+		{&operation_setting.EpayAlipayAddress, "https://alipay.example.test"},
+		{&operation_setting.EpayAlipayId, "2001"},
+		{&operation_setting.EpayAlipayKey, "alipay-local-test"},
+		{&operation_setting.EpayWxpayAddress, "https://wechat.example.test"},
+		{&operation_setting.EpayWxpayId, "3001"},
+		{&operation_setting.EpayWxpayKey, "wechat-local-test"},
+	} {
+		previous := *config.target
+		t.Cleanup(func() { *config.target = previous })
+		*config.target = config.value
+	}
+}
+
+func TestEpayIndependentGatewaysGenerateSeparatePayments(t *testing.T) {
+	configureSplitEpayForTest(t)
+	callback, err := url.Parse("https://api.example.test/api/user/epay/notify")
+	require.NoError(t, err)
+	for _, tc := range []struct{ method, address, merchant string }{
+		{"alipay", "https://alipay.example.test/submit.php", "2001"},
+		{"wxpay", "https://wechat.example.test/submit.php", "3001"},
+		{"custom1", "https://default.example.test/submit.php", "1001"},
+	} {
+		t.Run(tc.method, func(t *testing.T) {
+			client := GetEpayClient(operation_setting.SelectEpayGateway(tc.method))
+			require.NotNil(t, client)
+			address, params, err := client.Purchase(&epay.PurchaseArgs{Type: tc.method, ServiceTradeNo: "local-order", Money: "10.00", NotifyUrl: callback, ReturnUrl: callback})
+			require.NoError(t, err)
+			require.Equal(t, tc.address, address)
+			require.Equal(t, tc.merchant, params["pid"])
+		})
+	}
+	operation_setting.PayAddress = ""
+	require.True(t, isEpayMethodConfigured("alipay"), "independent platforms do not need a default")
+	require.True(t, isEpayMethodConfigured("wxpay"))
+	operation_setting.EpayAlipayKey = ""
+	require.False(t, isEpayMethodConfigured("alipay"), "partial credentials must not fall back to another platform")
+	require.True(t, isEpayMethodConfigured("wxpay"))
+}
+
+func TestEpayCallbacksUseTheOrdersGateway(t *testing.T) {
+	configureSplitEpayForTest(t)
+	for _, tc := range []struct {
+		name, gateway, signer, method, merchant, amount string
+		valid                                           bool
+	}{
+		{"alipay", "alipay", "alipay", "alipay", "2001", "10.00", true},
+		{"wechat", "wxpay", "wxpay", "wxpay", "3001", "10.00", true},
+		{"existing_default_order", "", "", "alipay", "1001", "10.00", true},
+		{"other_gateway", "alipay", "wxpay", "alipay", "2001", "10.00", false},
+		{"wrong_merchant", "alipay", "alipay", "alipay", "3001", "10.00", false},
+		{"wrong_method", "alipay", "alipay", "wxpay", "2001", "10.00", false},
+		{"wrong_amount", "alipay", "alipay", "alipay", "2001", "1.00", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			params := epay.GenerateParams(map[string]string{
+				"out_trade_no": "local-order", "pid": tc.merchant, "type": tc.method,
+				"money": tc.amount, "trade_status": epay.StatusTradeSuccess,
+			}, operation_setting.GetEpayGateway(tc.signer).Key)
+			_, err := verifyEpayPayment(params, tc.gateway, "local-order", 10)
+			if tc.valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
 }

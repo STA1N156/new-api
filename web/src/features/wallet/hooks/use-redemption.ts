@@ -40,22 +40,29 @@ export function useRedemption() {
 
     try {
       setRedeeming(true)
-      const response = await redeemTopupCode({ key: code })
+      const response = await redeemTopupCode({ key: code.trim() })
 
-      if (response.success && response.data) {
-        const quotaAdded = response.data
-        toast.success(
-          i18next.t('Redemption successful! Added: {{quota}}', {
-            quota: formatQuota(quotaAdded),
-          })
-        )
+      if (response.success && response.data !== undefined) {
+        if (typeof response.data === 'number') {
+          toast.success(
+            i18next.t('Redemption successful! Added: {{quota}}', {
+              quota: formatQuota(response.data),
+            })
+          )
+        } else {
+          toast.success(
+            i18next.t('Subscription activated: {{plan}}', {
+              plan: response.data.subscription_plan_title,
+            })
+          )
+        }
         await getSelf()
         return true
       }
 
       toast.error(response.message || i18next.t('Redemption failed'))
       return false
-    } catch (_error) {
+    } catch {
       toast.error(i18next.t('Redemption failed'))
       return false
     } finally {

@@ -41,7 +41,7 @@ export function AffiliateRewardsCard(props: AffiliateRewardsCardProps) {
   const { t } = useTranslation()
   if (props.loading) {
     return (
-      <Card data-card-hover='false' className='py-0'>
+      <Card data-card-hover='false' className='ring-border/70 py-0 shadow-none'>
         <CardContent className='space-y-4 p-4 sm:p-5'>
           <Skeleton className='h-6 w-32' />
           <Skeleton className='h-24 w-full rounded-lg' />
@@ -58,7 +58,7 @@ export function AffiliateRewardsCard(props: AffiliateRewardsCardProps) {
   const compliant = props.complianceConfirmed !== false
 
   return (
-    <Card data-card-hover='false' className='py-0'>
+    <Card data-card-hover='false' className='ring-border/70 py-0 shadow-none'>
       <CardContent className='space-y-5 p-4 sm:p-5'>
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <div className='flex items-center gap-2.5'>
@@ -81,8 +81,8 @@ export function AffiliateRewardsCard(props: AffiliateRewardsCardProps) {
           </div>
         </div>
 
-        <div className='grid gap-3 md:grid-cols-2'>
-          <div className='bg-muted/35 rounded-xl p-3.5'>
+        <div className='grid gap-4 md:grid-cols-2 md:gap-6'>
+          <div className='min-w-0'>
             <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
               <Gift aria-hidden='true' className='size-3.5' />
               {t('When your friend signs up')}
@@ -100,7 +100,7 @@ export function AffiliateRewardsCard(props: AffiliateRewardsCardProps) {
               </span>
             </div>
           </div>
-          <div className='bg-muted/35 rounded-xl p-3.5'>
+          <div className='min-w-0'>
             <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
               <ArrowUpRight aria-hidden='true' className='size-3.5' />
               {t(

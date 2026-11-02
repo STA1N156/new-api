@@ -26,9 +26,18 @@ func GetTopUpInfo(c *gin.Context) {
 	complianceConfirmed := operation_setting.IsPaymentComplianceConfirmed()
 
 	// 获取支付方式
-	payMethods := operation_setting.PayMethods
-	if !complianceConfirmed {
-		payMethods = []map[string]string{}
+	payMethods := make([]map[string]string, 0, len(operation_setting.PayMethods))
+	if complianceConfirmed {
+		for _, method := range operation_setting.PayMethods {
+			switch method["type"] {
+			case model.PaymentMethodStripe, model.PaymentMethodCreem, model.PaymentMethodWaffo, model.PaymentMethodWaffoPancake:
+				payMethods = append(payMethods, method)
+			default:
+				if isEpayMethodConfigured(method["type"]) {
+					payMethods = append(payMethods, method)
+				}
+			}
+		}
 	}
 
 	// 如果启用了 Stripe 支付，添加到支付方法列表
@@ -133,18 +142,39 @@ type AmountRequest struct {
 	Amount int64 `json:"amount"`
 }
 
-func GetEpayClient() *epay.Client {
-	if operation_setting.PayAddress == "" || operation_setting.EpayId == "" || operation_setting.EpayKey == "" {
+func GetEpayClient(gateway string) *epay.Client {
+	config := operation_setting.GetEpayGateway(gateway)
+	if !config.Configured() {
 		return nil
 	}
 	withUrl, err := epay.NewClient(&epay.Config{
-		PartnerID: operation_setting.EpayId,
-		Key:       operation_setting.EpayKey,
-	}, operation_setting.PayAddress)
+		PartnerID: config.MerchantID,
+		Key:       config.Key,
+	}, config.Address)
 	if err != nil {
 		return nil
 	}
 	return withUrl
+}
+
+func verifyEpayPayment(params map[string]string, gateway, tradeNo string, money float64) (*epay.VerifyRes, error) {
+	client := GetEpayClient(gateway)
+	if client == nil {
+		return nil, errors.New("payment gateway is not configured")
+	}
+	info, err := client.Verify(params)
+	if err != nil || info == nil || !info.VerifyStatus {
+		return nil, errors.New("invalid payment signature")
+	}
+	if info.ServiceTradeNo != tradeNo || params["pid"] != client.Config.PartnerID || (gateway != "" && info.Type != gateway) {
+		return nil, errors.New("payment gateway or order mismatch")
+	}
+	paid, err := decimal.NewFromString(info.Money)
+	expected, amountErr := decimal.NewFromString(strconv.FormatFloat(money, 'f', 2, 64))
+	if err != nil || amountErr != nil || !paid.Equal(expected) {
+		return nil, errors.New("payment amount mismatch")
+	}
+	return info, nil
 }
 
 func getPayMoney(amount int64, group string) float64 {
@@ -290,7 +320,7 @@ func RequestEpay(c *gin.Context) {
 		return
 	}
 
-	if !operation_setting.ContainsPayMethod(req.PaymentMethod) {
+	if !operation_setting.ContainsPayMethod(req.PaymentMethod) || !isEpayMethodConfigured(req.PaymentMethod) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "支付方式不存在"})
 		return
 	}
@@ -300,7 +330,8 @@ func RequestEpay(c *gin.Context) {
 	notifyUrl, _ := url.Parse(callBackAddress + "/api/user/epay/notify")
 	tradeNo := fmt.Sprintf("%s%d", common.GetRandomString(6), time.Now().Unix())
 	tradeNo = fmt.Sprintf("USR%dNO%s", id, tradeNo)
-	client := GetEpayClient()
+	gateway := operation_setting.SelectEpayGateway(req.PaymentMethod)
+	client := GetEpayClient(gateway)
 	if client == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "当前管理员未配置支付信息"})
 		return
@@ -332,6 +363,7 @@ func RequestEpay(c *gin.Context) {
 		TradeNo:         tradeNo,
 		PaymentMethod:   req.PaymentMethod,
 		PaymentProvider: model.PaymentProviderEpay,
+		EpayGateway:     gateway,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
 	}
@@ -421,25 +453,21 @@ func EpayNotify(c *gin.Context) {
 		_, _ = c.Writer.Write([]byte("fail"))
 		return
 	}
-	client := GetEpayClient()
-	if client == nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 client 未初始化 path=%q client_ip=%s", c.Request.RequestURI, c.ClientIP()))
+	order := model.GetTopUpByTradeNo(params["out_trade_no"])
+	if order == nil || order.PaymentProvider != model.PaymentProviderEpay {
+		logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 回调订单不存在或支付平台不匹配 path=%q client_ip=%s", c.Request.RequestURI, c.ClientIP()))
 		_, err := c.Writer.Write([]byte("fail"))
 		if err != nil {
 			logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 webhook 响应写入失败 path=%q client_ip=%s error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
 		}
 		return
 	}
-	verifyInfo, err := client.Verify(params)
-	if err != nil || !verifyInfo.VerifyStatus {
+	verifyInfo, err := verifyEpayPayment(params, order.EpayGateway, order.TradeNo, order.Money)
+	if err != nil {
 		if _, writeErr := c.Writer.Write([]byte("fail")); writeErr != nil {
 			logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 webhook 响应写入失败 path=%q client_ip=%s error=%q", c.Request.RequestURI, c.ClientIP(), writeErr.Error()))
 		}
-		if err != nil {
-			logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 webhook 验签失败 path=%q client_ip=%s verify_error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
-		} else {
-			logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 webhook 验签失败 path=%q client_ip=%s verify_status=false", c.Request.RequestURI, c.ClientIP()))
-		}
+		logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 webhook 验签失败 path=%q client_ip=%s verify_error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
 		return
 	}
 	logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付 webhook 验签成功 trade_no=%s callback_type=%s trade_status=%s client_ip=%s verify_info=%q", verifyInfo.ServiceTradeNo, verifyInfo.Type, verifyInfo.TradeStatus, c.ClientIP(), common.GetJsonString(verifyInfo)))

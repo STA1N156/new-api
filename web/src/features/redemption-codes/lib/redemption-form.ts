@@ -19,10 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import type { TFunction } from 'i18next'
 import { z } from 'zod'
 
-import {
-  parseQuotaFromDollars,
-  quotaUnitsToEditableAmount,
-} from '@/lib/format'
+import { parseQuotaFromDollars, quotaUnitsToEditableAmount } from '@/lib/format'
 
 import {
   REDEMPTION_VALIDATION,
@@ -36,23 +33,44 @@ import type { RedemptionFormData, Redemption } from '../types'
 
 export function getRedemptionFormSchema(t: TFunction) {
   const msg = getRedemptionFormErrorMessages(t)
-  return z.object({
-    name: z
-      .string()
-      .min(REDEMPTION_VALIDATION.NAME_MIN_LENGTH, msg.NAME_LENGTH_INVALID)
-      .max(REDEMPTION_VALIDATION.NAME_MAX_LENGTH, msg.NAME_LENGTH_INVALID),
-    quota_dollars: z.number().min(0, t('Quota must be a positive number')),
-    expired_time: z.date().optional(),
-    count: z
-      .number()
-      .min(REDEMPTION_VALIDATION.COUNT_MIN, msg.COUNT_INVALID)
-      .max(REDEMPTION_VALIDATION.COUNT_MAX, msg.COUNT_INVALID)
-      .optional(),
-  })
+  return z
+    .object({
+      type: z.enum(['quota', 'subscription']),
+      subscription_plan_id: z.number().int().min(0),
+      name: z
+        .string()
+        .min(REDEMPTION_VALIDATION.NAME_MIN_LENGTH, msg.NAME_LENGTH_INVALID)
+        .max(REDEMPTION_VALIDATION.NAME_MAX_LENGTH, msg.NAME_LENGTH_INVALID),
+      quota_dollars: z.number().min(0, t('Quota must be a positive number')),
+      expired_time: z.date().optional(),
+      count: z
+        .number()
+        .min(REDEMPTION_VALIDATION.COUNT_MIN, msg.COUNT_INVALID)
+        .max(REDEMPTION_VALIDATION.COUNT_MAX, msg.COUNT_INVALID)
+        .optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.type === 'subscription' && data.subscription_plan_id <= 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['subscription_plan_id'],
+          message: t('Select a subscription plan'),
+        })
+      }
+      if (data.type === 'quota' && data.quota_dollars <= 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['quota_dollars'],
+          message: t('Quota must be a positive number'),
+        })
+      }
+    })
 }
 
 export type RedemptionFormValues = {
   name: string
+  type: 'quota' | 'subscription'
+  subscription_plan_id: number
   quota_dollars: number
   expired_time?: Date
   count?: number
@@ -64,6 +82,8 @@ export type RedemptionFormValues = {
 
 export const REDEMPTION_FORM_DEFAULT_VALUES: RedemptionFormValues = {
   name: '',
+  type: 'quota',
+  subscription_plan_id: 0,
   quota_dollars: 10,
   expired_time: undefined,
   count: 1,
@@ -81,7 +101,12 @@ export function transformFormDataToPayload(
 ): RedemptionFormData {
   return {
     name: data.name,
-    quota: parseQuotaFromDollars(data.quota_dollars),
+    quota:
+      data.type === 'subscription'
+        ? 0
+        : parseQuotaFromDollars(data.quota_dollars),
+    subscription_plan_id:
+      data.type === 'subscription' ? data.subscription_plan_id : 0,
     expired_time: data.expired_time
       ? Math.floor(data.expired_time.getTime() / 1000)
       : 0,
@@ -97,6 +122,8 @@ export function transformRedemptionToFormDefaults(
 ): RedemptionFormValues {
   return {
     name: redemption.name,
+    type: redemption.subscription_plan_id ? 'subscription' : 'quota',
+    subscription_plan_id: redemption.subscription_plan_id || 0,
     quota_dollars: quotaUnitsToEditableAmount(redemption.quota),
     expired_time:
       redemption.expired_time > 0

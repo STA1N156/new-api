@@ -99,10 +99,11 @@ func GetStatus(c *gin.Context) {
 		"stripe_unit_price": setting.StripeUnitPrice,
 
 		// 面板启用开关
-		"api_info_enabled":      cs.ApiInfoEnabled,
-		"uptime_kuma_enabled":   cs.UptimeKumaEnabled,
-		"announcements_enabled": cs.AnnouncementsEnabled,
-		"faq_enabled":           cs.FAQEnabled,
+		"api_info_enabled":       cs.ApiInfoEnabled,
+		"uptime_kuma_enabled":    cs.UptimeKumaEnabled,
+		"announcements_enabled":  cs.AnnouncementsEnabled,
+		"scrolling_announcement": cs.ScrollingAnnouncement,
+		"faq_enabled":            cs.FAQEnabled,
 
 		// 模块管理配置
 		"HeaderNavModules":    common.OptionMap["HeaderNavModules"],
@@ -274,10 +275,22 @@ func SendEmailVerification(c *gin.Context) {
 			}
 		}
 		if !allowed {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": "The administrator has enabled the email domain name whitelist, and your email address is not allowed due to special symbols or it's not in the whitelist.",
-			})
+			domains := make([]string, 0, len(common.EmailDomainWhitelist))
+			for _, domain := range common.EmailDomainWhitelist {
+				if domain == "" {
+					continue
+				}
+				label := "@" + domain
+				if domain == "qq.com" && common.EmailAliasRestrictionEnabled {
+					label = i18n.T(c, i18n.MsgQQEmailNumericType)
+				}
+				domains = append(domains, label)
+			}
+			if len(domains) == 0 {
+				common.ApiErrorI18n(c, i18n.MsgEmailRegistrationUnavailable)
+			} else {
+				common.ApiErrorI18n(c, i18n.MsgEmailDomainRestricted, map[string]any{"Domains": strings.Join(domains, "、")})
+			}
 			return
 		}
 	}

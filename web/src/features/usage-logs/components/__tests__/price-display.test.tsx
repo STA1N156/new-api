@@ -102,6 +102,8 @@ it('switches totals, input/output/cache charges and detail prices to yuan using 
       .getByRole('region', { name: 'Total' })
       .textContent?.replaceAll(/\s/g, '')
   ).toBe('🍪38')
+  expect(screen.getByRole('tab', { name: 'Standard' })).toHaveTextContent('🍪')
+  expect(screen.getByRole('tab', { name: 'Recharge' })).toHaveTextContent('¥')
   fireEvent.click(screen.getByRole('tab', { name: 'Recharge' }))
   expect(screen.getByRole('tab', { name: 'Recharge' })).toHaveAttribute(
     'aria-selected',

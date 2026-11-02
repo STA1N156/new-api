@@ -54,7 +54,11 @@ export function LogTokensCell({
           className='inline-flex max-w-full min-w-0 items-center gap-1'
           title={t('Cache Read')}
         >
-          <ArrowDown className='size-3 shrink-0' aria-hidden />
+          <ArrowDown
+            className='size-3 shrink-0'
+            strokeWidth={1.5}
+            aria-hidden
+          />
           <span
             className={
               showCosts ? 'min-w-0 wrap-anywhere' : 'whitespace-nowrap'
@@ -69,7 +73,7 @@ export function LogTokensCell({
           className='inline-flex max-w-full min-w-0 items-center gap-1'
           title={t('Cache Write')}
         >
-          <ArrowUp className='size-3 shrink-0' aria-hidden />
+          <ArrowUp className='size-3 shrink-0' strokeWidth={1.5} aria-hidden />
           <span
             className={
               showCosts ? 'min-w-0 wrap-anywhere' : 'whitespace-nowrap'

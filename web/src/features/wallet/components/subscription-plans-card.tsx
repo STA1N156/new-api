@@ -36,7 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TitledCard } from '@/components/ui/titled-card'
 import {
@@ -272,11 +271,14 @@ export function SubscriptionPlansCard({
 
   if (loading) {
     return (
-      <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
-        <CardHeader className='border-b p-3 !pb-3 sm:p-5 sm:!pb-5'>
+      <Card
+        data-card-hover='false'
+        className='ring-border/70 gap-0 overflow-hidden py-0 shadow-none'
+      >
+        <CardHeader className='p-3 !pb-3 sm:p-5 sm:!pb-5'>
           <Skeleton className='h-6 w-32' />
         </CardHeader>
-        <CardContent className='space-y-4 p-3 sm:p-5'>
+        <CardContent className='space-y-4 p-3 pt-0 sm:p-5 sm:pt-0'>
           <Skeleton className='h-20 w-full' />
           <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'>
             {['first', 'second', 'third'].map((key) => (
@@ -320,6 +322,8 @@ export function SubscriptionPlansCard({
         icon={<Crown className='h-4 w-4' />}
         iconTone='warning'
         disableHoverEffect
+        className='ring-border/70 shadow-none'
+        headerClassName='border-b-0'
         action={
           <div className='flex w-full items-center gap-2 sm:w-auto'>
             <Select
@@ -395,7 +399,7 @@ export function SubscriptionPlansCard({
             </Button>
           </div>
         }
-        contentClassName='space-y-4 sm:space-y-5'
+        contentClassName='space-y-4 pt-0 sm:space-y-5 sm:pt-0'
       >
         {/* My subscriptions */}
         <div className='space-y-3'>
@@ -423,7 +427,7 @@ export function SubscriptionPlansCard({
                   <article
                     key={subscription?.id}
                     aria-label={`${t('Subscription')} #${subscription.id}`}
-                    className='bg-background space-y-4 rounded-2xl border p-3.5 text-xs sm:p-5'
+                    className='border-border/60 space-y-4 rounded-xl border bg-transparent p-3.5 text-xs sm:p-4'
                   >
                     <div className='flex flex-wrap items-center justify-between gap-2'>
                       <div className='flex min-w-0 flex-wrap items-center gap-2'>
@@ -506,7 +510,11 @@ export function SubscriptionPlansCard({
               ].filter(Boolean) as string[]
 
               return (
-                <Card key={plan.id} data-card-hover='false'>
+                <Card
+                  key={plan.id}
+                  data-card-hover='false'
+                  className='border-border/60 gap-0 rounded-xl border bg-transparent py-0 shadow-none ring-0'
+                >
                   <CardContent className='flex h-full flex-col p-3.5 sm:p-4'>
                     <div className='mb-2 min-w-0'>
                       <h4 className='truncate font-semibold'>
@@ -536,8 +544,6 @@ export function SubscriptionPlansCard({
                         </div>
                       ))}
                     </div>
-
-                    <Separator className='mb-3' />
 
                     <Button
                       variant='outline'

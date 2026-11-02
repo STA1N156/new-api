@@ -1,0 +1,142 @@
+.baking-activity .game-card[data-fx-level='6'] .stage-tag {
+  border-color: #d7bc81;
+  background: #f4e8cd;
+  color: #87652d;
+}
+.baking-activity .game-card[data-fx-level='6'] .state-message.success h2 {
+  color: #a77b30;
+}
+.dark .baking-activity .game-card[data-fx-level='6'] .stage-tag {
+  background: #42392a;
+  border-color: #716044;
+  color: #e8cb8d;
+}
+.dark .baking-activity .game-card[data-fx-level='6'] .state-message.success h2 {
+  color: #e8cb8d;
+}
+.wishing-jackpot {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 65;
+  pointer-events: none;
+}
+.wishing-jackpot > div {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.wishing-jackpot .wish-focus {
+  background: radial-gradient(
+    circle at var(--wish-focus-x) var(--wish-focus-y),
+    #211a100a 35px,
+    #211a1055 145px,
+    #211a109e 320px
+  );
+  will-change: opacity;
+}
+.wishing-jackpot .wish-aura {
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #fff6dbf2 0%,
+    #fff0cbd9 22%,
+    #eed8aa88 40%,
+    #ead6bb33 57%,
+    transparent 72%
+  );
+}
+.wishing-jackpot .wish-halo {
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 15deg,
+    #e9bf66aa 0deg 2deg,
+    transparent 2deg 29deg,
+    #b1bcd582 29deg 31deg,
+    transparent 31deg 60deg
+  );
+  mask-image: radial-gradient(
+    circle,
+    transparent 16%,
+    #000 32%,
+    #0008 52%,
+    transparent 70%
+  );
+}
+.wishing-jackpot .wish-ring,
+.wishing-jackpot .wish-orbit {
+  border: 1.5px solid #f4d48c;
+  border-radius: 50%;
+  box-shadow:
+    0 0 20px #efc57477,
+    inset 0 0 14px #fff0bb66;
+}
+.wishing-jackpot .wish-orbit {
+  border: 2px dotted #dfcde5;
+}
+.wishing-jackpot .wish-star {
+  clip-path: polygon(
+    50% 0,
+    62% 38%,
+    100% 50%,
+    62% 62%,
+    50% 100%,
+    38% 62%,
+    0 50%,
+    38% 38%
+  );
+}
+.wishing-jackpot .wish-ribbon {
+  border-radius: 1px;
+}
+.wishing-jackpot .wish-comet {
+  border-radius: 100%;
+  background: linear-gradient(90deg, transparent, #dfb75caa 65%, #fff5d7);
+  box-shadow: 2px 0 8px #f4d28188;
+}
+.wishing-jackpot .wish-comet::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff0bc;
+}
+.wishing-jackpot .wish-prize {
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  color: #fff0c2;
+  text-shadow:
+    0 2px 12px #33291ecc,
+    0 0 24px #33291eaa;
+}
+.wishing-jackpot .wish-prize span {
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  padding-left: 0.22em;
+}
+.wishing-jackpot .wish-prize strong {
+  font: 500 32px/1.2 var(--mono, ui-monospace, monospace);
+  white-space: nowrap;
+}
+.wishing-jackpot .wish-cookie {
+  z-index: 4;
+}
+.wishing-jackpot .wish-cookie svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.dark .wishing-jackpot .wish-aura {
+  background: radial-gradient(
+    circle,
+    #a97e4077,
+    #a58b4e44 28%,
+    #6d627e33 45%,
+    transparent 70%
+  );
+}

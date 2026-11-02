@@ -19,6 +19,22 @@ For commercial licensing, please contact support@quantumnous.com
 // Static translation keys that don't get picked up by the t('...') regex.
 // These cover dynamic labels (e.g. constants, configs) that are passed into t at runtime.
 export const STATIC_I18N_KEYS = [
+  // Baking names and server-returned messages.
+  'Butter Buddy',
+  'Cream Cloud',
+  'Matcha Mochi',
+  'Berry Sandwich',
+  'Caramel Swirl',
+  'Golden Crown',
+  'Wishing Cookie',
+  'Baking event is not active',
+  'Baking state changed. Please refresh',
+  'No baking ingredients available',
+  'Invalid baking currency configuration',
+  'Baking progress limit exceeded',
+  'Invalid subscription payment amount',
+  'Invalid baking reward',
+  'Invalid baking request',
   // Header navigation
   'Home',
   'Console',

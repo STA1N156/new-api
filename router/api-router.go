@@ -152,6 +152,11 @@ func SetApiRouter(router *gin.Engine) {
 			}
 		}
 
+		bakingRoute := apiRouter.Group("/baking")
+		bakingRoute.Use(middleware.UserAuth(), middleware.DisableCache())
+		bakingRoute.GET("/state", controller.GetBakingState)
+		bakingRoute.POST("/:action", middleware.BakingActionRateLimit(), controller.BakingAction)
+
 		// Subscription billing (plans, purchase, admin management)
 		subscriptionRoute := apiRouter.Group("/subscription")
 		subscriptionRoute.Use(middleware.UserAuth())

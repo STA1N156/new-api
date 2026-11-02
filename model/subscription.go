@@ -224,6 +224,7 @@ type SubscriptionOrder struct {
 	TradeNo         string `json:"trade_no" gorm:"unique;type:varchar(255);index"`
 	PaymentMethod   string `json:"payment_method" gorm:"type:varchar(50)"`
 	PaymentProvider string `json:"payment_provider" gorm:"type:varchar(50);default:''"`
+	EpayGateway     string `json:"-" gorm:"type:varchar(16);default:''"`
 	Status          string `json:"status"`
 	CreateTime      int64  `json:"create_time"`
 	CompleteTime    int64  `json:"complete_time"`
@@ -676,6 +677,7 @@ func upsertSubscriptionTopUpTx(tx *gorm.DB, order *SubscriptionOrder) error {
 		}
 	}
 	topup.Money = order.Money
+	topup.EpayGateway = order.EpayGateway
 	if topup.PaymentMethod == "" {
 		topup.PaymentMethod = order.PaymentMethod
 	} else if topup.PaymentMethod != order.PaymentMethod {
@@ -693,7 +695,10 @@ func upsertSubscriptionTopUpTx(tx *gorm.DB, order *SubscriptionOrder) error {
 	if err != nil {
 		return err
 	}
-	return creditInvitationReward(tx, &topup, order.UserId, quota)
+	if err := creditInvitationReward(tx, &topup, order.UserId, quota); err != nil {
+		return err
+	}
+	return creditBakingSubscription(tx, order)
 }
 
 func ExpireSubscriptionOrder(tradeNo string, expectedPaymentProvider string) error {

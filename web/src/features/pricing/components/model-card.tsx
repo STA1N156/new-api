@@ -47,9 +47,9 @@ export interface ModelCardProps {
 
 function ModelPriceRow(props: { label?: string; price: string; unit: string }) {
   return (
-    <span className='text-muted-foreground flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5'>
+    <span className='text-muted-foreground grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-0.5'>
       {props.label && <span>{props.label}</span>}
-      <span className='inline-flex flex-wrap items-baseline gap-x-1'>
+      <span className='inline-flex min-w-0 flex-wrap items-baseline justify-self-end gap-x-1'>
         <span className='text-foreground font-mono font-semibold break-all'>
           {props.price}
         </span>
@@ -164,7 +164,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   return (
     <div
       className={cn(
-        'bg-card group relative flex min-w-0 flex-col rounded-2xl border px-4 py-3.5 transition-colors sm:px-5 sm:py-4',
+        'bg-card group relative row-span-4 grid min-w-0 grid-rows-subgrid gap-y-3 rounded-2xl border px-4 py-3.5 transition-colors sm:px-5 sm:py-4',
         'hover:border-primary/30'
       )}
     >
@@ -199,54 +199,55 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         </button>
       </div>
 
-      {/* Description */}
-      {props.model.description?.trim() && (
-        <p className='text-muted-foreground mt-2.5 line-clamp-2 text-xs leading-relaxed'>
-          {props.model.description}
-        </p>
-      )}
-
-      <div className='mt-2.5 flex flex-wrap items-center gap-2'>
-        <ModelBillingModeBadge
-          model={props.model}
-          className='h-5 px-0 text-sm leading-5'
-        />
-        {(isTokenBased || isDynamicPricing) &&
-          discount != null &&
-          discount > 0 &&
-          discount <= 10 && (
-            <span className='inline-flex h-5 items-center text-sm leading-5 font-medium text-emerald-600 dark:text-emerald-400'>
-              {discount === 10
-                ? t('Official list price')
-                : t('{{percent}}% off official price', {
-                    discount,
-                    percent: Number(((10 - discount) * 10).toFixed(2)),
-                  })}
-            </span>
-          )}
-      </div>
-      <div className='mt-2.5 flex flex-col gap-1.5 px-3 py-2 text-[13px] leading-5'>
-        {priceSummary}
-      </div>
-      {bottomTags.length > 0 && (
-        <div className='mt-2.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1'>
-          {bottomTags.map((item) => (
-            <span
-              key={item}
-              className='text-muted-foreground text-xs break-all'
-            >
-              {item}
-            </span>
-          ))}
-          {hiddenCount > 0 && (
-            <span className='text-muted-foreground/40 text-xs'>
-              +{hiddenCount}
-            </span>
-          )}
+      <div className='flex min-w-0 flex-col gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
+          <ModelBillingModeBadge
+            model={props.model}
+            className='h-5 px-0 text-sm leading-5'
+          />
+          {(isTokenBased || isDynamicPricing) &&
+            discount != null &&
+            discount > 0 &&
+            discount <= 10 && (
+              <span className='inline-flex h-5 items-center text-sm leading-5 font-medium text-emerald-600 dark:text-emerald-400'>
+                {discount === 10
+                  ? t('Official list price')
+                  : t('{{percent}}% off official price', {
+                      discount,
+                      percent: Number(((10 - discount) * 10).toFixed(2)),
+                    })}
+              </span>
+            )}
         </div>
-      )}
-      <div className='flex-1' />
-      <div className='mt-3 border-t pt-2.5'>
+        {props.model.description?.trim() && (
+          <p className='text-muted-foreground line-clamp-2 text-xs leading-relaxed'>
+            {props.model.description}
+          </p>
+        )}
+      </div>
+      <div className='flex min-w-0 flex-col gap-2.5'>
+        <div className='flex min-w-0 flex-col gap-1.5 text-[13px] leading-5'>
+          {priceSummary}
+        </div>
+        {bottomTags.length > 0 && (
+          <div className='flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1'>
+            {bottomTags.map((item) => (
+              <span
+                key={item}
+                className='text-muted-foreground text-xs break-all'
+              >
+                {item}
+              </span>
+            ))}
+            {hiddenCount > 0 && (
+              <span className='text-muted-foreground/40 text-xs'>
+                +{hiddenCount}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className='min-w-0 border-t pt-2.5'>
         <ModelPerfBadge perf={props.perf} />
       </div>
     </div>

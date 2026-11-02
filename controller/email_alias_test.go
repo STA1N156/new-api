@@ -9,11 +9,48 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestEmailDomainRestrictionMessage(t *testing.T) {
+	require.NoError(t, i18n.Init())
+	oldAlias, oldDomain, oldWhitelist, oldTranslate := common.EmailAliasRestrictionEnabled, common.EmailDomainRestrictionEnabled, common.EmailDomainWhitelist, common.TranslateMessage
+	t.Cleanup(func() {
+		common.EmailAliasRestrictionEnabled, common.EmailDomainRestrictionEnabled, common.EmailDomainWhitelist, common.TranslateMessage = oldAlias, oldDomain, oldWhitelist, oldTranslate
+	})
+	common.EmailDomainRestrictionEnabled = true
+	common.TranslateMessage = i18n.T
+	for _, tt := range []struct {
+		name    string
+		alias   bool
+		domains []string
+		want    string
+	}{
+		{"numeric QQ only", true, []string{"qq.com"}, "该邮箱暂不支持注册。仅支持以下邮箱注册：纯数字 QQ 邮箱（例如 12345678@qq.com）。"},
+		{"multiple domains", true, []string{"qq.com", "gmail.com"}, "该邮箱暂不支持注册。仅支持以下邮箱注册：纯数字 QQ 邮箱（例如 12345678@qq.com）、@gmail.com。"},
+		{"QQ aliases allowed", false, []string{"qq.com"}, "该邮箱暂不支持注册。仅支持以下邮箱注册：@qq.com。"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			common.EmailAliasRestrictionEnabled, common.EmailDomainWhitelist = tt.alias, tt.domains
+			recorder := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(recorder)
+			c.Request = httptest.NewRequest(http.MethodGet, "/api/verification?email=example@foxmail.com", nil)
+			c.Request.Header.Set("Accept-Language", "zh-CN")
+			SendEmailVerification(c)
+			var response struct {
+				Success bool
+				Message string
+			}
+			require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
+			require.False(t, response.Success)
+			require.Equal(t, tt.want, response.Message)
+		})
+	}
+}
 
 func TestQQEmailAliasRestriction(t *testing.T) {
 	for _, tt := range []struct {

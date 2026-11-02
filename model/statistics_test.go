@@ -84,3 +84,38 @@ func TestDailyStatisticsDateRange(t *testing.T) {
 		}
 	}
 }
+
+func TestDailyStatisticsRegistrations(t *testing.T) {
+	prepareStatisticsCacheTest(t)
+	day := time.Date(2026, 10, 30, 0, 0, 0, 0, time.FixedZone("UTC+8", 8*3600))
+	now := day.Add(10*time.Hour + 30*time.Minute)
+	users := []User{
+		{Username: "stats-self", AffCode: "stats-self", CreatedAt: day.Unix()},
+		{Username: "stats-invited", AffCode: "stats-invited", CreatedAt: day.Unix() + 3600, InviterId: 42},
+		{Username: "stats-deleted", AffCode: "stats-deleted", CreatedAt: now.Unix(), InviterId: 42, DeletedAt: gorm.DeletedAt{Time: now, Valid: true}},
+		{Username: "stats-future", AffCode: "stats-future", CreatedAt: now.Unix() + 1},
+		{Username: "stats-yesterday", AffCode: "stats-yesterday", CreatedAt: day.Add(-23 * time.Hour).Unix(), InviterId: 42},
+		{Username: "stats-yesterday-late", AffCode: "stats-yesterday-late", CreatedAt: day.Add(-time.Hour).Unix()},
+	}
+	require.NoError(t, DB.Create(&users).Error)
+	result, err := GetDailyStatistics("", now, 1)
+	require.NoError(t, err)
+	require.Len(t, result.Hours, 11)
+	require.EqualValues(t, 1, result.Hours[0].Registrations)
+	require.Zero(t, result.Hours[0].InvitedRegistrations)
+	require.EqualValues(t, 1, result.Hours[1].InvitedRegistrations)
+	require.EqualValues(t, 1, result.Hours[10].Registrations)
+	require.EqualValues(t, 1, result.Previous.Registrations)
+	require.EqualValues(t, 1, result.Previous.InvitedRegistrations)
+	require.Len(t, result.PreviousHours, 24)
+	require.EqualValues(t, 1, result.PreviousHours[23].Registrations)
+	for _, days := range []int{7, 30} {
+		result, err = GetDailyStatistics("", now, days)
+		require.NoError(t, err)
+		require.Len(t, result.Hours, days)
+		require.Len(t, result.PreviousHours, days)
+		require.EqualValues(t, 2, result.Hours[days-2].Registrations)
+		require.EqualValues(t, 3, result.Hours[days-1].Registrations)
+		require.EqualValues(t, 2, result.Hours[days-1].InvitedRegistrations)
+	}
+}

@@ -62,7 +62,7 @@ const state: BakingState = {
     { cookies: 1000, grants: 5 },
   ],
   rewards: [10, 20, 40, 60, 100, 200, 1111],
-  chances: [80, 65, 50, 35, 20, 5],
+  chances: [85, 65, 50, 35, 20, 10],
   history: [],
   round: {
     id: 21,
@@ -341,7 +341,7 @@ describe('baking actions', () => {
       .getAllByRole('row')
       .slice(1)
       .map((row) => within(row).getAllByRole('cell')[2].textContent)
-    expect(chances).toEqual(['—', '80%', '65%', '50%', '35%', '20%', '5%'])
+    expect(chances).toEqual(['—', '85%', '65%', '50%', '35%', '20%', '10%'])
     expect(screen.getByRole('heading', { name: '活动规则' })).toBeVisible()
     expect(
       screen.getByText('每次升级独立判定概率，每炉最高可领取1,111🍪。')

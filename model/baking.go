@@ -25,7 +25,7 @@ var bakingZone = time.FixedZone("Asia/Hong_Kong", 8*60*60)
 var bakingStart = time.Date(2026, 11, 6, 0, 0, 0, 0, bakingZone)
 var bakingEnd = time.Date(2026, 11, 13, 0, 0, 0, 0, bakingZone)
 var bakingRewards = []int{10, 20, 40, 60, 100, 200, 1111}
-var bakingChances = []int{80, 65, 50, 35, 20, 5}
+var bakingChances = []int{85, 65, 50, 35, 20, 10}
 
 var ErrBakingClosed = errors.New("Baking event is not active")
 var ErrBakingChanged = errors.New("Baking state changed. Please refresh")

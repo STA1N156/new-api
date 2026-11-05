@@ -210,7 +210,7 @@ func TestBakingWishingSettlementCreditsOnlyAClaimedSuccess(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, state.Rewards, 7)
 			require.Len(t, state.Chances, 6)
-			assert.Equal(t, 5, state.Chances[5])
+			assert.Equal(t, 10, state.Chances[5])
 			require.NoError(t, DB.Model(&BakingRound{}).Where("id = ?", state.Round.ID).UpdateColumn("level", 5).Error)
 			state, err = ExecuteBakingAction(user.Id, "bake", BakingCommand{RoundID: state.Round.ID, Version: state.Round.Version})
 			require.NoError(t, err)

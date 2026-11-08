@@ -36,10 +36,13 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { SidebarData } from '@/components/layout/types'
 import { ROLE } from '@/lib/roles'
+
+const BAKING_ENDS_AT = Date.parse('2026-11-13T00:00:00+08:00')
 
 /**
  * Root navigation groups for the application sidebar.
@@ -49,6 +52,27 @@ import { ROLE } from '@/lib/roles'
  */
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation()
+  const [showBaking, setShowBaking] = useState(
+    () => Date.now() < BAKING_ENDS_AT
+  )
+
+  useEffect(() => {
+    let timer: number | undefined
+    const update = () => {
+      window.clearTimeout(timer)
+      const remaining = BAKING_ENDS_AT - Date.now()
+      setShowBaking(remaining > 0)
+      if (remaining > 0) {
+        timer = window.setTimeout(update, Math.min(remaining, 86_400_000))
+      }
+    }
+    update()
+    document.addEventListener('visibilitychange', update)
+    return () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', update)
+    }
+  }, [])
 
   return {
     navGroups: [
@@ -72,11 +96,15 @@ export function useSidebarData(): SidebarData {
         id: 'general',
         title: t('General'),
         items: [
-          {
-            title: t('Lucky Bakery', { lng: 'zhCN', context: 'sidebar' }),
-            url: '/baking',
-            icon: Cookie,
-          },
+          ...(showBaking
+            ? [
+                {
+                  title: t('Lucky Bakery', { lng: 'zhCN', context: 'sidebar' }),
+                  url: '/baking',
+                  icon: Cookie,
+                },
+              ]
+            : []),
           {
             title: t('Overview'),
             url: '/dashboard/overview',

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -90,6 +91,9 @@ type RelayInfo struct {
 	TokenUnlimited    bool
 	StartTime         time.Time
 	FirstResponseTime time.Time
+	outputTimingMu    sync.Mutex
+	firstOutputTime   time.Time
+	lastOutputTime    time.Time
 	isFirstResponse   bool
 	//SendLastReasoningResponse bool
 	IsStream               bool

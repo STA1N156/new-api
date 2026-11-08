@@ -103,6 +103,7 @@ func cohereStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 	go func() {
 		for scanner.Scan() {
 			data := scanner.Text()
+			info.ObserveStreamOutput(data)
 			dataChan <- data
 		}
 		if err := scanner.Err(); err != nil {

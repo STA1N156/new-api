@@ -16,10 +16,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { renderHook } from '@testing-library/react'
-import { expect, it } from 'vitest'
+import { act, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { useSidebarData } from '../use-sidebar-data'
+
+beforeEach(() => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2026-11-12T23:59:59+08:00'))
+})
+
+afterEach(() => vi.useRealTimers())
 
 it('shows the baking event in General for ordinary users', () => {
   const { result } = renderHook(() => useSidebarData())
@@ -28,6 +35,22 @@ it('shows the baking event in General for ordinary users', () => {
     ?.items.find((entry) => 'url' in entry && entry.url === '/baking')
   expect(item).toBeDefined()
   expect(item?.requiredRole).toBeUndefined()
+})
+
+it('hides the baking link at the Beijing closing time without refreshing', () => {
+  const { result } = renderHook(() => useSidebarData())
+  act(() => vi.advanceTimersByTime(1000))
+  expect(
+    result.current.navGroups.find((group) => group.id === 'general')?.items
+  ).not.toContainEqual(expect.objectContaining({ url: '/baking' }))
+})
+
+it('omits the baking link when opening the page after the event ends', () => {
+  vi.setSystemTime(new Date('2026-11-13T00:00:00+08:00'))
+  const { result } = renderHook(() => useSidebarData())
+  expect(
+    result.current.navGroups.find((group) => group.id === 'general')?.items
+  ).not.toContainEqual(expect.objectContaining({ url: '/baking' }))
 })
 
 it('places Statistics immediately after Users and limits it to super administrators', () => {

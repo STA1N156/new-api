@@ -25,8 +25,13 @@ func Init() {
 }
 
 func RecordRelaySample(info *relaycommon.RelayInfo, success bool, outputTokens int64) {
+	Record(NewRelaySample(info, success, outputTokens))
+}
+
+// NewRelaySample freezes timing before billing, log writes and the async queue.
+func NewRelaySample(info *relaycommon.RelayInfo, success bool, outputTokens int64) Sample {
 	if info == nil {
-		return
+		return Sample{}
 	}
 	now := time.Now()
 	hasTtft := info.IsStream && info.HasSendResponse()
@@ -36,13 +41,10 @@ func RecordRelaySample(info *relaycommon.RelayInfo, success bool, outputTokens i
 	}
 	latencyMs := now.Sub(info.StartTime).Milliseconds()
 	generationMs := latencyMs
-	if hasTtft {
-		generationMs = now.Sub(info.FirstResponseTime).Milliseconds()
+	if info.IsStream {
+		generationMs = info.OutputDuration().Milliseconds()
 	}
-	if generationMs <= 0 {
-		generationMs = latencyMs
-	}
-	Record(Sample{
+	return Sample{
 		Model:        info.OriginModelName,
 		Group:        info.UsingGroup,
 		LatencyMs:    latencyMs,
@@ -51,7 +53,7 @@ func RecordRelaySample(info *relaycommon.RelayInfo, success bool, outputTokens i
 		Success:      success,
 		OutputTokens: outputTokens,
 		GenerationMs: generationMs,
-	})
+	}
 }
 
 func Record(sample Sample) {

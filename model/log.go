@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -354,6 +355,27 @@ type RecordConsumeLogParams struct {
 	Other            map[string]interface{} `json:"other"`
 }
 
+func logMetadataWithNode(other map[string]interface{}, node string) string {
+	if node == "" {
+		node = common.NodeName
+	}
+	if node == "" {
+		return common.MapToJsonStr(other)
+	}
+	other = maps.Clone(other)
+	if other == nil {
+		other = make(map[string]interface{})
+	}
+	admin, _ := other["admin_info"].(map[string]interface{})
+	admin = maps.Clone(admin)
+	if admin == nil {
+		admin = make(map[string]interface{})
+	}
+	admin["node_name"] = node
+	other["admin_info"] = admin
+	return common.MapToJsonStr(other)
+}
+
 func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
 	if !common.LogConsumeEnabled {
 		return
@@ -363,7 +385,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	requestId := c.GetString(common.RequestIdKey)
 	upstreamRequestId := c.GetString(common.UpstreamRequestIdKey)
 	createdAt := common.GetTimestamp()
-	otherStr := common.MapToJsonStr(params.Other)
+	otherStr := logMetadataWithNode(params.Other, common.NodeName)
 	log := &Log{
 		UserId:            userId,
 		Username:          username,
@@ -388,20 +410,6 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	err := createLog(log)
 	if err != nil {
 		logger.LogError(c, "failed to record log: "+err.Error())
-	}
-	if common.DataExportEnabled {
-		LogQuotaData(QuotaDataLogParams{
-			UserID:    userId,
-			Username:  username,
-			ModelName: params.ModelName,
-			Quota:     params.Quota,
-			CreatedAt: createdAt,
-			TokenUsed: params.PromptTokens + params.CompletionTokens,
-			UseGroup:  params.Group,
-			TokenID:   params.TokenId,
-			ChannelID: params.ChannelId,
-			NodeName:  common.NodeName,
-		})
 	}
 }
 
@@ -442,28 +450,11 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 		ChannelId: params.ChannelId,
 		TokenId:   params.TokenId,
 		Group:     params.Group,
-		Other:     common.MapToJsonStr(params.Other),
+		Other:     logMetadataWithNode(params.Other, params.NodeName),
 	}
 	err := createLog(log)
 	if err != nil {
 		common.SysLog("failed to record task billing log: " + err.Error())
-	}
-	if params.LogType == LogTypeConsume && common.DataExportEnabled {
-		nodeName := params.NodeName
-		if nodeName == "" {
-			nodeName = common.NodeName
-		}
-		LogQuotaData(QuotaDataLogParams{
-			UserID:    params.UserId,
-			Username:  username,
-			ModelName: params.ModelName,
-			Quota:     params.Quota,
-			CreatedAt: createdAt,
-			UseGroup:  params.Group,
-			TokenID:   params.TokenId,
-			ChannelID: params.ChannelId,
-			NodeName:  nodeName,
-		})
 	}
 }
 

@@ -44,10 +44,12 @@ export async function getUserQuotaDates(
   isAdmin = false
 ) {
   const endpoint = isAdmin ? '/api/data' : '/api/data/self'
-  const res = await api.get<{ success: boolean; data: QuotaDataItem[] }>(
-    endpoint,
-    { params }
-  )
+  const res = await api.get<{
+    success: boolean
+    data: QuotaDataItem[]
+    message?: string
+  }>(endpoint, { params })
+  if (!res.data.success) throw new Error(res.data.message)
   return res.data
 }
 
@@ -59,10 +61,12 @@ export async function getUserQuotaDataByUsers(params: {
   start_timestamp: number
   end_timestamp: number
 }) {
-  const res = await api.get<{ success: boolean; data: QuotaDataItem[] }>(
-    '/api/data/users',
-    { params }
-  )
+  const res = await api.get<{
+    success: boolean
+    data: QuotaDataItem[]
+    message?: string
+  }>('/api/data/users', { params })
+  if (!res.data.success) throw new Error(res.data.message)
   return res.data
 }
 
@@ -81,6 +85,7 @@ export async function getFlowQuotaDates(
     data?: FlowQuotaDataItem[]
     message?: string
   }>(endpoint, { params })
+  if (!res.data.success) throw new Error(res.data.message)
   return res.data
 }
 

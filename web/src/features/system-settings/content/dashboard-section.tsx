@@ -25,13 +25,10 @@ import * as z from 'zod'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -40,29 +37,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 
-import {
-  SettingsForm,
-  SettingsSwitchContent,
-  SettingsSwitchItem,
-} from '../components/settings-form-layout'
+import { SettingsForm } from '../components/settings-form-layout'
 import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
-import { safeNumberFieldProps } from '../utils/numeric-field'
 
 const dataDashboardSchema = z.object({
-  DataExportEnabled: z.boolean(),
-  DataExportInterval: z.number().int().min(1).max(1440),
   DataExportDefaultTime: z.enum(['hour', 'day', 'week']),
 })
-
 type DataDashboardFormValues = z.infer<typeof dataDashboardSchema>
-
-type DashboardSectionProps = {
-  defaultValues: DataDashboardFormValues
-}
 
 const granularityOptions = [
   { label: 'Hour', value: 'hour' },
@@ -70,32 +54,29 @@ const granularityOptions = [
   { label: 'Week', value: 'week' },
 ]
 
-export function DashboardSection({ defaultValues }: DashboardSectionProps) {
+export function DashboardSection(props: {
+  defaultValues: DataDashboardFormValues
+}) {
   const { t } = useTranslation()
   const updateOption = useUpdateOption()
-
   const form = useForm<DataDashboardFormValues>({
     resolver: zodResolver(dataDashboardSchema),
-    defaultValues,
+    defaultValues: props.defaultValues,
   })
-
   useEffect(() => {
-    form.reset(defaultValues)
-  }, [defaultValues, form])
+    form.reset(props.defaultValues)
+  }, [props.defaultValues, form])
 
   const onSubmit = async (values: DataDashboardFormValues) => {
-    const updates = Object.entries(values).filter(
-      ([key, value]) =>
-        value !== defaultValues[key as keyof DataDashboardFormValues]
-    )
-
-    for (const [key, value] of updates) {
-      await updateOption.mutateAsync({ key, value })
+    if (
+      values.DataExportDefaultTime !== props.defaultValues.DataExportDefaultTime
+    ) {
+      await updateOption.mutateAsync({
+        key: 'DataExportDefaultTime',
+        value: values.DataExportDefaultTime,
+      })
     }
   }
-
-  const isEnabled = form.watch('DataExportEnabled')
-
   return (
     <SettingsSection title={t('Data Dashboard')}>
       <Form {...form}>
@@ -106,89 +87,36 @@ export function DashboardSection({ defaultValues }: DashboardSectionProps) {
           />
           <FormField
             control={form.control}
-            name='DataExportEnabled'
+            name='DataExportDefaultTime'
             render={({ field }) => (
-              <SettingsSwitchItem>
-                <SettingsSwitchContent>
-                  <FormLabel>{t('Enable Data Dashboard')}</FormLabel>
-                </SettingsSwitchContent>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </SettingsSwitchItem>
+              <FormItem>
+                <FormLabel>{t('Default time granularity')}</FormLabel>
+                <Select
+                  items={granularityOptions.map((option) => ({
+                    value: option.value,
+                    label: t(option.label),
+                  }))}
+                  onValueChange={field.onChange}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('Select granularity')} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent alignItemWithTrigger={false}>
+                    <SelectGroup>
+                      {granularityOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(option.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </FormItem>
             )}
           />
-
-          <div className='grid gap-6 sm:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='DataExportInterval'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Refresh interval (minutes)')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      min={1}
-                      max={1440}
-                      step={1}
-                      {...safeNumberFieldProps(field)}
-                      disabled={!isEnabled}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t('Keep this above 1 minute to avoid heavy database load')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='DataExportDefaultTime'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Default time granularity')}</FormLabel>
-                  <Select
-                    items={[
-                      ...granularityOptions.map((option) => ({
-                        value: option.value,
-                        label: t(option.label),
-                      })),
-                    ]}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={!isEnabled}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('Select granularity')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent alignItemWithTrigger={false}>
-                      <SelectGroup>
-                        {granularityOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {t(option.label)}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {t(
-                      'UI granularity only &mdash; data is still aggregated hourly'
-                    )}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
         </SettingsForm>
       </Form>
     </SettingsSection>

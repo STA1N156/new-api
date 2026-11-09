@@ -20,35 +20,37 @@ type flowQuotaResponse struct {
 func setupFlowControllerTestDB(t *testing.T) {
 	t.Helper()
 	db := setupModelListControllerTestDB(t)
-	require.NoError(t, db.AutoMigrate(&model.Token{}, &model.QuotaData{}))
+	require.NoError(t, db.AutoMigrate(&model.Token{}, &model.Log{}))
+	oldLogDB := model.LOG_DB
+	model.LOG_DB = db
+	t.Cleanup(func() { model.LOG_DB = oldLogDB })
 	require.NoError(t, model.DB.Create(&model.Channel{Id: 1, Name: "east"}).Error)
 	require.NoError(t, model.DB.Create(&model.Token{Id: 11, UserId: 1, Key: "sk-primary", Name: "primary"}).Error)
 	require.NoError(t, model.DB.Create(&model.Token{Id: 22, UserId: 2, Key: "sk-backup", Name: "backup"}).Error)
-	require.NoError(t, model.DB.Create(&model.QuotaData{
-		UserID:    1,
-		Username:  "alice",
-		NodeName:  "node-a",
-		TokenID:   11,
-		UseGroup:  "default",
-		ChannelID: 1,
-		ModelName: "gpt-a",
-		CreatedAt: 1100,
-		Count:     2,
-		Quota:     100,
-		TokenUsed: 40,
+	require.NoError(t, model.DB.Create(&model.Log{
+		UserId:       1,
+		Username:     "alice",
+		Type:         model.LogTypeConsume,
+		TokenId:      11,
+		Group:        "default",
+		ChannelId:    1,
+		ModelName:    "gpt-a",
+		CreatedAt:    1100,
+		Quota:        100,
+		PromptTokens: 40,
+		Other:        `{"admin_info":{"node_name":"node-a"}}`,
 	}).Error)
-	require.NoError(t, model.DB.Create(&model.QuotaData{
-		UserID:    2,
-		Username:  "bob",
-		NodeName:  "node-b",
-		TokenID:   22,
-		UseGroup:  "vip",
-		ChannelID: 1,
-		ModelName: "gpt-b",
-		CreatedAt: 1200,
-		Count:     1,
-		Quota:     70,
-		TokenUsed: 30,
+	require.NoError(t, model.DB.Create(&model.Log{
+		UserId:       2,
+		Username:     "bob",
+		Type:         model.LogTypeConsume,
+		TokenId:      22,
+		Group:        "vip",
+		ChannelId:    1,
+		ModelName:    "gpt-b",
+		CreatedAt:    1200,
+		Quota:        70,
+		PromptTokens: 30,
 	}).Error)
 }
 

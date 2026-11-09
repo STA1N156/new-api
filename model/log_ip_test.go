@@ -24,10 +24,10 @@ func TestRequestLogsRespectIPSetting(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			setupUserUpdateTestState(t)
-			oldConsume, oldExport := common.LogConsumeEnabled, common.DataExportEnabled
-			common.LogConsumeEnabled, common.DataExportEnabled = true, false
+			oldConsume := common.LogConsumeEnabled
+			common.LogConsumeEnabled = true
 			t.Cleanup(func() {
-				common.LogConsumeEnabled, common.DataExportEnabled = oldConsume, oldExport
+				common.LogConsumeEnabled = oldConsume
 			})
 			user := User{Username: "ip-log-user", Setting: tc.setting}
 			require.NoError(t, DB.Create(&user).Error)

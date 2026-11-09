@@ -69,7 +69,9 @@ func TestMain(m *testing.M) {
 
 func truncateTables(t *testing.T) {
 	t.Helper()
+	quotaQueryCache.Purge()
 	t.Cleanup(func() {
+		quotaQueryCache.Purge()
 		DB.Exec("DELETE FROM tasks")
 		DB.Exec("DELETE FROM auth_flows")
 		DB.Exec("DELETE FROM external_identity_claims")

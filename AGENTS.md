@@ -140,6 +140,11 @@ Do NOT directly import or call `encoding/json` in business code. `json.RawMessag
 
 ### Frontend Rules
 
+**Rankings:** See `docs/rankings.md`. The old quota-data export is retired.
+Rankings preserve legacy history and use dedicated model/hour snapshots for
+new consumption. Keep snapshot work outside the relay request path, preserve
+atomic publication and cached responses during background refreshes.
+
 - Use `bun` as the preferred package manager and script runner for the frontend (`web/`):
   - `bun install` for dependency installation
   - `bun run dev` for development server

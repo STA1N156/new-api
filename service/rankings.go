@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/model"
+	"golang.org/x/sync/singleflight"
 )
 
 const (
@@ -132,6 +133,7 @@ type vendorAggregate struct {
 var (
 	rankingCacheMu sync.Mutex
 	rankingCache   = map[string]rankingCacheItem{}
+	rankingBuilds  singleflight.Group
 )
 
 func GetRankingsSnapshot(period string) (*RankingsResponse, error) {
@@ -142,25 +144,43 @@ func GetRankingsSnapshot(period string) (*RankingsResponse, error) {
 
 	now := time.Now()
 	rankingCacheMu.Lock()
-	if item, ok := rankingCache[config.id]; ok && now.Before(item.expiresAt) {
+	item, cached := rankingCache[config.id]
+	if cached && now.Before(item.expiresAt) {
 		rankingCacheMu.Unlock()
 		return item.data, nil
 	}
 	rankingCacheMu.Unlock()
 
-	data, err := buildRankingsSnapshot(config, now)
-	if err != nil {
-		return nil, err
+	result := rankingBuilds.DoChan(config.id, func() (any, error) {
+		rankingCacheMu.Lock()
+		latest, found := rankingCache[config.id]
+		rankingCacheMu.Unlock()
+		if found && time.Now().Before(latest.expiresAt) {
+			return latest.data, nil
+		}
+		data, err := buildRankingsSnapshot(config, time.Now())
+		if err != nil {
+			if found {
+				latest.expiresAt = time.Now().Add(15 * time.Second)
+				rankingCacheMu.Lock()
+				rankingCache[config.id] = latest
+				rankingCacheMu.Unlock()
+			}
+			return nil, err
+		}
+		rankingCacheMu.Lock()
+		rankingCache[config.id] = rankingCacheItem{expiresAt: time.Now().Add(rankingCacheTTL), data: data}
+		rankingCacheMu.Unlock()
+		return data, nil
+	})
+	if cached {
+		return item.data, nil
 	}
-
-	rankingCacheMu.Lock()
-	rankingCache[config.id] = rankingCacheItem{
-		expiresAt: now.Add(rankingCacheTTL),
-		data:      data,
+	value := <-result
+	if value.Err != nil {
+		return nil, value.Err
 	}
-	rankingCacheMu.Unlock()
-
-	return data, nil
+	return value.Val.(*RankingsResponse), nil
 }
 
 func rankingConfig(period string) (rankingPeriodConfig, error) {
